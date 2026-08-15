@@ -10,7 +10,12 @@ using { konstryx.admin } from './admin';
 using { konstryx.master } from './master';
 
 // S/4 Enterprise Project mirror + Konstryx-local attributes.
-entity Project : cuid, managed, common.s4mirror {
+/**
+ * Mastered in KONSTRYX (D-17), not mirrored from S/4. A project is created
+ * here — or imported from Primavera — and pushed outward, so it carries the
+ * outbound sync aspect whose default is NOT_SENT rather than OK.
+ */
+entity Project : cuid, managed, common.s4outbound {
   code             : String(24);
   name             : String(150);
   company          : Association to admin.Company;
@@ -19,15 +24,23 @@ entity Project : cuid, managed, common.s4mirror {
   ccy              : Currency;
   startDate        : Date;
   endDate          : Date;
-  stage            : String(40);
+  /** Configurable lifecycle; a project only leaves DRAFT once it is complete. */
+  stage            : String(40) default 'Draft';
   executingCompany : Association to admin.Company;
-  childProjects    : Composition of many Project on childProjects.parentProject = $self;
+  /**
+   * Association, not Composition. A self-referencing composition makes CAP
+   * expand the hierarchy recursively on draft activation and overflow the
+   * stack, and it implies cascade-delete — removing a parent would silently
+   * take its sub-projects with it (issue I-23).
+   */
+  childProjects    : Association to many Project on childProjects.parentProject = $self;
   parentProject    : Association to Project;
   wbsElements      : Composition of many WBSElement on wbsElements.project = $self;
 }
 
 // S/4 WBS mirror.
-entity WBSElement : cuid, managed, common.s4mirror {
+/** Mastered here alongside its project (D-17), so outbound like the project. */
+entity WBSElement : cuid, managed, common.s4outbound {
   code         : String(24);
   project      : Association to Project;
   parent       : Association to WBSElement;
