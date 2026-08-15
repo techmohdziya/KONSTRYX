@@ -1,0 +1,157 @@
+{
+  "_version": "3.1.0",
+
+  "site": {
+    "identification": {
+      "id": "konstryx-sandbox",
+      "namespace": "",
+      "title": "KONSTRYX",
+      "description": "Local launchpad matching the S/4HANA Public Cloud shell"
+    },
+    "payload": {
+      "config": {
+        "ushellConfig": {
+          "renderers": {
+            "fiori2": {
+              "componentData": {
+                "config": {
+                  "enableSearch": true,
+                  "enableAbout": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "catalogs": {},
+  "systemAliases": {},
+
+  "applications": {
+    "konstryx": {
+      "sap.app": {
+        "id": "konstryx",
+        "title": "KONSTRYX",
+        "subTitle": "Engineering & Construction",
+        "applicationVersion": { "version": "1.0.0" },
+        "crossNavigation": {
+          "inbounds": {
+            "konstryx-display": {
+              "semanticObject": "KonstryxResourceRequest",
+              "action": "display",
+              "title": "Resource Requests",
+              "subTitle": "Request & Source",
+              "icon": "sap-icon://activity-items",
+              "signature": { "parameters": {}, "additionalParameters": "allowed" }
+            },
+            "konstryx-reservations": {
+              "semanticObject": "KonstryxReservation",
+              "action": "display",
+              "title": "Reservations",
+              "subTitle": "Request & Source",
+              "icon": "sap-icon://sales-order",
+              "signature": { "parameters": {}, "additionalParameters": "allowed" }
+            }
+          }
+        }
+      },
+      "sap.flp": { "type": "application" },
+      "sap.ui": {
+        "technology": "UI5",
+        "icons": { "icon": "sap-icon://activity-items" },
+        "deviceTypes": { "desktop": true, "tablet": true, "phone": false }
+      },
+      "sap.ui5": { "componentName": "konstryx" },
+      "sap.platform.runtime": {
+        "componentProperties": { "url": "../" }
+      }
+    }
+  },
+
+  "visualizations": {
+    "vizResourceRequests": {
+      "vizType": "sap.ushell.StaticAppLauncher",
+      "businessApp": "konstryx",
+      "vizConfig": {
+        "sap.app": {
+          "title": "Resource Requests",
+          "subTitle": "Multi-line requests across six verticals"
+        },
+        "sap.ui": { "icons": { "icon": "sap-icon://activity-items" } },
+        "sap.flp": {
+          "target": { "appId": "konstryx", "inboundId": "konstryx-display" }
+        }
+      }
+    },
+    "vizReservations": {
+      "vizType": "sap.ushell.StaticAppLauncher",
+      "businessApp": "konstryx",
+      "vizConfig": {
+        "sap.app": {
+          "title": "Reservations",
+          "subTitle": "Encumbered budget by line"
+        },
+        "sap.ui": { "icons": { "icon": "sap-icon://sales-order" } },
+        "sap.flp": {
+          "target": { "appId": "konstryx", "inboundId": "konstryx-reservations" }
+        }
+      }
+    }
+  },
+
+  "pages": {
+    "KX_PROJECT_EXECUTION": {
+      "identification": {
+        "id": "KX_PROJECT_EXECUTION",
+        "title": "Project Execution"
+      },
+      "payload": {
+        "layout": { "sectionOrder": [ "REQUEST_SOURCE", "COMMIT_EXECUTE" ] },
+        "sections": {
+          "REQUEST_SOURCE": {
+            "id": "REQUEST_SOURCE",
+            "title": "Request & Source",
+            "layout": { "vizOrder": [ "vizRR", "vizRES" ] },
+            "viz": {
+              "vizRR":  { "id": "vizRR",  "vizId": "vizResourceRequests" },
+              "vizRES": { "id": "vizRES", "vizId": "vizReservations" }
+            }
+          },
+          "COMMIT_EXECUTE": {
+            "id": "COMMIT_EXECUTE",
+            "title": "Commit & Execute",
+            "layout": { "vizOrder": [] },
+            "viz": {}
+          }
+        }
+      }
+    }
+  },
+
+  "menus": {
+    "main": {
+      "identification": { "id": "main" },
+      "payload": {
+        "menuEntries": [
+          {
+            "id": "KX_EXECUTION",
+            "title": "Project Execution",
+            "description": "Resource requests through closure",
+            "icon": "sap-icon://factory",
+            "type": "IBN",
+            "target": {
+              "semanticObject": "Launchpad",
+              "action": "openFLPPage",
+              "parameters": [
+                { "name": "pageId",  "value": "KX_PROJECT_EXECUTION" },
+                { "name": "spaceId", "value": "KX_EXECUTION" }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

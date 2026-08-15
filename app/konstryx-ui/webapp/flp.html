@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>KONSTRYX — Launchpad (local)</title>
+
+	<!--
+		Local stand-in for the S/4HANA Public Cloud Fiori launchpad.
+
+		The point is not the sandbox itself but that the app is developed in the
+		same shape it deploys in: no chrome of its own, reached through a
+		semantic-object intent, placed on a page inside a space. What differs on
+		S/4 is only who supplies the site — there it comes from the launchpad
+		content manager and the IAM App registration, here from flpSite.json.
+
+		Theme is set once, on the shell. The app must never set its own or it
+		will fight a client who switches to Evening Horizon.
+	-->
+	<script>
+		window["sap-ushell-config"] = {
+			defaultRenderer: "fiori2",
+			ushell: {
+				spaces: { enabled: true }
+			},
+			services: {
+				NavTargetResolution: {
+					config: { enableClientSideTargetResolution: true }
+				},
+				CommonDataModel: {
+					adapter: { config: { siteDataUrl: "flpSite.json" } }
+				}
+			}
+		};
+	</script>
+
+	<script src="resources/sap/ushell/bootstrap/sandbox2.js"></script>
+
+	<script
+		id="sap-ui-bootstrap"
+		src="resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_horizon"
+		data-sap-ui-libs="sap.m,sap.ushell,sap.f,sap.ui.layout,sap.tnt,sap.uxap"
+		data-sap-ui-compat-version="edge"
+		data-sap-ui-async="true"
+		data-sap-ui-frame-options="allow"
+		data-sap-ui-resource-roots='{"konstryx": "./"}'>
+	</script>
+
+	<script>
+		sap.ui.getCore().attachInit(function () {
+			sap.ui.require(["sap/ushell/Container"], function (Container) {
+				Container.createRenderer(undefined, true).then(function (oRenderer) {
+					oRenderer.placeAt("content");
+				});
+			});
+		});
+	</script>
+</head>
+<body class="sapUiBody sapUiSizeCompact" id="content"></body>
+</html>

@@ -2,131 +2,24 @@
 	controllerName="konstryx.controller.App"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
-	xmlns:tnt="sap.tnt"
-	xmlns:core="sap.ui.core"
 	displayBlock="true"
 	height="100%">
 
-	<tnt:ToolPage id="toolPage" sideExpanded="{app>/navExpanded}">
+	<!--
+		Content only, by design (decision D-16, 2026-08-15).
 
-		<!-- ============================ SHELL BAR ============================ -->
-		<tnt:header>
-			<tnt:ToolHeader>
-				<Button
-					id="sideNavigationToggleButton"
-					icon="sap-icon://menu2"
-					type="Transparent"
-					press=".onMenuButtonPress"
-					tooltip="Show / hide navigation">
-					<layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
-				</Button>
+		KONSTRYX is hosted in the SAP S/4HANA Public Cloud Fiori launchpad, so
+		the shell belongs to the launchpad: header, product logo, global search,
+		notifications, user menu, theme and the Spaces/Pages navigation all come
+		from there. An app that draws its own would show two headers stacked and
+		two search fields, and would not follow the client's theme when they
+		switch between Morning and Evening Horizon.
 
-				<Image src="img/logo.png" height="1.375rem" class="kxShellLogo">
-					<layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
-				</Image>
+		This view was previously a sap.tnt.ToolPage carrying all of that. What it
+		lost — the process-phase side navigation over the ten chain documents —
+		becomes tiles on a launchpad page, one intent per document type, which is
+		how S/4 surfaces task-focused apps.
+	-->
+	<NavContainer id="appContent" autoFocus="false"/>
 
-				<Title text="KONSTRYX" level="H6" class="kxShellTitle">
-					<layoutData><OverflowToolbarLayoutData priority="NeverOverflow"/></layoutData>
-				</Title>
-
-				<ToolbarSpacer/>
-
-				<Title id="shellContextTitle" text="{/project/id} · {/project/name}" level="H6" class="kxShellContext"/>
-
-				<ToolbarSpacer/>
-
-				<SearchField
-					width="18rem"
-					placeholder="Search requests, reservations, assets…"
-					search=".onShellSearch">
-					<layoutData><OverflowToolbarLayoutData priority="Low"/></layoutData>
-				</SearchField>
-
-				<Select
-					id="companySelect"
-					items="{path: '/companies', templateShareable: false}"
-					selectedKey="{app>/activeCompany}"
-					change=".onCompanyChange"
-					tooltip="Active company"
-					autoAdjustWidth="true">
-					<core:Item key="{key}" text="{text}"/>
-					<layoutData><OverflowToolbarLayoutData priority="Low"/></layoutData>
-				</Select>
-
-				<Button icon="sap-icon://bell" type="Transparent" tooltip="Notifications" press=".onNotImplemented"/>
-				<Avatar
-					initials="{/user/initials}"
-					displaySize="XS"
-					backgroundColor="Accent6"
-					tooltip="{/user/name} · {/user/role}"
-					press=".onNotImplemented"/>
-			</tnt:ToolHeader>
-		</tnt:header>
-
-		<!-- ======================= SIDE NAVIGATION =========================
-		     Grouped by the three phases of the canonical KONSTRYX chain
-		     RR → ADV → AVC → RES → CMT → MOB → OPL → VAR → DMB → CLS
-		     rather than by technical module, so the menu reads the way the
-		     process actually runs.
-		================================================================== -->
-		<tnt:sideContent>
-			<tnt:SideNavigation
-				id="sideNavigation"
-				expanded="{app>/navExpanded}"
-				selectedKey="{app>/selectedKey}"
-				itemSelect=".onNavItemSelect">
-
-				<tnt:NavigationList>
-					<tnt:NavigationListItem
-						text="Home"
-						key="launchpad"
-						icon="sap-icon://home"/>
-
-					<tnt:NavigationListItem
-						text="① Request &amp; Source"
-						icon="sap-icon://activity-items"
-						expanded="true"
-						selectable="false">
-						<tnt:NavigationListItem text="Resource Requests"   key="RR"  icon="sap-icon://activity-items"/>
-						<tnt:NavigationListItem text="Advisory Decisions"  key="ADV" icon="sap-icon://decision"/>
-						<tnt:NavigationListItem text="Availability Checks" key="AVC" icon="sap-icon://check-availability"/>
-						<tnt:NavigationListItem text="Reservations"        key="RES" icon="sap-icon://sales-order"/>
-					</tnt:NavigationListItem>
-
-					<tnt:NavigationListItem
-						text="② Commit &amp; Execute"
-						icon="sap-icon://factory"
-						expanded="true"
-						selectable="false">
-						<tnt:NavigationListItem text="Budget Commitments" key="CMT" icon="sap-icon://money-bills"/>
-						<tnt:NavigationListItem text="Mobilizations"      key="MOB" icon="sap-icon://shipping-status"/>
-						<tnt:NavigationListItem text="Operation Logs"     key="OPL" icon="sap-icon://time-entry-request"/>
-					</tnt:NavigationListItem>
-
-					<tnt:NavigationListItem
-						text="③ Change &amp; Close"
-						icon="sap-icon://complete"
-						expanded="true"
-						selectable="false">
-						<tnt:NavigationListItem text="Variation Orders"  key="VAR" icon="sap-icon://request"/>
-						<tnt:NavigationListItem text="De-mobilizations"  key="DMB" icon="sap-icon://undo"/>
-						<tnt:NavigationListItem text="Closures"          key="CLS" icon="sap-icon://complete"/>
-					</tnt:NavigationListItem>
-				</tnt:NavigationList>
-
-				<tnt:fixedItem>
-					<tnt:NavigationList>
-						<tnt:NavigationListItem text="Project Insight" key="insight" icon="sap-icon://business-objects-experience"/>
-						<tnt:NavigationListItem text="Settings"        key="settings" icon="sap-icon://action-settings"/>
-					</tnt:NavigationList>
-				</tnt:fixedItem>
-			</tnt:SideNavigation>
-		</tnt:sideContent>
-
-		<!-- ============================= CONTENT ============================ -->
-		<tnt:mainContents>
-			<NavContainer id="appContent" autoFocus="false"/>
-		</tnt:mainContents>
-
-	</tnt:ToolPage>
 </mvc:View>

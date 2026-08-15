@@ -48,11 +48,18 @@ service WorkflowService @(path:'/workflow') {
         raisedBy,
         raisedOn,
         needBy,
+        // The project and company associations are exposed, not just their
+        // codes, because the authorization catalogue filters this entity by
+        // the paths project.code and company.code. A flattened projection that
+        // dropped them would resolve to nothing and fail the request at
+        // runtime — which is exactly what it did before this line existed.
+        project,
+        company,
         project.code       as projectCode : String(24),
         project.name       as projectName : String(150),
         count(lines.ID)    as lineCount   : Integer,
         sum(lines.estTotal) as totalValue : Decimal(15,2)
   } group by
       ID, docNo, verticalType, status, raisedBy, raisedOn, needBy,
-      project.code, project.name;
+      project.ID, company.ID, project.code, project.name;
 }

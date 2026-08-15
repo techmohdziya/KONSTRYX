@@ -48,7 +48,8 @@ def body(ws, start_row, rows, widths, status_col=None):
             s = ws.cell(row=r, column=status_col).value
             fill = {"Done": GREEN, "In progress": AMBER, "Not started": None,
                     "Blocked": RED, "At risk": RED, "Open": AMBER,
-                    "Decided": GREEN, "Broken": RED}.get(s)
+                    "Decided": GREEN, "Broken": RED, "Closed": GREY,
+                    "YES": GREEN, "OPEN": AMBER}.get(s)
             if fill:
                 ws.cell(row=r, column=status_col).fill = PatternFill("solid", fgColor=fill)
     for i, w in enumerate(widths, start=1):
@@ -169,6 +170,7 @@ decisions = [
     ("D-13", "2026-08-15", "Number range scope is configurable per object, not a product-wide choice", "Your instruction. Scope (GLOBAL/COMPANY) and pattern are configured independently so a client can print the company code while running one group series, or vice versa", "You", "Low — configuration only", "Decided"),
     ("D-14", "2026-08-15", "Document numbers are issued on draft activation, not draft creation", "Abandoned drafts would otherwise burn numbers and leave gaps in the series", "Claude (technical)", "Low, but gap-free numbering is sometimes an audit requirement — confirm if so", "Decided"),
     ("D-15", "2026-08-15", "UI is launchpad-hosted; Spaces and Pages are launchpad configuration, not application data", "Your requirement to blend with S/4HANA. The shell, theme and navigation come from the launchpad; the app renders content only. Modelling spaces as CDS entities was started and abandoned as wrong for this target", "You", "High — supersedes part of D-05; the app's own ToolPage shell must be removed", "Decided"),
+    ("D-16", "2026-08-15", "Option A — S/4HANA Public Cloud's own launchpad is the shell, not SAP Build Work Zone", "Users live in S/4 all day, so one shell is the strongest blend. Avoids a Work Zone dependency and licence per client. App registered as IAM External App via LADI -> Business Catalog -> Business Role", "You", "Medium — Work Zone remains available later; app-side work (intents, no own shell) is identical either way, so switching costs launchpad configuration only", "Decided"),
 ]
 body(ws, 6, decisions, [8, 12, 44, 62, 22, 42, 12], status_col=7)
 ws.freeze_panes = "A6"
@@ -181,7 +183,7 @@ header(ws, 5, ["ID", "Question", "Why it matters", "Options", "Blocks", "Status"
 
 opens = [
     ("Q-01", "Document number ranges: per company or group-global?", "ANSWERED: configurable per object. Built and verified both scopes", "—", "—", "Closed", "Answered 2026-08-15"),
-    ("Q-13", "Where does KONSTRYX surface for the end user — SAP Build Work Zone, or the S/4HANA Public Cloud launchpad directly?", "Decides how Spaces and Pages are configured and how our apps federate with standard S/4 content. Work Zone is the usual route for BTP apps alongside S/4", "SAP Build Work Zone (federates S/4 content) / S/4 launchpad content manager / both", "U-05, U-06, D-01 mta.yaml", "Open", "Before first CF deploy"),
+    ("Q-13", "Where does KONSTRYX surface — Work Zone or the S/4 launchpad?", "ANSWERED: Option A, S/4's own launchpad. See D-16", "—", "—", "Closed", "Answered 2026-08-15"),
     ("Q-14", "Does numbering need to be gap-free for audit?", "Numbers are issued on activation so abandoned drafts do not consume them, but a cancelled document still leaves a gap. Some jurisdictions require unbroken sequences for certain document types", "Gaps acceptable (current) / gap-free required for named document types", "P-06", "Open", "Before Budgeting"),
     ("Q-02", "What is in the EC&O starter content pack?", "You chose 'code lists ship, starter pack as optional import'. I need to know what the pack contains before building the import", "Resource hierarchy depth, CBS library, productivity/consumption norms, trade catalogue", "B-01 Masters, B-02 Templates", "Open", "Before Masters"),
     ("Q-03", "Approval schemes: who approves what, at which value bands?", "The framework is built but has no content. Needs real thresholds per object per company", "Per object type: steps, approver persona, amount bands", "F-02 Approval engine", "Open", "Before Budgeting"),
@@ -221,7 +223,38 @@ seq = [
 body(ws, 6, seq, [5, 30, 62, 66, 26, 13], status_col=6)
 ws.freeze_panes = "A6"
 
-# ------------------------------------------------------------------ 6. Issues
+# --------------------------------------------------------- 6. Options register
+ws = wb.create_sheet("Options Considered")
+title(ws, "Options register — what was on the table, and what switching would cost",
+      "Kept so any decision can be reopened without re-deriving the alternatives. Chosen option marked.", 7)
+header(ws, 5, ["Decision", "Question", "Option", "Chosen", "Trade-off", "Cost to switch to this later", "Reversibility"])
+
+options = [
+    ("D-01", "Backend runtime", "CAP Java", "YES", "Matches skeleton, staffing plan and integration-heavy workload; slower inner loop", "—", "Hard — rewrites pom, mta, handlers"),
+    ("D-01", "", "CAP Node.js", "", "Fastest iteration, lower memory; contradicts every signed plan document", "Rewrite all service handlers and deployment descriptors", "Hard"),
+    ("D-02", "Tenancy", "Dedicated — one deployment per client", "YES", "Simplest to build and certify; upgrade effort scales linearly with clients", "—", "Reversible now, costly per live client later"),
+    ("D-02", "", "Shared multitenancy", "", "One upgrade serves all tenants; needs MTX sidecar, SaaS registry, subscription callbacks", "A few days now with zero clients. Per live client later: data copy into a tenant container, freeze window, rollback plan", "Model is tenancy-neutral, so no data reshaping"),
+    ("D-03", "Delivered content", "Code lists ship; business content is an optional import", "YES", "Clean tenant databases, content versioned independently", "—", "Easy"),
+    ("D-03", "", "Ship a starter EC&O pack in the database", "", "Faster onboarding; becomes product IP you must version and upgrade across tenants", "Move rows from the import into db/data", "Easy"),
+    ("D-03", "", "Code lists only, nothing else ever", "", "Purest no-assumptions reading; slowest client onboarding", "Drop the import mechanism", "Easy"),
+    ("D-04", "Vertical modelling", "Extension entity per vertical", "YES", "Fits six genuinely different verticals; more entities, polymorphic queries", "—", "Medium"),
+    ("D-04", "", "Denormalise onto the request line", "", "Cheaper queries; routing decision then exists in two places and can drift", "Flatten extension entities into the spine", "Medium"),
+    ("D-04", "", "Derive routing from AdvisoryDecision", "", "No duplication; cannot express re-sourcing by variation without reopening ADV", "Drop extension entities, add fields to ADV", "Medium"),
+    ("D-16", "Launchpad / shell", "Option A — S/4's own Fiori launchpad", "YES", "Strongest blend for users who live in S/4; no Work Zone licence or dependency per client", "—", "Easy — app-side work is identical either way"),
+    ("D-16", "", "Option B — SAP Build Work Zone", "", "One entry point across S/4 + SuccessFactors + Ariba + extensions; entitled at 1 user per FUE but another moving part per client", "Launchpad configuration only; no application change", "Easy"),
+    ("D-16", "", "Standalone app with its own shell", "", "What exists today. Does not blend — duplicates launchpad chrome", "Keep the ToolPage shell", "Easy"),
+    ("D-13", "Number ranges", "Configurable scope and pattern per object", "YES", "Serves both client styles from one build", "—", "Easy"),
+    ("D-13", "", "Fixed per company, or fixed global", "", "Simpler; forces one convention on every client", "Remove the scope setting", "Easy"),
+    ("D-05", "UI approach", "Evolve the existing freestyle UI5 app", "YES", "Keeps the app stakeholders validated; manual binding work per screen", "—", "Medium"),
+    ("D-05", "", "Fiori Elements throughout", "", "Fastest across 434 screens; chain strip, wizards and mass-entry grids do not fit the floorplans", "Regenerate screens from annotations", "Medium"),
+    ("D-05", "", "Hybrid — FE for masters, freestyle for chain", "", "Best effort/fidelity ratio at scale; two patterns to maintain", "Adopt incrementally, per module", "Easy"),
+    ("Q-04", "Attachment storage", "SAP Object Store", "OPEN", "Right for drawings and photos at volume; needs a CF service instance", "—", "Medium once files exist"),
+    ("Q-04", "", "HANA LOB", "OPEN", "Simpler, no extra service; costlier at volume and bloats the container", "—", "Medium once files exist"),
+]
+body(ws, 6, options, [10, 22, 44, 9, 60, 56, 34], status_col=4)
+ws.freeze_panes = "A6"
+
+# ------------------------------------------------------------------ 7. Issues
 ws = wb.create_sheet("Issues")
 title(ws, "Issues, risks and things that broke",
       "Defects found and fixed are listed too, so the history is visible", 7)
