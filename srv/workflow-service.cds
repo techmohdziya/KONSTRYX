@@ -4,6 +4,7 @@
  * Reservation lines encumber budget on creation.
  */
 using { konstryx.wf } from '../db/wf';
+using { konstryx.eq } from '../db/eq';
 
 @requires: 'ResourceCoordinator'
 service WorkflowService @(path:'/workflow') {
@@ -17,6 +18,9 @@ service WorkflowService @(path:'/workflow') {
       action sendToAdvisory();
     };
   entity ResourceRequestLines as projection on wf.ResourceRequestLine;
+
+  // EQR vertical extension — reached from a line via $expand=equipment
+  entity EquipmentRequestLines as projection on eq.EquipmentRequestLine;
   entity AdvisoryDecisions    as projection on wf.AdvisoryDecision;
   entity AvailabilityChecks   as projection on wf.AvailabilityCheck;
 

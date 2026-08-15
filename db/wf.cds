@@ -29,6 +29,10 @@ entity ResourceRequestLine : cuid {
   description : String(255);
   qty         : Decimal(15,3);
   uom         : String(10);
+  // Spec §6: every line carries one WBS and one CBS. The header WBS is the
+  // request's default; lines may charge different WBS elements, which the
+  // canonical EQR thread does (two lines on 2.04, one on 1.02, two on 0.10).
+  wbs         : Association to prj.WBSElement;
   cbs         : Association to prj.CBSInstance;
   estUnitCost : Decimal(15,2);
   estTotal    : Decimal(15,2);
