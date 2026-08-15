@@ -108,7 +108,7 @@ items = [
     ("P-03", "Platform", "CAP Java service builds and runs", "Fixed 5 blocking defects in the Sprint 0 skeleton", "Done", "All 8 OData V4 services return metadata and data", "—"),
     ("P-04", "Platform", "Local DB + mock personas", "H2 embedded, 5 mock users mirroring xs-security role templates", "Done", "Persona-based 403s observed as designed", "—"),
     ("P-05", "Platform", "Test data separated from product data", "13 fixtures moved db/data -> test/data; both Node and Java config layers set", "Done", "cds build --production emits only currency code list; no PRJ-001/Emaar in output", "—"),
-    ("P-06", "Platform", "Document number ranges", "Shared docNo generation per company or group-global; needed before any document module", "Not started", "—", "Build next, before Masters"),
+    ("P-06", "Platform", "Document number ranges", "Configurable per object: scope GLOBAL or COMPANY, and pattern, set independently", "Done", "GLOBAL issues RR-2026-0001/RES-2026-0001; COMPANY issues BUD-INFC-2026-0001 and BUD-PMI-2026-0001 advancing independently; numbers issued on draft activation, not draft creation", "—"),
     ("A-01", "Authorization", "Authorization model (S/4 style)", "AuthObject + Activity + Persona + PersonaPermission + UserAssignment scoped by company/project", "Done", "Catalogue: 7 modules, 21 objects, 6 activities", "—"),
     ("A-02", "Authorization", "EffectivePermission view", "Flattens assignments x grants to answer 'what can this person do'", "Done", "23 rows resolved for the 4 seeded personas", "—"),
     ("A-03", "Authorization", "Runtime enforcement handler", "Activity check + company/project instance filtering on every CRUD event", "Done", "Scoped user sees 4 of 5 requests; unrestricted sees 5; own $filter still ANDs; no grant = 403", "—"),
@@ -127,6 +127,10 @@ items = [
     ("U-01", "UI", "RR worklist on live OData", "RequestOverview projection, server-side filters", "Done", "Verified in browser: 4 requests, EQR shows 5 lines / 685,080; EQR filter issues new $batch", "—"),
     ("U-02", "UI", "Request detail page on OData", "Still reads webapp/model/data.json", "Not started", "—", "Now unblocked by M-03"),
     ("U-03", "UI", "Chain step pages on OData", "Still read data.json", "Blocked", "—", "Blocked by M-04"),
+    ("U-04", "UI", "Launchpad intents declared", "crossNavigation inbounds for KonstryxResourceRequest and KonstryxReservation", "Done", "manifest parses; two inbounds registered", "—"),
+    ("U-05", "UI", "Launchpad-hosted shell (blend with S/4)", "App must render inside the Fiori launchpad shell; its own sap.tnt.ToolPage chrome duplicates launchpad header, search, user menu and side nav", "Not started", "—", "Strip app shell to content only"),
+    ("U-06", "UI", "Spaces and Pages navigation", "S/4 Public Cloud style. Launchpad CONFIGURATION (CDM site / Work Zone), not CDS entities", "Not started", "sandbox2 confirmed present in the local 1.150.0 runtime, so this is reproducible locally", "Build FLP sandbox site"),
+    ("U-07", "UI", "Morning Horizon theme", "sap_horizon is Morning Horizon; already the bootstrap theme", "Done", "index.html bootstraps data-sap-ui-theme=sap_horizon", "Must be inherited from the shell once launchpad-hosted, never hard-coded"),
     ("B-01", "Business", "Masters", "Resource hierarchy, CBS library, rates, vendors; scoped GROUP/COMPANY + promotion queue", "Not started", "—", "Start after P-06"),
     ("B-02", "Business", "Templates", "Project templates: CBS tree + default resources", "Not started", "—", "After Masters"),
     ("B-03", "Business", "Project Setup", "Project, WBS, CBS instance; S/4 Enterprise Project mirror", "Not started", "—", "After Templates"),
@@ -162,6 +166,9 @@ decisions = [
     ("D-10", "2026-08-15", "XSUAA Admin role bypasses the data-driven auth layer", "A fresh deployment has no personas or assignments; without it nobody could sign in to create the first one", "Claude (technical)", "Low — but it is a standing privileged path, worth a security review", "Decided"),
     ("D-11", "2026-08-15", "Seeded EQR line values at AED 685,080, not the 716,044 header", "The line values are self-consistent and reconcile exactly to the per-WBS commitment breakdown; the header does not", "Claude (flagged to you)", "Low technically, but the demo numbers must be settled", "Decided"),
     ("D-12", "2026-08-15", "CAP service listens on 8090 locally", "8080 is taken by the UI5 dev server", "Claude (technical)", "Trivial", "Decided"),
+    ("D-13", "2026-08-15", "Number range scope is configurable per object, not a product-wide choice", "Your instruction. Scope (GLOBAL/COMPANY) and pattern are configured independently so a client can print the company code while running one group series, or vice versa", "You", "Low — configuration only", "Decided"),
+    ("D-14", "2026-08-15", "Document numbers are issued on draft activation, not draft creation", "Abandoned drafts would otherwise burn numbers and leave gaps in the series", "Claude (technical)", "Low, but gap-free numbering is sometimes an audit requirement — confirm if so", "Decided"),
+    ("D-15", "2026-08-15", "UI is launchpad-hosted; Spaces and Pages are launchpad configuration, not application data", "Your requirement to blend with S/4HANA. The shell, theme and navigation come from the launchpad; the app renders content only. Modelling spaces as CDS entities was started and abandoned as wrong for this target", "You", "High — supersedes part of D-05; the app's own ToolPage shell must be removed", "Decided"),
 ]
 body(ws, 6, decisions, [8, 12, 44, 62, 22, 42, 12], status_col=7)
 ws.freeze_panes = "A6"
@@ -173,7 +180,9 @@ title(ws, "Open decisions — needed from you",
 header(ws, 5, ["ID", "Question", "Why it matters", "Options", "Blocks", "Status", "Needed by"])
 
 opens = [
-    ("Q-01", "Document number ranges: per company (RR-INFC-2026-0001) or group-global (RR-2026-0001)?", "Every document module depends on it; changing later means renumbering live data", "Per company / group-global / configurable per object type", "P-06, then all of Masters onward", "Open", "Before Masters"),
+    ("Q-01", "Document number ranges: per company or group-global?", "ANSWERED: configurable per object. Built and verified both scopes", "—", "—", "Closed", "Answered 2026-08-15"),
+    ("Q-13", "Where does KONSTRYX surface for the end user — SAP Build Work Zone, or the S/4HANA Public Cloud launchpad directly?", "Decides how Spaces and Pages are configured and how our apps federate with standard S/4 content. Work Zone is the usual route for BTP apps alongside S/4", "SAP Build Work Zone (federates S/4 content) / S/4 launchpad content manager / both", "U-05, U-06, D-01 mta.yaml", "Open", "Before first CF deploy"),
+    ("Q-14", "Does numbering need to be gap-free for audit?", "Numbers are issued on activation so abandoned drafts do not consume them, but a cancelled document still leaves a gap. Some jurisdictions require unbroken sequences for certain document types", "Gaps acceptable (current) / gap-free required for named document types", "P-06", "Open", "Before Budgeting"),
     ("Q-02", "What is in the EC&O starter content pack?", "You chose 'code lists ship, starter pack as optional import'. I need to know what the pack contains before building the import", "Resource hierarchy depth, CBS library, productivity/consumption norms, trade catalogue", "B-01 Masters, B-02 Templates", "Open", "Before Masters"),
     ("Q-03", "Approval schemes: who approves what, at which value bands?", "The framework is built but has no content. Needs real thresholds per object per company", "Per object type: steps, approver persona, amount bands", "F-02 Approval engine", "Open", "Before Budgeting"),
     ("Q-04", "Attachment storage: SAP Object Store or HANA LOB?", "Object Store needs a CF service instance and changes the upload path; HANA LOB is simpler but costlier at volume", "Object Store (recommended for drawings/photos) / HANA LOB", "F-04", "Open", "Before Uploads"),
@@ -197,7 +206,8 @@ header(ws, 5, ["#", "Block", "Contents", "Why here", "Depends on", "Status"])
 
 seq = [
     (1, "Authorization enforcement", "Runtime handler applying configured grants + instance filtering", "Every screen inherits it; retrofitting enforcement after screens exist is where products go wrong", "—", "Done"),
-    (2, "Document number ranges", "Shared docNo generation service", "Every document module needs it; changing the scheme later means renumbering live data", "Q-01", "Not started"),
+    (2, "Document number ranges", "Configurable scope (GLOBAL/COMPANY) and pattern per object; issued on activation", "Every document module needs it; changing the scheme later means renumbering live data", "Q-01 (answered)", "Done"),
+    ("2b", "Launchpad-hosted shell", "Strip the app's own ToolPage chrome; FLP sandbox with Spaces and Pages for local dev", "Blend with S/4HANA. Doing this before the screen count grows avoids stripping the shell out of every screen later", "Q-13", "Not started"),
     (3, "Masters", "Resource hierarchy, CBS library, rates, vendors, scoped GROUP/COMPANY + promotion queue", "Your sequence. Everything downstream references master codes", "Q-01, Q-02", "Not started"),
     (4, "Templates", "Project templates: CBS tree + default resources", "Your sequence. Templates are composed of masters", "Masters", "Not started"),
     (5, "Project Setup", "Project, WBS, CBS instance, S/4 Enterprise Project mirror", "Your sequence. Instantiates a template", "Templates, Q-07, Q-09", "Not started"),
