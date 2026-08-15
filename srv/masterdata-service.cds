@@ -42,9 +42,40 @@ service MasterDataService @(path:'/masterdata') {
 
   entity TemplateResources as projection on master.ProjectTemplateResource;
 
+  /**
+   * Rates and norms are draft-enabled for the same reason the masters are: a
+   * rate is entered against a resource, a basis, a currency and a date, and a
+   * half-entered one must not be visible to anyone costing a project.
+   */
+  @odata.draft.enabled
   entity ProductivityRates as projection on master.ProductivityRate;
+
+  @odata.draft.enabled
   entity ConsumptionRates  as projection on master.ConsumptionRate;
-  entity Rates             as projection on master.RateMaster;
+
+  @odata.draft.enabled
+  entity Rates as projection on master.RateMaster;
+
+  /**
+   * Which rate actually applies on a given day.
+   *
+   * Effective dating is only worth having if something resolves it. A resource
+   * accumulates rate revisions over years, and every consumer - a budget, a
+   * reservation, a variation - needs the one in force on its own date, not the
+   * newest row. Answering that in one place stops each module inventing its own
+   * interpretation of "current".
+   */
+  function rateOn(resourceCode : String(40), onDate : Date, companyCode : String(10))
+    returns {
+      resourceCode  : String(40);
+      rateValue     : Decimal(15,2);
+      netRate       : Decimal(15,2);
+      basis         : String(10);
+      currency      : String(3);
+      effectiveFrom : Date;
+      scope         : String(10);
+      source        : String(120);
+    };
 
   // S/4 mirrors — read-only in Konstryx
   @readonly entity Vendors    as projection on master.Vendor;

@@ -32,6 +32,8 @@ public class MasterValidationHandler implements EventHandler {
     private static final String E_RESOURCE = "konstryx.master.ResourceNode";
     private static final String E_CBS = "konstryx.master.CBSNode";
     private static final String E_RATE = "konstryx.master.RateMaster";
+    private static final String E_PRODUCTIVITY = "konstryx.master.ProductivityRate";
+    private static final String E_CONSUMPTION = "konstryx.master.ConsumptionRate";
 
     private static final List<String> RESOURCE_LEVELS = List.of("L1", "L2", "L3", "L4", "L5");
     private static final List<String> CBS_LEVELS = List.of("L1", "L2", "L3");
@@ -190,6 +192,106 @@ public class MasterValidationHandler implements EventHandler {
                         "A rate for this resource already takes effect on " + from
                                 + " in the same scope.");
             }
+        }
+    }
+
+    // ----------------------------------------------------------------- norms
+
+    /**
+     * Productivity and consumption norms had no validation at all, which made
+     * them the weakest link in costing: a budget built on a norm of zero, or on
+     * two norms effective the same day, is wrong in a way nobody notices until
+     * the numbers are challenged. They are effective-dated exactly like rates,
+     * so they are checked exactly like rates.
+     */
+    @Before(event = CqnService.EVENT_CREATE, entity = "MasterDataService.ProductivityRates")
+    public void validateProductivityCreate(CdsCreateEventContext context, List<CdsData> entries) {
+        entries.forEach(e -> validateNorm(e, E_PRODUCTIVITY, "resource_ID", "productivity norm"));
+    }
+
+    @Before(event = CqnService.EVENT_UPDATE, entity = "MasterDataService.ProductivityRates")
+    public void validateProductivityUpdate(CdsUpdateEventContext context, List<CdsData> entries) {
+        entries.forEach(e -> validateNorm(e, E_PRODUCTIVITY, "resource_ID", "productivity norm"));
+    }
+
+    @Before(event = CqnService.EVENT_CREATE, entity = "MasterDataService.ConsumptionRates")
+    public void validateConsumptionCreate(CdsCreateEventContext context, List<CdsData> entries) {
+        entries.forEach(e -> validateNorm(e, E_CONSUMPTION, "material_ID", "consumption norm"));
+    }
+
+    @Before(event = CqnService.EVENT_UPDATE, entity = "MasterDataService.ConsumptionRates")
+    public void validateConsumptionUpdate(CdsUpdateEventContext context, List<CdsData> entries) {
+        entries.forEach(e -> validateNorm(e, E_CONSUMPTION, "material_ID", "consumption norm"));
+    }
+
+    private void validateNorm(CdsData entry, String entity, String subjectField, String what) {
+        String id = str(entry.get("ID"));
+        Row stored = id == null ? null : db.run(Select.from(entity)
+                .where(e -> e.get("ID").eq(id))).first().orElse(null);
+
+        String subject = merged(entry, stored, subjectField);
+        String from = merged(entry, stored, "effectiveFrom");
+
+        if (subject == null) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A " + what + " has to say which resource it is for.");
+        }
+        if (from == null) {
+            // Without a date nothing can resolve which norm applies when, and
+            // effective dating is the only reason these are separate rows.
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A " + what + " needs an effective-from date.");
+        }
+
+        assertPositive(entry, stored, "outputPerHr", "Output per hour");
+        assertPositive(entry, stored, "outputPerManday8h", "Output per man-day");
+        assertPositive(entry, stored, "consRate", "Consumption rate");
+
+        String wastage = merged(entry, stored, "wastageAllowancePct");
+        if (wastage != null) {
+            try {
+                java.math.BigDecimal pct = new java.math.BigDecimal(wastage);
+                if (pct.signum() < 0 || pct.compareTo(new java.math.BigDecimal("100")) > 0) {
+                    throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                            "A wastage allowance of " + wastage
+                                    + "% is not a proportion of anything. Use 0 to 100.");
+                }
+            } catch (NumberFormatException e) {
+                throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                        "The wastage allowance must be a number.");
+            }
+        }
+
+        String owner = merged(entry, stored, "owningCompany_ID");
+        for (Row other : db.run(Select.from(entity)
+                .where(e -> e.get(subjectField).eq(subject).and(e.get("effectiveFrom").eq(from))))) {
+            String otherId = str(other.get("ID"));
+            if (otherId != null && otherId.equals(id)) {
+                continue;
+            }
+            String otherOwner = str(other.get("owningCompany_ID"));
+            boolean sameScope = owner == null ? otherOwner == null : owner.equals(otherOwner);
+            if (sameScope) {
+                throw new ServiceException(ErrorStatuses.CONFLICT,
+                        "A " + what + " for this resource already takes effect on " + from
+                                + " in the same scope.");
+            }
+        }
+    }
+
+    /** A norm of zero silently prices work at nothing, or divides by it. */
+    private void assertPositive(CdsData entry, Row stored, String field, String label) {
+        String value = merged(entry, stored, field);
+        if (value == null) {
+            return;
+        }
+        try {
+            if (new java.math.BigDecimal(value).signum() <= 0) {
+                throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                        label + " must be greater than zero.");
+            }
+        } catch (NumberFormatException e) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST, label + " must be a number.");
         }
     }
 
