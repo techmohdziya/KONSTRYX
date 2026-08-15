@@ -111,6 +111,8 @@ public class PromotionHandler implements EventHandler {
             String objectType = String.valueOf(request.get("objectType"));
             String objectKey = String.valueOf(request.get("objectKey"));
 
+            assertNoCodeCollision(objectType, objectKey);
+
             // Promote the master itself: group scope has no owning company.
             // HashMap, not Map.of — the latter rejects null values, and
             // clearing the owner is precisely a null.
@@ -136,6 +138,37 @@ public class PromotionHandler implements EventHandler {
             Row request = loadRequest(context);
             close(context, request, "REJECTED",
                     String.valueOf(request.get("objectKey")) + " stays local to its company.");
+        }
+
+        /**
+         * Promotion is where company-local codes can collide. Two companies may
+         * each hold a local EQ-001 quite legitimately; the moment one is shared
+         * group-wide, the other company sees both and the code stops resolving.
+         *
+         * The steward is told which companies conflict rather than the promotion
+         * half-succeeding or the collision surfacing later as a wrong rate.
+         */
+        private void assertNoCodeCollision(String entity, String code) {
+            java.util.List<String> conflicts = new java.util.ArrayList<>();
+            for (Row other : db.run(Select.from(entity).where(m -> m.get("code").eq(code)))) {
+                String scope = String.valueOf(other.getOrDefault("scope", "COMPANY"));
+                Object owner = other.get("owningCompany_ID");
+                if ("COMPANY".equals(scope) && owner != null) {
+                    db.run(Select.from("konstryx.admin.Company")
+                            .where(c -> c.get("ID").eq(owner.toString())))
+                            .first()
+                            .ifPresent(c -> conflicts.add(String.valueOf(c.get("code"))));
+                }
+            }
+            // The record being promoted is itself one of these; more than one
+            // means another company holds the same code.
+            if (conflicts.size() > 1) {
+                throw new ServiceException(ErrorStatuses.CONFLICT,
+                        "Cannot promote " + code + " to group scope: "
+                                + String.join(", ", conflicts)
+                                + " each hold a local master with this code. Re-code the"
+                                + " conflicting masters first, or keep this one local.");
+            }
         }
 
         private void close(EventContext context, Row request, String decision, String message) {

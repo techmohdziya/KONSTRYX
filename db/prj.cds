@@ -69,7 +69,9 @@ entity CBSInstance : cuid, managed {
   libraryNode  : Association to master.CBSNode;
   budgetAmount : Decimal(15,2);
   level        : String(2);
-  children     : Composition of many CBSInstance on children.parent = $self;
+  // Association for the same reason as the library hierarchies: self-referencing
+  // compositions break draft activation and imply cascade-delete of a subtree.
+  children     : Association to many CBSInstance on children.parent = $self;
 }
 
 // BOQItem <-> WBS <-> CBS mapping.

@@ -23,7 +23,11 @@ entity ResourceNode : cuid, managed, common.scoped {
   outputUoM    : String(10);
   defaultCBS   : Association to CBSNode;
   linkedRate   : Association to RateMaster;
-  children     : Composition of many ResourceNode on children.parent = $self;
+  // Association, not Composition. A self-referencing composition sends CAP's
+  // draft activation into infinite recursion expanding its own children, and
+  // composition would mean deleting an L2 silently deletes its whole subtree.
+  // The hierarchy is owned by `parent`; children are simply the inverse.
+  children     : Association to many ResourceNode on children.parent = $self;
 }
 
 // CBS library L1->L3 + resource affinity.
@@ -34,7 +38,7 @@ entity CBSNode : cuid, managed, common.scoped {
   constructionType : String(60);
   resourceAffinity : String(60);
   phase            : String(60);     // L1 phase
-  children         : Composition of many CBSNode on children.parent = $self;
+  children         : Association to many CBSNode on children.parent = $self;
 }
 
 entity ProjectTemplate : cuid, managed, common.scoped {
