@@ -28,3 +28,4 @@ test/verify/results.txt
 test/verify/out_*.txt
 test/verify/kx.log
 test/verify/runner.log
+KONSTRYX_Status_Tracker_2026-08-15.xlsx
