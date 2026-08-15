@@ -21,3 +21,6 @@ Thumbs.db
 
 # operator content drops applied at runtime, not source
 /content/
+
+# Excel lock files created while the tracker is open
+~$*.xlsx
