@@ -1,0 +1,5 @@
+ID;code;name;description;isActive;isDelivered
+72000000-0000-0000-0000-000000000001;SITE_ENGINEER;Site Engineer;Raises resource requests and confirms execution on site;true;true
+72000000-0000-0000-0000-000000000002;PROJECT_MANAGER;Project Manager;Owns the project, approves requests and variations;true;true
+72000000-0000-0000-0000-000000000003;COST_ENGINEER;Cost Engineer;Budget, cost control and reconciliation;true;true
+72000000-0000-0000-0000-000000000004;RESOURCE_COORD;Resource Coordinator;Advisory, availability and reservation;true;true

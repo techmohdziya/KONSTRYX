@@ -43,6 +43,18 @@ entity AuthObject : cuid, managed {
   entityName          : String(120); // konstryx.bud.Budget
   /** False for cross-project masters — company scope still applies. */
   projectScoped       : Boolean default true;
+
+  /**
+   * How this entity reaches its project and company, as a CDS path from the
+   * entity itself. Instance filtering is data-driven for the same reason the
+   * grants are: entities reach their project differently — a request holds it
+   * directly, a request line reaches it through parent — and encoding thirty
+   * such paths in Java would put the enforcement rules somewhere an
+   * administrator cannot see them. Null means the dimension does not apply.
+   */
+  projectPath         : String(120); // project.code · parent.project.code
+  companyPath         : String(120); // company.code · parent.company.code
+
   activities          : Composition of many AuthObjectActivity on activities.authObject = $self;
 }
 
