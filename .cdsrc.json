@@ -1,7 +1,4 @@
 {
-  "build": {
-    "target": "gen"
-  },
   "odata": {
     "version": "v4"
   },

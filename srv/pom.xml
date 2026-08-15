@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -15,9 +12,11 @@
   <name>KONSTRYX :: srv</name>
 
   <dependencies>
+    <!-- includes cds-adapter-odata-v4; the plain -spring-boot starter has no
+         protocol adapter and silently exposes no endpoints -->
     <dependency>
       <groupId>com.sap.cds</groupId>
-      <artifactId>cds-starter-spring-boot</artifactId>
+      <artifactId>cds-starter-spring-boot-odata</artifactId>
     </dependency>
     <dependency>
       <groupId>com.sap.cds</groupId>
@@ -40,6 +39,12 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+  	<dependency>
+  		<groupId>com.h2database</groupId>
+  		<artifactId>h2</artifactId>
+  		<scope>runtime</scope>
+  	</dependency>
   </dependencies>
 
   <build>
@@ -50,7 +55,13 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring.boot.version}</version>
         <executions>
-          <execution><goals><goal>repackage</goal></goals></execution>
+          <execution>
+            <goals><goal>repackage</goal></goals>
+            <configuration>
+              <!-- mta.yaml build-result is target/*-exec.jar -->
+              <classifier>exec</classifier>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <!-- cds maven plugin: compile CDS model into srv resources -->
@@ -65,6 +76,7 @@
             <configuration>
               <commands>
                 <command>build --for java</command>
+              	<command>deploy --to h2 --with-mocks --dry --out "${project.basedir}/src/main/resources/schema-h2.sql"</command>
               </commands>
             </configuration>
           </execution>

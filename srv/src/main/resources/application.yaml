@@ -1,7 +1,39 @@
+server:
+  # 8080 is taken by the UI5 dev server (start-konstryx.bat / ui5 serve).
+  # CAP OData V4 therefore listens on 8090 locally; unchanged in the cloud profile.
+  port: 8090
+
 spring:
   config:
     activate:
       on-profile: default
+  sql:
+    init:
+      platform: h2
+cds:
+  data-source:
+    auto-config:
+      enabled: false
+  # Local development only. Personas mirror the xs-security.json role templates
+  # one-for-one; the cloud profile takes its roles from XSUAA instead.
+  security:
+    mock:
+      users:
+        - name: admin
+          password: admin
+          roles: [ Admin, MasterDataSteward ]
+        - name: vikram          # PM — Vikram Rao
+          password: vikram
+          roles: [ ProjectManager ]
+        - name: rohan           # Cost Engineer — Rohan Menon
+          password: rohan
+          roles: [ BudgetController, ProjectManager ]
+        - name: daud            # Site Engineer — Daud Patel
+          password: daud
+          roles: [ SiteEngineer, ResourceCoordinator ]
+        - name: jin             # Material Buyer — Jin Lee
+          password: jin
+          roles: [ ResourceCoordinator ]
 ---
 # Cloud profile — XSUAA security + HANA Cloud + remote S/4 destinations
 spring:

@@ -14,8 +14,10 @@
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <cds.services.version>3.5.0</cds.services.version>
-    <spring.boot.version>3.3.4</spring.boot.version>
+    <!-- CAP Java 4.x is the line that accepts cds-compiler 6 / @sap/cds-dk 9.
+         Do not drop back to 3.x without also pinning cds-dk to 8. -->
+    <cds.services.version>4.9.3</cds.services.version>
+    <spring.boot.version>3.5.6</spring.boot.version>
   </properties>
 
   <modules>
