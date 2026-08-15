@@ -4,9 +4,10 @@
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:f="sap.f"
 	xmlns:core="sap.ui.core"
+	xmlns:t="sap.ui.table"
 	height="100%">
 
-	<f:DynamicPage id="cbsPage" headerExpanded="true" fitContent="false">
+	<f:DynamicPage id="cbsPage" headerExpanded="true" fitContent="true">
 
 		<f:title>
 			<f:DynamicPageTitle>
@@ -51,52 +52,72 @@
 		</f:header>
 
 		<f:content>
-			<Table
-				id="cbsTable"
-				items="{path: 'md>/CBSLibrary', parameters: {'$orderby': 'code'}, templateShareable: false}"
-				growing="true"
-				growingThreshold="50"
-				sticky="ColumnHeaders"
-				mode="SingleSelectMaster"
-				selectionChange=".onSelect"
-				class="sapUiResponsiveMargin"
-				width="auto">
+			<!-- A TreeTable, not a list. The CBS is a cost breakdown structure:
+			     which node rolls up into which is the whole meaning of it, and a
+			     flat table sorted by code hides exactly that. -->
+			<t:TreeTable
+				id="cbsTree"
+				rows="{path: 'tree>/nodes', parameters: {arrayNames: ['children']}}"
+				selectionMode="Single"
+				selectionBehavior="RowOnly"
+				rowSelectionChange=".onSelect"
+				visibleRowCountMode="Fixed"
+				visibleRowCount="16"
+				enableColumnReordering="true">
 
-				<headerToolbar>
+				<t:extension>
 					<OverflowToolbar>
 						<Title id="tableTitle" text="CBS nodes" level="H4"/>
 						<ToolbarSpacer/>
+						<Button icon="sap-icon://expand-all" text="Expand all" press=".onExpandAll"/>
+						<Button icon="sap-icon://collapse-all" text="Collapse" press=".onCollapseAll"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
-				</headerToolbar>
+				</t:extension>
 
-				<columns>
-					<Column width="10rem"><Text text="Code"/></Column>
-					<Column width="5rem"><Text text="Level"/></Column>
-					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Phase"/></Column>
-					<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Construction type"/></Column>
-					<Column width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Resource affinity"/></Column>
-					<Column width="9rem"><Text text="Scope"/></Column>
-					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
-				</columns>
-
-				<items>
-					<ColumnListItem>
-						<cells>
-							<ObjectIdentifier title="{md>code}"/>
-							<Text text="{md>level}"/>
-							<Text text="{md>phase}"/>
-							<Text text="{md>constructionType}"/>
-							<Text text="{md>resourceAffinity}"/>
+				<t:columns>
+					<t:Column width="18rem">
+						<Label text="Code"/>
+						<t:template>
+							<!-- emphasized, not class: class is not bindable in an XML view. -->
+							<ObjectIdentifier title="{tree>code}"
+							                  titleActive="false"
+							                  text="{= ${tree>isMatch} ? '' : 'shown for context' }"/>
+						</t:template>
+					</t:Column>
+					<t:Column width="5rem">
+						<Label text="Level"/>
+						<t:template><Text text="{tree>level}"/></t:template>
+					</t:Column>
+					<t:Column width="16rem">
+						<Label text="Phase"/>
+						<t:template><Text text="{tree>phase}" wrapping="false"/></t:template>
+					</t:Column>
+					<t:Column width="12rem">
+						<Label text="Construction type"/>
+						<t:template><Text text="{tree>constructionType}"/></t:template>
+					</t:Column>
+					<t:Column width="10rem">
+						<Label text="Resource affinity"/>
+						<t:template><Text text="{tree>resourceAffinity}"/></t:template>
+					</t:Column>
+					<t:Column width="9rem">
+						<Label text="Scope"/>
+						<t:template>
 							<ObjectStatus
-								text="{md>scope}"
-								state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
-								icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
-							<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
-						</cells>
-					</ColumnListItem>
-				</items>
-			</Table>
+								text="{tree>scope}"
+								state="{= ${tree>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+								icon="{= ${tree>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+						</t:template>
+					</t:Column>
+					<t:Column width="12rem">
+						<Label text="Owned by"/>
+						<t:template>
+							<Text text="{= ${tree>owningCompany/code} ? ${tree>owningCompany/code} : 'Whole group' }"/>
+						</t:template>
+					</t:Column>
+				</t:columns>
+			</t:TreeTable>
 		</f:content>
 
 		<f:footer>

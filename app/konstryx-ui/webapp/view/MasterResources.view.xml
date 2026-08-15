@@ -4,9 +4,10 @@
 	xmlns:mvc="sap.ui.core.mvc"
 	xmlns:f="sap.f"
 	xmlns:core="sap.ui.core"
+	xmlns:t="sap.ui.table"
 	height="100%">
 
-	<f:DynamicPage id="masterResourcePage" headerExpanded="true" fitContent="false">
+	<f:DynamicPage id="masterResourcePage" headerExpanded="true" fitContent="true">
 
 		<f:title>
 			<f:DynamicPageTitle>
@@ -52,55 +53,82 @@
 		</f:header>
 
 		<f:content>
-			<Table
-				id="resourceTable"
-				items="{path: 'md>/Resources', parameters: {'$orderby': 'code'}, templateShareable: false}"
-				growing="true"
-				growingThreshold="50"
-				sticky="ColumnHeaders"
-				mode="SingleSelectMaster"
-				selectionChange=".onSelect"
-				class="sapUiResponsiveMargin"
-				width="auto">
+			<!-- A TreeTable, not a list. L1 to L5 is the point of this master: a
+			     flat table sorted by code puts a crane next to a cabin and gives
+			     no way to see which category either belongs to. -->
+			<t:TreeTable
+				id="resourceTree"
+				rows="{path: 'tree>/nodes', parameters: {arrayNames: ['children']}}"
+				selectionMode="Single"
+				selectionBehavior="RowOnly"
+				rowSelectionChange=".onSelect"
+				visibleRowCountMode="Fixed"
+				visibleRowCount="16"
+				enableColumnReordering="true"
+				columnHeaderVisible="true">
 
-				<headerToolbar>
+				<t:extension>
 					<OverflowToolbar>
 						<Title id="tableTitle" text="Resources" level="H4"/>
 						<ToolbarSpacer/>
+						<Button icon="sap-icon://expand-all" text="Expand all" press=".onExpandAll"/>
+						<Button icon="sap-icon://collapse-all" text="Collapse" press=".onCollapseAll"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
-				</headerToolbar>
+				</t:extension>
 
-				<columns>
-					<Column width="12rem"><Text text="Code"/></Column>
-					<Column width="5rem"><Text text="Level"/></Column>
-					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
-					<Column width="6rem"><Text text="Vertical"/></Column>
-					<Column width="9rem"><Text text="Scope"/></Column>
-					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
-					<Column width="8rem"><Text text="Status"/></Column>
-				</columns>
-
-				<items>
-					<ColumnListItem type="Navigation" press=".onNavigateToDetail">
-						<cells>
-							<ObjectIdentifier title="{md>code}"/>
-							<Text text="{md>level}"/>
-							<Text text="{md>description}"/>
-							<Text text="{md>verticalType}"/>
+				<t:columns>
+					<t:Column width="20rem">
+						<Label text="Code"/>
+						<t:template>
+							<!-- A row kept only to place a search hit inside its branch is
+							     left unemphasised, so it is obvious which rows actually
+							     matched. Bound to emphasized rather than to class: class is
+							     not a bindable property in an XML view, it is applied once at
+							     creation, and binding it fails silently. -->
+							<Link text="{tree>code}" press=".onNavigateToDetail"
+							      emphasized="{tree>isMatch}"/>
+						</t:template>
+					</t:Column>
+					<t:Column width="5rem">
+						<Label text="Level"/>
+						<t:template><Text text="{tree>level}"/></t:template>
+					</t:Column>
+					<t:Column width="22rem">
+						<Label text="Description"/>
+						<t:template><Text text="{tree>description}" wrapping="false"/></t:template>
+					</t:Column>
+					<t:Column width="6rem">
+						<Label text="Vertical"/>
+						<t:template><Text text="{tree>verticalType}"/></t:template>
+					</t:Column>
+					<t:Column width="9rem">
+						<Label text="Scope"/>
+						<t:template>
 							<!-- Group masters are the shared backbone; company masters are
 							     local and deliberately stand out, since promoting one is a
 							     decision that changes every other company's costing. -->
 							<ObjectStatus
-								text="{md>scope}"
-								state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
-								icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
-							<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
-							<ObjectStatus text="{md>masterStatus}" state="{= ${md>masterStatus} === 'ACTIVE' ? 'Success' : 'None' }"/>
-						</cells>
-					</ColumnListItem>
-				</items>
-			</Table>
+								text="{tree>scope}"
+								state="{= ${tree>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+								icon="{= ${tree>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+						</t:template>
+					</t:Column>
+					<t:Column width="14rem">
+						<Label text="Owned by"/>
+						<t:template>
+							<Text text="{= ${tree>owningCompany/code} ? ${tree>owningCompany/code} : 'Whole group' }"/>
+						</t:template>
+					</t:Column>
+					<t:Column width="8rem">
+						<Label text="Status"/>
+						<t:template>
+							<ObjectStatus text="{tree>masterStatus}"
+							              state="{= ${tree>masterStatus} === 'ACTIVE' ? 'Success' : 'None' }"/>
+						</t:template>
+					</t:Column>
+				</t:columns>
+			</t:TreeTable>
 		</f:content>
 
 		<f:footer>

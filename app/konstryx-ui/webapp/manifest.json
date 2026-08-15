@@ -1,13 +1,13 @@
 {
   "_version": "1.60.0",
-
   "sap.app": {
     "id": "konstryx",
     "type": "application",
     "title": "KONSTRYX",
     "description": "Engineering & Construction Operations on SAP BTP",
-    "applicationVersion": { "version": "1.0.0" },
-
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
     "crossNavigation": {
       "inbounds": {
         "konstryx-display": {
@@ -16,7 +16,10 @@
           "title": "Resource Requests",
           "subTitle": "Engineering & Construction",
           "icon": "sap-icon://activity-items",
-          "signature": { "parameters": {}, "additionalParameters": "allowed" }
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
         },
         "konstryx-reservations": {
           "semanticObject": "KonstryxReservation",
@@ -24,11 +27,13 @@
           "title": "Reservations",
           "subTitle": "Engineering & Construction",
           "icon": "sap-icon://sales-order",
-          "signature": { "parameters": {}, "additionalParameters": "allowed" }
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
         }
       }
     },
-
     "dataSources": {
       "konstryxData": {
         "uri": "model/data.json",
@@ -57,19 +62,20 @@
       }
     }
   },
-
   "sap.ui": {
     "technology": "UI5",
-    "deviceTypes": { "desktop": true, "tablet": true, "phone": false }
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": false
+    }
   },
-
   "sap.ui5": {
     "rootView": {
       "viewName": "konstryx.view.App",
       "type": "XML",
       "async": true
     },
-
     "dependencies": {
       "minUI5Version": "1.120.0",
       "libs": {
@@ -78,21 +84,31 @@
         "sap.f": {},
         "sap.tnt": {},
         "sap.uxap": {},
-        "sap.ui.layout": {}
+        "sap.ui.layout": {},
+        "sap.ui.table": {}
       }
     },
-
-    "contentDensities": { "compact": true, "cozy": false },
-
+    "contentDensities": {
+      "compact": true,
+      "cozy": false
+    },
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
-        "settings": { "bundleName": "konstryx.i18n.i18n", "supportedLocales": [""], "fallbackLocale": "" }
+        "settings": {
+          "bundleName": "konstryx.i18n.i18n",
+          "supportedLocales": [
+            ""
+          ],
+          "fallbackLocale": ""
+        }
       },
       "": {
         "dataSource": "konstryxData",
         "preload": true,
-        "settings": { "defaultBindingMode": "TwoWay" }
+        "settings": {
+          "defaultBindingMode": "TwoWay"
+        }
       },
       "kx": {
         "dataSource": "workflowService",
@@ -123,9 +139,13 @@
         }
       }
     },
-
-    "resources": { "css": [ { "uri": "css/style.css" } ] },
-
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
     "routing": {
       "config": {
         "routerClass": "sap.m.routing.Router",
@@ -137,34 +157,125 @@
         "controlAggregation": "pages",
         "transition": "slide",
         "async": true,
-        "bypassed": { "target": "notFound" }
+        "bypassed": {
+          "target": "notFound"
+        }
       },
       "routes": [
-        { "pattern": "",                          "name": "launchpad", "target": "launchpad" },
-        { "pattern": "worklist/{docType}",        "name": "worklist",  "target": "worklist"  },
-        { "pattern": "request/{requestId}",       "name": "request",   "target": "request"   },
-        { "pattern": "doc/{requestId}/{step}",    "name": "doc",       "target": "doc"       },
-        { "pattern": "masters/resources",         "name": "masterResources", "target": "masterResources" },
-        { "pattern": "masters/cbs",               "name": "masterCBS",       "target": "masterCBS"       },
-        { "pattern": "masters/promotions",        "name": "promotionQueue",  "target": "promotionQueue"  },
-        { "pattern": "masters/rates",             "name": "masterRates",     "target": "masterRates"     },
-        { "pattern": "masters/resource/{code}",   "name": "resourceDetail",  "target": "resourceDetail"  },
-        { "pattern": "masters/norms",             "name": "masterNorms",     "target": "masterNorms"     },
-        { "pattern": "masters/templates",         "name": "masterTemplates", "target": "masterTemplates" }
+        {
+          "pattern": "",
+          "name": "launchpad",
+          "target": "launchpad"
+        },
+        {
+          "pattern": "worklist/{docType}",
+          "name": "worklist",
+          "target": "worklist"
+        },
+        {
+          "pattern": "request/{requestId}",
+          "name": "request",
+          "target": "request"
+        },
+        {
+          "pattern": "doc/{requestId}/{step}",
+          "name": "doc",
+          "target": "doc"
+        },
+        {
+          "pattern": "masters/resources",
+          "name": "masterResources",
+          "target": "masterResources"
+        },
+        {
+          "pattern": "masters/cbs",
+          "name": "masterCBS",
+          "target": "masterCBS"
+        },
+        {
+          "pattern": "masters/promotions",
+          "name": "promotionQueue",
+          "target": "promotionQueue"
+        },
+        {
+          "pattern": "masters/rates",
+          "name": "masterRates",
+          "target": "masterRates"
+        },
+        {
+          "pattern": "masters/resource/{code}",
+          "name": "resourceDetail",
+          "target": "resourceDetail"
+        },
+        {
+          "pattern": "masters/norms",
+          "name": "masterNorms",
+          "target": "masterNorms"
+        },
+        {
+          "pattern": "masters/templates",
+          "name": "masterTemplates",
+          "target": "masterTemplates"
+        }
       ],
       "targets": {
-        "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
-        "worklist":  { "id": "worklist",  "name": "Worklist"  },
-        "request":   { "id": "request",   "name": "RequestDetail" },
-        "doc":       { "id": "doc",       "name": "ChainStep" },
-        "masterResources": { "id": "masterResources", "name": "MasterResources", "title": "Resource Hierarchy" },
-        "masterCBS":       { "id": "masterCBS",       "name": "MasterCBS",       "title": "CBS Library" },
-        "promotionQueue":  { "id": "promotionQueue",  "name": "PromotionQueue",  "title": "Promotion Queue" },
-        "masterRates":     { "id": "masterRates",     "name": "MasterRates",     "title": "Rate Master" },
-        "resourceDetail":  { "id": "resourceDetail",  "name": "ResourceDetail",  "title": "Resource" },
-        "masterNorms":     { "id": "masterNorms",     "name": "MasterNorms",     "title": "Norms" },
-        "masterTemplates": { "id": "masterTemplates", "name": "MasterTemplates", "title": "Project Templates" },
-        "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
+        "launchpad": {
+          "id": "launchpad",
+          "name": "Launchpad",
+          "title": "Home"
+        },
+        "worklist": {
+          "id": "worklist",
+          "name": "Worklist"
+        },
+        "request": {
+          "id": "request",
+          "name": "RequestDetail"
+        },
+        "doc": {
+          "id": "doc",
+          "name": "ChainStep"
+        },
+        "masterResources": {
+          "id": "masterResources",
+          "name": "MasterResources",
+          "title": "Resource Hierarchy"
+        },
+        "masterCBS": {
+          "id": "masterCBS",
+          "name": "MasterCBS",
+          "title": "CBS Library"
+        },
+        "promotionQueue": {
+          "id": "promotionQueue",
+          "name": "PromotionQueue",
+          "title": "Promotion Queue"
+        },
+        "masterRates": {
+          "id": "masterRates",
+          "name": "MasterRates",
+          "title": "Rate Master"
+        },
+        "resourceDetail": {
+          "id": "resourceDetail",
+          "name": "ResourceDetail",
+          "title": "Resource"
+        },
+        "masterNorms": {
+          "id": "masterNorms",
+          "name": "MasterNorms",
+          "title": "Norms"
+        },
+        "masterTemplates": {
+          "id": "masterTemplates",
+          "name": "MasterTemplates",
+          "title": "Project Templates"
+        },
+        "notFound": {
+          "id": "notFound",
+          "name": "NotFound",
+          "transition": "show"
+        }
       }
     }
   }
