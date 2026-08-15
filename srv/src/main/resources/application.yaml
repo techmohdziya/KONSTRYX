@@ -50,6 +50,14 @@ cds:
         - name: steward_pmi
           password: steward_pmi
           roles: [ MasterDataSteward ]
+        # Local demo only: one session that can reach every screen. Data scope
+        # still applies — this user is assigned to INFC and PRJ-001, so the
+        # authorization and master-scope filtering stay visible rather than
+        # being bypassed the way the Admin bootstrap role would.
+        - name: demo
+          password: demo
+          roles: [ MasterDataSteward, ProjectManager, BudgetController,
+                   ResourceCoordinator, SiteEngineer ]
 ---
 # Cloud profile — XSUAA security + HANA Cloud + remote S/4 destinations
 spring:

@@ -40,6 +40,13 @@
         "settings": {
           "odataVersion": "4.0"
         }
+      },
+      "masterDataService": {
+        "uri": "/odata/v4/masterdata/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
       }
     }
   },
@@ -89,6 +96,15 @@
           "earlyRequests": true,
           "groupId": "$auto"
         }
+      },
+      "md": {
+        "dataSource": "masterDataService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto"
+        }
       }
     },
 
@@ -111,13 +127,15 @@
         { "pattern": "",                          "name": "launchpad", "target": "launchpad" },
         { "pattern": "worklist/{docType}",        "name": "worklist",  "target": "worklist"  },
         { "pattern": "request/{requestId}",       "name": "request",   "target": "request"   },
-        { "pattern": "doc/{requestId}/{step}",    "name": "doc",       "target": "doc"       }
+        { "pattern": "doc/{requestId}/{step}",    "name": "doc",       "target": "doc"       },
+        { "pattern": "masters/resources",         "name": "masterResources", "target": "masterResources" }
       ],
       "targets": {
         "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
         "worklist":  { "id": "worklist",  "name": "Worklist"  },
         "request":   { "id": "request",   "name": "RequestDetail" },
         "doc":       { "id": "doc",       "name": "ChainStep" },
+        "masterResources": { "id": "masterResources", "name": "MasterResources", "title": "Resource Hierarchy" },
         "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
       }
     }

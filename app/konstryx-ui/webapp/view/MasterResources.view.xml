@@ -1,0 +1,120 @@
+<mvc:View
+	controllerName="konstryx.controller.MasterResources"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="masterResourcePage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Resource Hierarchy" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="L1 to L5. A group master is shared across every company; a company master belongs to one legal entity and is invisible to the others."/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Create" type="Emphasized" icon="sap-icon://add" press=".onNotImplemented"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Scope"/>
+						<Select id="scopeFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All scopes"/>
+							<core:Item key="GROUP" text="Group - shared"/>
+							<core:Item key="COMPANY" text="Company - local"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Vertical"/>
+						<Select id="verticalFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All verticals"/>
+							<core:Item key="EQR" text="EQR - Equipment"/>
+							<core:Item key="MR" text="MR - Material"/>
+							<core:Item key="MPR" text="MPR - Manpower"/>
+							<core:Item key="VR" text="VR - Vehicle"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Search"/>
+						<SearchField id="masterSearch" width="16rem" liveChange=".onSearch" placeholder="Code or description"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="resourceTable"
+				items="{path: 'md>/Resources', parameters: {'$orderby': 'code'}, templateShareable: false}"
+				growing="true"
+				growingThreshold="50"
+				sticky="ColumnHeaders"
+				mode="SingleSelectMaster"
+				selectionChange=".onSelect"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="Resources" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="12rem"><Text text="Code"/></Column>
+					<Column width="5rem"><Text text="Level"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+					<Column width="6rem"><Text text="Vertical"/></Column>
+					<Column width="9rem"><Text text="Scope"/></Column>
+					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+					<Column width="8rem"><Text text="Status"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectIdentifier title="{md>code}"/>
+							<Text text="{md>level}"/>
+							<Text text="{md>description}"/>
+							<Text text="{md>verticalType}"/>
+							<!-- Group masters are the shared backbone; company masters are
+							     local and deliberately stand out, since promoting one is a
+							     decision that changes every other company's costing. -->
+							<ObjectStatus
+								text="{md>scope}"
+								state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+								icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+							<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
+							<ObjectStatus text="{md>masterStatus}" state="{= ${md>masterStatus} === 'ACTIVE' ? 'Success' : 'None' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+
+		<f:footer>
+			<OverflowToolbar>
+				<Text id="selectionHint" text="Select a company-scoped master to request promotion to group scope."/>
+				<ToolbarSpacer/>
+				<Button
+					id="promoteButton"
+					text="Request promotion"
+					type="Emphasized"
+					icon="sap-icon://arrow-top"
+					enabled="false"
+					press=".onRequestPromotion"/>
+			</OverflowToolbar>
+		</f:footer>
+	</f:DynamicPage>
+</mvc:View>
