@@ -22,6 +22,13 @@ entity BudgetLine : cuid {
   budget     : Association to Budget;
   cbs        : Association to prj.CBSInstance;
   boqItem    : Association to prj.BOQItem;
+  /**
+   * Cost nature — one of the six verticals (MR, MPR, EQR, VR, SF, SC), carried
+   * from the resource build-up the line was generated from. Six, not four: the
+   * four-way taxonomy is the movement ledger below, computed from ledger
+   * entries, and the two must never be conflated.
+   */
+  category   : String(10);
   amount     : Decimal(15,2);
   authorised : Decimal(15,2);
   committed  : Decimal(15,2);     // S/4 PO/SO
@@ -34,6 +41,24 @@ entity BudgetLine : cuid {
   eacMargin  : Decimal(15,2);
   costRate   : Decimal(15,2);
   costDelta  : Decimal(15,2);
+}
+
+/**
+ * The movement ledger (KX-BUD-004): every dirham of budget movement is one
+ * ledger entry in exactly one of four categories. A line's amount is never
+ * edited after baseline — it is the sum of its ledger entries, and the ledger
+ * is the answer to "how did this number become this number".
+ */
+entity BudgetLedgerEntry : cuid, managed {
+  budget    : Association to Budget;
+  line      : Association to BudgetLine;
+  category  : String enum { ORIGINAL; SHIFT; RISK_TRANSFER; VARIATION; };
+  /** Signed. A shift is two entries that sum to zero across its two lines. */
+  amount    : Decimal(15,2);
+  reference : String(40);      // the document that caused the movement
+  reason    : String(500);
+  /** Pairs the two sides of a shift so neither can be read alone. */
+  pairKey   : String(36);
 }
 
 entity MobilizationAuth : cuid, managed, common.documented {
