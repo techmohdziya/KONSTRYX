@@ -28,8 +28,19 @@ service MasterDataService @(path:'/masterdata') {
       action requestPromotion(reason : String(500)) returns String;
     };
 
+  /**
+   * A template is a construction type plus the CBS structure and default
+   * resources that go with it. Instantiating copies that structure into a
+   * project rather than referencing it, so a later change to the library does
+   * not silently reshape a project already being costed.
+   */
   @odata.draft.enabled
-  entity ProjectTemplates  as projection on master.ProjectTemplate;
+  entity ProjectTemplates  as projection on master.ProjectTemplate
+    actions {
+      action instantiate(projectCode : String(24)) returns String;
+    };
+
+  entity TemplateResources as projection on master.ProjectTemplateResource;
 
   entity ProductivityRates as projection on master.ProductivityRate;
   entity ConsumptionRates  as projection on master.ConsumptionRate;
