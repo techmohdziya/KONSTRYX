@@ -45,7 +45,12 @@
 						icon="sap-icon://arrow-top"
 						visible="false"
 						press=".onRequestPromotion"/>
-					<Button text="Edit" icon="sap-icon://edit" press=".onNotImplemented"/>
+					<Button id="editButton" text="Edit" icon="sap-icon://edit"
+						visible="{= !${ui>/editing} }" press=".onEdit"/>
+					<Button id="saveButton" text="Save" type="Emphasized" icon="sap-icon://save"
+						visible="{ui>/editing}" press=".onSave"/>
+					<Button id="cancelButton" text="Cancel" icon="sap-icon://decline"
+						visible="{ui>/editing}" press=".onCancel"/>
 				</uxap:actions>
 			</uxap:ObjectPageDynamicHeaderTitle>
 		</uxap:headerTitle>
@@ -83,19 +88,25 @@
 			<uxap:ObjectPageSection title="Attributes" titleUppercase="false">
 				<uxap:subSections>
 					<uxap:ObjectPageSubSection>
-						<form:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="2" columnsXL="2" editable="false">
+						<!--
+							Inputs rather than Texts, switched by ui>/editing. Code and
+							level stay read-only even in edit mode: the code is the
+							identity every request line, rate and BOQ mapping refers to,
+							and the level is enforced against the parent by the service.
+						-->
+						<form:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="2" columnsXL="2" editable="true">
 							<Label text="Code"/>
-							<Text text="{md>code}"/>
+							<Input value="{md>code}" editable="false"/>
 							<Label text="Description"/>
-							<Text text="{md>description}"/>
+							<Input value="{md>description}" editable="{ui>/editing}"/>
 							<Label text="Hierarchy level"/>
-							<Text text="{md>level}"/>
+							<Input value="{md>level}" editable="false"/>
 							<Label text="Parent"/>
 							<Text text="{= ${md>parent/code} ? ${md>parent/code} + ' · ' + ${md>parent/description} : 'Top of the hierarchy' }"/>
 							<Label text="Consumption UoM"/>
-							<Text text="{= ${md>consUoM} || '—' }"/>
+							<Input value="{md>consUoM}" editable="{ui>/editing}"/>
 							<Label text="Output UoM"/>
-							<Text text="{= ${md>outputUoM} || '—' }"/>
+							<Input value="{md>outputUoM}" editable="{ui>/editing}"/>
 						</form:SimpleForm>
 					</uxap:ObjectPageSubSection>
 				</uxap:subSections>

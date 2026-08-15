@@ -49,7 +49,7 @@ def body(ws, start_row, rows, widths, status_col=None):
             fill = {"Done": GREEN, "In progress": AMBER, "Not started": None,
                     "Blocked": RED, "At risk": RED, "Open": AMBER,
                     "Decided": GREEN, "Broken": RED, "Closed": GREY,
-                    "YES": GREEN, "OPEN": AMBER}.get(s)
+                    "YES": GREEN, "OPEN": AMBER, "Adopted": GREEN}.get(s)
             if fill:
                 ws.cell(row=r, column=status_col).fill = PatternFill("solid", fgColor=fill)
     for i, w in enumerate(widths, start=1):
@@ -77,6 +77,7 @@ metrics = [
     ("Decisions taken", '=COUNTA(Decisions!B6:B100)'),
     ("Decisions open (need you)", '=COUNTIF(\'Open Decisions\'!F6:F100,"Open")'),
     ("Known issues open", '=COUNTIF(Issues!F6:F100,"Open")+COUNTIF(Issues!F6:F100,"Broken")'),
+    ("Suggestions open", '=COUNTIF(Suggestions!F6:F100,"Open")'),
 ]
 for r, (label, formula) in enumerate(metrics, start=6):
     ws.cell(row=r, column=1, value=label).font = Font(name=FONT, size=10)
@@ -230,6 +231,32 @@ seq = [
     (11, "Plant Department", "Equipment, fleet, scaffolding/formwork", "Your sequence — explicitly after the core", "Execution", "Not started"),
 ]
 body(ws, 6, seq, [5, 30, 62, 66, 26, 13], status_col=6)
+ws.freeze_panes = "A6"
+
+# ------------------------------------------------------ 5b. Suggestions & flags
+ws = wb.create_sheet("Suggestions")
+title(ws, "Suggestions and flags raised during the build",
+      "Everything recommended or warned about, kept in one place for review. Nothing here is decided.", 7)
+header(ws, 5, ["ID", "Area", "Suggestion or flag", "Why it matters", "My recommendation", "Status", "Raised"])
+
+suggestions = [
+    ("S-01", "Plan", "Re-baseline the MVP estimate", "Personalization, attachments and approvals apply to every object. Wireframe v12 is 41 modules / 434 screens; the 22-week plan with one UI5 developer does not carry that layer", "Re-baseline before any client date is committed, or cut MVP screen scope", "Open", "2026-08-15"),
+    ("S-02", "Architecture", "Revisit tenancy once client count grows", "Dedicated deployment means N upgrades for N clients. The model is tenancy-neutral so the switch is cheap now and costly per live client later", "Revisit at 5-10 clients; decide before the first go-live, not after", "Open", "2026-08-15"),
+    ("S-03", "UI", "Split into task-focused apps per document type", "S/4 surfaces one app per task, reached from a tile. KONSTRYX is currently one app with in-app routing across ten document types", "Split as screens are built; register an intent per app", "Open", "2026-08-15"),
+    ("S-04", "Deployment", "Move the UI to the HTML5 application repository", "The approuter currently routes the UI through the Java service, which is fine for one app but wrong for scaling and caching", "Move when the app splits into several apps", "Open", "2026-08-15"),
+    ("S-05", "Authorization", "Validate declared auth paths at startup", "A path that does not resolve on a projection fails per request with a 500 instead of at boot. That is exactly how the RequestOverview outage happened", "Add a startup check over the catalogue against the model", "Open", "2026-08-15"),
+    ("S-06", "Local dev", "H2 is in-memory - nothing survives a restart", "Promotion requests, drafts and anything created during a demo are lost when the service restarts. Seed fixtures reload; transactional work does not", "Make H2 file-backed, or point local dev at HANA Cloud, before any live demo", "Open", "2026-08-15"),
+    ("S-07", "Build", "Run npm install after every mbt build", "The MTA build prunes devDependencies at the root, removing @sap/cds-dk, and the next Maven build fails with 'cds' is not recognized", "Add it to the build script or CI pipeline", "Open", "2026-08-15"),
+    ("S-08", "Quality", "Verify UI work visually, not through the DOM", "DOM text, network traces and per-element geometry all reported success while the screen was blank for an hour. Only a screenshot and an ancestor-chain walk found it", "Screenshot every UI change; measure ancestors, not the element", "Adopted", "2026-08-15"),
+    ("S-09", "Demo data", "Settle the canonical figures", "The wireframe header says AED 716,044 while its own line values sum to 685,080 and reconcile to the per-WBS commitment split", "Correct the header, or supply the intended numbers", "Open", "2026-08-15"),
+    ("S-10", "Compliance", "Confirm whether numbering must be gap-free", "Numbers are issued on activation so abandoned drafts do not consume them, but a cancelled document still leaves a gap", "Confirm per document type; some jurisdictions require unbroken sequences", "Open", "2026-08-15"),
+    ("S-11", "Masters", "Promotion collision currently blocks", "When two companies hold the same code locally, promotion is refused and names both. Merge or force-rename are the alternatives", "Keep blocking unless the business prefers a merge; it is a one-method change", "Open", "2026-08-15"),
+    ("S-12", "Security", "Review role collections before go-live", "The XSUAA Admin role bypasses the data-driven authorization layer as a bootstrap path, and service-level @requires still gates entry independently of the persona model", "Security review of both layers before the first client", "Open", "2026-08-15"),
+    ("S-13", "Masters", "Reuse the content pack mechanism for the starter pack", "Versioned, insert-if-missing, never overwrites client edits - already built and proven for number ranges", "Ship the EC&O starter pack the same way", "Open", "2026-08-15"),
+    ("S-14", "Masters", "Master editing needs draft handling", "A master screen that cannot be maintained is half a screen, and the draft pattern is inherited by every later module", "Build it before Templates so the pattern is settled once", "In progress", "2026-08-15"),
+    ("S-15", "Integration", "S/4 dev tenant is on the critical path", "No connector can be built or validated without it, and it is named as a prerequisite in the phase plan", "Secure access before Project Setup", "Open", "2026-08-15"),
+]
+body(ws, 6, suggestions, [8, 16, 44, 62, 52, 12, 12], status_col=6)
 ws.freeze_panes = "A6"
 
 # --------------------------------------------------------- 6. Options register
