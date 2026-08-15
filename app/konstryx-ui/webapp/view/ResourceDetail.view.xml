@@ -1,0 +1,176 @@
+<mvc:View
+	controllerName="konstryx.controller.ResourceDetail"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:uxap="sap.uxap"
+	xmlns:layout="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<uxap:ObjectPageLayout id="resourcePage" showTitleInHeaderContent="true" upperCaseAnchorBar="false">
+
+		<uxap:headerTitle>
+			<uxap:ObjectPageDynamicHeaderTitle>
+				<uxap:breadcrumbs>
+					<Breadcrumbs currentLocationText="{md>code}">
+						<Link text="Resource Hierarchy" press=".onBackToList"/>
+					</Breadcrumbs>
+				</uxap:breadcrumbs>
+
+				<uxap:expandedHeading>
+					<Title text="{md>code}" wrapping="true"/>
+				</uxap:expandedHeading>
+				<uxap:snappedHeading>
+					<Title text="{md>code}" wrapping="true"/>
+				</uxap:snappedHeading>
+
+				<uxap:expandedContent>
+					<Text text="{md>description}"/>
+				</uxap:expandedContent>
+				<uxap:snappedContent>
+					<Text text="{md>description}"/>
+				</uxap:snappedContent>
+
+				<uxap:actions>
+					<!-- Visibility is set by the controller once the context resolves.
+					     An expression binding here does not re-evaluate when the
+					     binding context is applied imperatively to the header
+					     actions, and the button was offering promotion on masters
+					     that are already group-wide. -->
+					<Button
+						id="promoteButton"
+						text="Request promotion"
+						type="Emphasized"
+						icon="sap-icon://arrow-top"
+						visible="false"
+						press=".onRequestPromotion"/>
+					<Button text="Edit" icon="sap-icon://edit" press=".onNotImplemented"/>
+				</uxap:actions>
+			</uxap:ObjectPageDynamicHeaderTitle>
+		</uxap:headerTitle>
+
+		<uxap:headerContent>
+			<layout:HorizontalLayout allowWrapping="true">
+				<layout:VerticalLayout class="sapUiMediumMarginEnd">
+					<Label text="Scope"/>
+					<ObjectStatus
+						text="{md>scope}"
+						state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+						icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+				</layout:VerticalLayout>
+				<layout:VerticalLayout class="sapUiMediumMarginEnd">
+					<Label text="Owned by"/>
+					<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
+				</layout:VerticalLayout>
+				<layout:VerticalLayout class="sapUiMediumMarginEnd">
+					<Label text="Level"/>
+					<Text text="{md>level}"/>
+				</layout:VerticalLayout>
+				<layout:VerticalLayout class="sapUiMediumMarginEnd">
+					<Label text="Vertical"/>
+					<Text text="{md>verticalType}"/>
+				</layout:VerticalLayout>
+				<layout:VerticalLayout>
+					<Label text="Status"/>
+					<ObjectStatus text="{md>masterStatus}" state="{= ${md>masterStatus} === 'ACTIVE' ? 'Success' : 'None' }"/>
+				</layout:VerticalLayout>
+			</layout:HorizontalLayout>
+		</uxap:headerContent>
+
+		<uxap:sections>
+
+			<uxap:ObjectPageSection title="Attributes" titleUppercase="false">
+				<uxap:subSections>
+					<uxap:ObjectPageSubSection>
+						<form:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="2" columnsXL="2" editable="false">
+							<Label text="Code"/>
+							<Text text="{md>code}"/>
+							<Label text="Description"/>
+							<Text text="{md>description}"/>
+							<Label text="Hierarchy level"/>
+							<Text text="{md>level}"/>
+							<Label text="Parent"/>
+							<Text text="{= ${md>parent/code} ? ${md>parent/code} + ' · ' + ${md>parent/description} : 'Top of the hierarchy' }"/>
+							<Label text="Consumption UoM"/>
+							<Text text="{= ${md>consUoM} || '—' }"/>
+							<Label text="Output UoM"/>
+							<Text text="{= ${md>outputUoM} || '—' }"/>
+						</form:SimpleForm>
+					</uxap:ObjectPageSubSection>
+				</uxap:subSections>
+			</uxap:ObjectPageSection>
+
+			<uxap:ObjectPageSection title="Rates" titleUppercase="false">
+				<uxap:subSections>
+					<uxap:ObjectPageSubSection>
+						<Table id="rateTable" items="{path: 'md>/Rates', parameters: {'$orderby': 'effectiveFrom desc'}, templateShareable: false}">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title id="rateTitle" text="Rates" level="H5"/>
+									<ToolbarSpacer/>
+									<Text text="A revision is a new rate with a later effective date, never an edit in place."/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column width="10rem" hAlign="End"><Text text="Rate"/></Column>
+								<Column width="7rem"><Text text="Basis"/></Column>
+								<Column width="11rem"><Text text="Effective from"/></Column>
+								<Column width="9rem"><Text text="Scope"/></Column>
+								<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<ObjectNumber
+											number="{path: 'md>rateValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, minFractionDigits: 2, maxFractionDigits: 2}}"
+											unit="{md>ccy_code}"/>
+										<Text text="per {md>basis}"/>
+										<ObjectStatus
+											text="{path: 'md>effectiveFrom', type: 'sap.ui.model.odata.type.Date', formatOptions: {style: 'medium'}}"
+											state="{= ${md>effectiveFrom} &gt; ${/project/dataDate} ? 'Information' : 'None' }"/>
+										<ObjectStatus
+											text="{md>scope}"
+											state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"/>
+										<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} : 'Whole group' }"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</uxap:ObjectPageSubSection>
+				</uxap:subSections>
+			</uxap:ObjectPageSection>
+
+			<uxap:ObjectPageSection title="Below this node" titleUppercase="false">
+				<uxap:subSections>
+					<uxap:ObjectPageSubSection>
+						<Table id="childTable" items="{path: 'md>/Resources', templateShareable: false}">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title id="childTitle" text="Children" level="H5"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column width="12rem"><Text text="Code"/></Column>
+								<Column width="5rem"><Text text="Level"/></Column>
+								<Column><Text text="Description"/></Column>
+								<Column width="9rem"><Text text="Scope"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem type="Navigation" press=".onChildPress">
+									<cells>
+										<ObjectIdentifier title="{md>code}"/>
+										<Text text="{md>level}"/>
+										<Text text="{md>description}"/>
+										<ObjectStatus text="{md>scope}" state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</uxap:ObjectPageSubSection>
+				</uxap:subSections>
+			</uxap:ObjectPageSection>
+
+		</uxap:sections>
+	</uxap:ObjectPageLayout>
+</mvc:View>

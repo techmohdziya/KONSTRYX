@@ -84,6 +84,12 @@ sap.ui.define([
 				: oCtx.getProperty("code") + " is already shared across the group.");
 		},
 
+		/** Row press opens the master; selection stays for the promotion action. */
+		onNavigateToDetail: function (oEvent) {
+			var oCtx = oEvent.getSource().getBindingContext("md");
+			this.navTo("resourceDetail", { code: encodeURIComponent(oCtx.getProperty("code")) });
+		},
+
 		onRequestPromotion: function () {
 			var oCtx = this._oSelected;
 			if (!oCtx) {

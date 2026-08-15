@@ -82,7 +82,7 @@
 				</columns>
 
 				<items>
-					<ColumnListItem>
+					<ColumnListItem type="Navigation" press=".onNavigateToDetail">
 						<cells>
 							<ObjectIdentifier title="{md>code}"/>
 							<Text text="{md>level}"/>
