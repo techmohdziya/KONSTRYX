@@ -1,0 +1,105 @@
+<mvc:View
+	controllerName="konstryx.controller.MasterNorms"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="normsPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Productivity &amp; Consumption Norms" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="The norms the system derives from. Output achieved drives earned value; consumption per unit of output drives theoretical material usage, which is what site consumption is checked against."/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:content>
+			<IconTabBar id="normTabs" expanded="true" class="sapUiResponsiveContentPadding">
+
+				<items>
+					<IconTabFilter id="prodTab" text="Productivity" icon="sap-icon://trend-up" key="PROD">
+						<Table id="prodTable" items="{path: 'md>/ProductivityRates', templateShareable: false}" sticky="ColumnHeaders">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title id="prodTitle" text="Productivity norms" level="H4"/>
+									<ToolbarSpacer/>
+									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column width="14rem"><Text text="Resource"/></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Crew composition"/></Column>
+								<Column width="10rem" hAlign="End"><Text text="Per hour"/></Column>
+								<Column width="12rem" hAlign="End"><Text text="Per 8h man-day"/></Column>
+								<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Basis"/></Column>
+								<Column width="9rem"><Text text="Scope"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<ObjectIdentifier title="{md>resource/code}" text="{md>resource/description}"/>
+										<Text text="{md>crewComposition}"/>
+										<ObjectNumber
+											number="{path: 'md>outputPerHr', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"
+											unit="{md>outputUoM}"/>
+										<ObjectNumber
+											number="{path: 'md>outputPerManday8h', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"
+											unit="{md>outputUoM}"/>
+										<Text text="{md>basis}"/>
+										<ObjectStatus text="{md>scope}"
+											state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+											icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</IconTabFilter>
+
+					<IconTabFilter id="consTab" text="Consumption" icon="sap-icon://measuring-point" key="CONS">
+						<Table id="consTable" items="{path: 'md>/ConsumptionRates', templateShareable: false}" sticky="ColumnHeaders">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title id="consTitle" text="Consumption norms" level="H4"/>
+									<ToolbarSpacer/>
+									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column width="14rem"><Text text="Material"/></Column>
+								<Column width="12rem" hAlign="End"><Text text="Rate"/></Column>
+								<Column width="10rem" hAlign="End"><Text text="Wastage"/></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Basis"/></Column>
+								<Column width="9rem"><Text text="Scope"/></Column>
+								<Column width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<ObjectIdentifier title="{md>material/code}" text="{md>material/description}"/>
+										<ObjectNumber
+											number="{path: 'md>consRate', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 3}}"
+											unit="{md>consUoM}"/>
+										<ObjectNumber
+											number="{path: 'md>wastageAllowancePct', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 2}}"
+											unit="%"
+											state="Warning"/>
+										<Text text="{md>basis}"/>
+										<ObjectStatus text="{md>scope}"
+											state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+											icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+										<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} : 'Whole group' }"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</IconTabFilter>
+				</items>
+			</IconTabBar>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

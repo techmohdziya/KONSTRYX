@@ -132,7 +132,8 @@
         { "pattern": "masters/cbs",               "name": "masterCBS",       "target": "masterCBS"       },
         { "pattern": "masters/promotions",        "name": "promotionQueue",  "target": "promotionQueue"  },
         { "pattern": "masters/rates",             "name": "masterRates",     "target": "masterRates"     },
-        { "pattern": "masters/resource/{code}",   "name": "resourceDetail",  "target": "resourceDetail"  }
+        { "pattern": "masters/resource/{code}",   "name": "resourceDetail",  "target": "resourceDetail"  },
+        { "pattern": "masters/norms",             "name": "masterNorms",     "target": "masterNorms"     }
       ],
       "targets": {
         "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
@@ -144,6 +145,7 @@
         "promotionQueue":  { "id": "promotionQueue",  "name": "PromotionQueue",  "title": "Promotion Queue" },
         "masterRates":     { "id": "masterRates",     "name": "MasterRates",     "title": "Rate Master" },
         "resourceDetail":  { "id": "resourceDetail",  "name": "ResourceDetail",  "title": "Resource" },
+        "masterNorms":     { "id": "masterNorms",     "name": "MasterNorms",     "title": "Norms" },
         "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
       }
     }
