@@ -130,7 +130,8 @@
         { "pattern": "doc/{requestId}/{step}",    "name": "doc",       "target": "doc"       },
         { "pattern": "masters/resources",         "name": "masterResources", "target": "masterResources" },
         { "pattern": "masters/cbs",               "name": "masterCBS",       "target": "masterCBS"       },
-        { "pattern": "masters/promotions",        "name": "promotionQueue",  "target": "promotionQueue"  }
+        { "pattern": "masters/promotions",        "name": "promotionQueue",  "target": "promotionQueue"  },
+        { "pattern": "masters/rates",             "name": "masterRates",     "target": "masterRates"     }
       ],
       "targets": {
         "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
@@ -140,6 +141,7 @@
         "masterResources": { "id": "masterResources", "name": "MasterResources", "title": "Resource Hierarchy" },
         "masterCBS":       { "id": "masterCBS",       "name": "MasterCBS",       "title": "CBS Library" },
         "promotionQueue":  { "id": "promotionQueue",  "name": "PromotionQueue",  "title": "Promotion Queue" },
+        "masterRates":     { "id": "masterRates",     "name": "MasterRates",     "title": "Rate Master" },
         "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
       }
     }

@@ -33,6 +33,7 @@
   "masterTiles": [
     { "title": "Resource Hierarchy", "subtitle": "L1-L5 resource master", "icon": "sap-icon://tree", "value": "7", "unit": "codes", "state": "Good", "route": "masterResources" },
     { "title": "CBS Library", "subtitle": "Cost breakdown, L1-L3", "icon": "sap-icon://org-chart", "value": "8", "unit": "nodes", "state": "Good", "route": "masterCBS" },
+    { "title": "Rate Master", "subtitle": "Effective-dated cost rates", "icon": "sap-icon://money-bills", "value": "8", "unit": "rates", "state": "Good", "route": "masterRates" },
     { "title": "Promotion Queue", "subtitle": "Company master to group scope", "icon": "sap-icon://arrow-top", "value": "1", "unit": "pending", "state": "Critical", "route": "promotionQueue" }
   ],
 

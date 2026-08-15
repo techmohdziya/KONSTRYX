@@ -1,0 +1,105 @@
+<mvc:View
+	controllerName="konstryx.controller.MasterRates"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="ratesPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Rate Master" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Cost rates per resource. A rate is never edited in place — a revision is a new rate with a later effective date, so past postings keep the rate they were costed at."/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Create" type="Emphasized" icon="sap-icon://add" press=".onNotImplemented"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Scope"/>
+						<Select id="scopeFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All scopes"/>
+							<core:Item key="GROUP" text="Group - shared"/>
+							<core:Item key="COMPANY" text="Company - local"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Effective"/>
+						<Select id="effectiveFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All rates"/>
+							<core:Item key="CURRENT" text="In force today"/>
+							<core:Item key="FUTURE" text="Future-dated"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Search"/>
+						<SearchField id="rateSearch" width="16rem" liveChange=".onSearch" placeholder="Resource code"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="rateTable"
+				items="{path: 'md>/Rates', parameters: {'$orderby': 'effectiveFrom desc'}, templateShareable: false}"
+				growing="true"
+				growingThreshold="50"
+				sticky="ColumnHeaders"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="Rates" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="14rem"><Text text="Resource"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+					<Column width="10rem" hAlign="End"><Text text="Rate"/></Column>
+					<Column width="6rem"><Text text="Basis"/></Column>
+					<Column width="11rem"><Text text="Effective from"/></Column>
+					<Column width="9rem"><Text text="Scope"/></Column>
+					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectIdentifier title="{md>resource/code}"/>
+							<Text text="{md>resource/description}"/>
+							<ObjectNumber
+								number="{path: 'md>rateValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, minFractionDigits: 2, maxFractionDigits: 2}}"
+								unit="{md>ccy_code}"/>
+							<Text text="per {md>basis}"/>
+							<!-- A future-dated rate is not yet costing anything, so it reads as
+							     information rather than as the rate in force. -->
+							<ObjectStatus
+								text="{path: 'md>effectiveFrom', type: 'sap.ui.model.odata.type.Date', formatOptions: {style: 'medium'}}"
+								state="{= ${md>effectiveFrom} &gt; ${/project/dataDate} ? 'Information' : 'None' }"/>
+							<ObjectStatus
+								text="{md>scope}"
+								state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+								icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+							<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>
