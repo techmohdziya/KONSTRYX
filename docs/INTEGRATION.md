@@ -78,6 +78,18 @@ Scenarios needed:
 
 ### 2.2 On the BTP side — destination
 
+> **Credentials never leave the BTP cockpit.** KONSTRYX resolves them at
+> runtime through the destination service; the code, this repository and
+> anyone developing against it only ever reference the destination *by name*.
+> A communication-user password is entered once, by whoever administers the
+> subaccount, into the destination below — not shared with developers, not
+> committed, not sent over chat or email. If one has been shared that way,
+> rotate it rather than reuse it.
+>
+> Nothing secret belongs in this repository. `application.yaml` holds
+> destination names only, and the mock users in the default profile exist for
+> local development and have no meaning once deployed.
+
 Create a destination named **`S4HANA_CLOUD`** (the name the service expects —
 see `application.yaml`, cloud profile):
 
@@ -225,8 +237,14 @@ stops.
 
 ## 6. What must be decided before building connectors
 
-1. **S/4 dev tenant access**, with communication arrangements for the scenarios
-   above. Nothing can be built or validated without it (Q-09).
+1. **S/4 dev tenant access** (Q-09). Four things, and only the first is
+   information a developer needs:
+   - the tenant API host, e.g. `https://myNNNNNN-api.s4hana.cloud.sap`
+   - a communication user created in S/4 — **its password goes straight into
+     the BTP destination**, not to the development team
+   - communication arrangements activated, `SAP_COM_0308` first because the
+     project now syncs outward
+   - a named S/4 administrator who can maintain them and re-activate on expiry
 2. **Project sync trigger** — on release, on save, or scheduled. This decides
    how long a project can exist in KONSTRYX without an S/4 counterpart.
 3. **P6 or S/4 as the schedule source per client**, since both cannot own the
