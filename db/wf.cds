@@ -65,7 +65,9 @@ entity AvailabilityCheckLine : cuid {
   stockQty     : Decimal(15,3);
   expectedQty  : Decimal(15,3);    // stock + inbound GR
   storageLoc   : String(10);
-  result       : String(20);
+  // Wide enough for a sentence a human wrote. Twenty characters forced the
+  // seed into fragments like "FA valid · quoted" and truncated anything real.
+  result       : String(60);
 }
 
 // ---- RES (Reservation) ----

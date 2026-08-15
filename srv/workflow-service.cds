@@ -14,8 +14,37 @@ service WorkflowService @(path:'/workflow') {
   @odata.draft.enabled
   entity ResourceRequests as projection on wf.ResourceRequest
     actions {
-      action submit();
-      action sendToAdvisory();
+      /**
+       * Prices any unpriced line from the rate master and hands the request to
+       * the approval framework. The request's own status tracks the approval:
+       * Draft -> In Approval, and the approval outcome moves it to Approved or
+       * Rejected without anyone re-keying it.
+       */
+      action submit() returns String;
+
+      /**
+       * Records the advisory decision for one line: source it in-house,
+       * procure it, substitute it, or reject it. Line by line because that is
+       * how the decision is actually made — a request for a crane and cabins
+       * routinely splits between the fleet and a hire company.
+       */
+      action decideLine(lineNo : Integer, decision : String(12),
+                        rationale : String(500)) returns String;
+
+      /**
+       * Availability for the in-house lines. Locally this documents what
+       * KONSTRYX itself knows — competing reservations on the same resource.
+       * The S/4 ATP call slots in behind the same document once a tenant
+       * exists (Q-09); the document shape does not change.
+       */
+      action runAvailabilityCheck() returns String;
+
+      /**
+       * Reserves the in-house lines and encumbers each line's approved value.
+       * The encumbrance is the line's estTotal — the figure the approval was
+       * given — so what is locked is exactly what was signed for.
+       */
+      action createReservation() returns String;
     };
   entity ResourceRequestLines as projection on wf.ResourceRequestLine;
 
@@ -26,7 +55,8 @@ service WorkflowService @(path:'/workflow') {
 
   entity Reservations as projection on wf.Reservation
     actions {
-      action close();
+      /** Closes every line and the document; the encumbrance record remains. */
+      action close() returns String;
     };
   entity ReservationLines as projection on wf.ReservationLine;
 

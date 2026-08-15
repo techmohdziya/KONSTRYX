@@ -397,6 +397,7 @@ public class ApprovalEngine {
         update.put("status", "WITHDRAWN");
         update.put("completedAt", Instant.now());
         db.run(Update.entity(E_INSTANCE).data(update).where(i -> i.get("ID").eq(instanceId)));
+        reflectOutcome(instanceId, "WITHDRAWN");
 
         Map<String, Object> skip = new HashMap<>();
         skip.put("decision", "SKIPPED");
@@ -432,6 +433,45 @@ public class ApprovalEngine {
         update.put("status", status);
         update.put("completedAt", Instant.now());
         db.run(Update.entity(E_INSTANCE).data(update).where(i -> i.get("ID").eq(instanceId)));
+        reflectOutcome(instanceId, status);
+    }
+
+    /**
+     * The outcome reaches the document itself. An approval that closes while
+     * the request still reads "In Approval" leaves two systems of record, and
+     * the person who re-keys the status is the person who mistypes it. Any
+     * entity carrying a status element gets this for free; entities without
+     * one are left alone.
+     */
+    private void reflectOutcome(String instanceId, String outcome) {
+        Optional<Row> instance = db.run(Select.from(E_INSTANCE)
+                .where(i -> i.get("ID").eq(instanceId))).first();
+        if (instance.isEmpty()) {
+            return;
+        }
+        String entityName = str(instance.get().get("entityName"));
+        String objectID = str(instance.get().get("objectID"));
+        if (entityName == null || objectID == null) {
+            return;
+        }
+        boolean hasStatus = runtime.getCdsModel().findEntity(entityName)
+                .map(e -> e.findElement("status").isPresent())
+                .orElse(false);
+        if (!hasStatus) {
+            return;
+        }
+        String status = switch (outcome) {
+            case "APPROVED" -> "Approved";
+            case "REJECTED" -> "Rejected";
+            case "WITHDRAWN" -> "Draft";
+            default -> null;
+        };
+        if (status == null) {
+            return;
+        }
+        Map<String, Object> update = new HashMap<>();
+        update.put("status", status);
+        db.run(Update.entity(entityName).data(update).where(e -> e.get("ID").eq(objectID)));
     }
 
     // ------------------------------------------------------------------ helpers
