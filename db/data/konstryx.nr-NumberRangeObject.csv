@@ -1,0 +1,6 @@
+ID;code;name;entityName;scope;pattern;resetPolicy;seqLength;startAt;isActive
+75000000-0000-0000-0000-000000000001;RR;Resource Request;konstryx.wf.ResourceRequest;GLOBAL;{OBJ}-{YYYY}-{SEQ};YEARLY;4;1;true
+75000000-0000-0000-0000-000000000002;AVC;Availability Check;konstryx.wf.AvailabilityCheck;GLOBAL;{OBJ}-{YYYY}-{SEQ};YEARLY;4;1;true
+75000000-0000-0000-0000-000000000003;RES;Reservation;konstryx.wf.Reservation;GLOBAL;{OBJ}-{YYYY}-{SEQ};YEARLY;4;1;true
+75000000-0000-0000-0000-000000000004;BUD;Budget;konstryx.bud.Budget;COMPANY;{OBJ}-{CC}-{YYYY}-{SEQ};YEARLY;4;1;true
+75000000-0000-0000-0000-000000000005;MA;Mobilization Authorization;konstryx.bud.MobilizationAuth;COMPANY;{OBJ}-{CC}-{YYYY}-{SEQ};YEARLY;4;1;true

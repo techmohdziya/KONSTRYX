@@ -7,6 +7,7 @@
 using { konstryx.auth } from '../db/auth';
 using { konstryx.apr } from '../db/apr';
 using { konstryx.sys } from '../db/sys';
+using { konstryx.nr } from '../db/nr';
 
 @requires: 'Admin'
 service AuthorizationService @(path:'/authorization') {
@@ -37,6 +38,12 @@ service AuthorizationService @(path:'/authorization') {
 
   // -- attachment configuration --------------------------------------------
   entity AttachmentCategories as projection on sys.AttachmentCategory;
+
+  // -- document number ranges ----------------------------------------------
+  /** Scope (GLOBAL vs COMPANY) and pattern are both configurable per object. */
+  entity NumberRangeObjects as projection on nr.NumberRangeObject;
+  /** Live counters. Read-only: numbers are issued by the runtime, never keyed. */
+  @readonly entity NumberRangeCounters as projection on nr.NumberRangeCounter;
 }
 
 /**
