@@ -7,6 +7,9 @@ using { konstryx.wf } from '../db/wf';
 
 @requires: 'ResourceCoordinator'
 service WorkflowService @(path:'/workflow') {
+  // canonical target: RequestOverview below also projects ResourceRequest,
+  // so associations must be told which of the two to redirect to
+  @cds.redirection.target
   @odata.draft.enabled
   entity ResourceRequests as projection on wf.ResourceRequest
     actions {
@@ -25,4 +28,27 @@ service WorkflowService @(path:'/workflow') {
 
   @readonly entity StatusHistory as projection on wf.StatusHistory;
   @readonly entity DocumentLinks as projection on wf.DocumentLink;
+
+  /**
+   * Worklist projection: one row per request with its line count and value
+   * rolled up. Keeps the client from fetching every line just to render a
+   * list, and makes the request value a single server-side number rather
+   * than something each consumer re-derives.
+   */
+  @readonly
+  entity RequestOverview as select from wf.ResourceRequest {
+    key ID,
+        docNo,
+        verticalType,
+        status,
+        raisedBy,
+        raisedOn,
+        needBy,
+        project.code       as projectCode : String(24),
+        project.name       as projectName : String(150),
+        count(lines.ID)    as lineCount   : Integer,
+        sum(lines.estTotal) as totalValue : Decimal(15,2)
+  } group by
+      ID, docNo, verticalType, status, raisedBy, raisedOn, needBy,
+      project.code, project.name;
 }

@@ -59,8 +59,65 @@
 		</f:header>
 
 		<f:content>
+		  <VBox fitContainer="true">
+			<!--
+				Step 1 (RR) is served live from the CAP WorkflowService; the
+				RequestOverview projection rolls up line count and value on the
+				server. Steps 2-10 still come from the JSON fixture because
+				MOB/OPL/VAR/DMB/CLS are not modelled in CAP yet.
+			-->
+			<Table
+				id="requestTable"
+				visible="{= ${view>/docType} === 'RR' }"
+				items="{path: 'kx>/RequestOverview', parameters: {'$orderby': 'docNo'}, templateShareable: false}"
+				growing="true"
+				growingThreshold="25"
+				sticky="ColumnHeaders"
+				mode="None"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="{view>/tableTitle}" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="11rem"><Text text="{view>/idColumn}"/></Column>
+					<Column width="5.5rem"><Text text="Type"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Project"/></Column>
+					<Column width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Scope"/></Column>
+					<Column width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Need by"/></Column>
+					<Column width="10rem" hAlign="End"><Text text="Value"/></Column>
+					<Column width="9rem"><Text text="Status"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Navigation" press=".onRequestPress">
+						<cells>
+							<ObjectIdentifier title="{kx>docNo}" text="{path: 'kx>raisedOn', type: 'sap.ui.model.odata.type.Date', formatOptions: {style: 'medium'}}"/>
+							<ObjectStatus text="{kx>verticalType}" inverted="true" state="Information"/>
+							<VBox>
+								<Text text="{kx>projectName}"/>
+								<Text text="{kx>projectCode} · {kx>raisedBy}" class="kxSubText"/>
+							</VBox>
+							<Text text="{kx>lineCount} lines"/>
+							<Text text="{path: 'kx>needBy', type: 'sap.ui.model.odata.type.Date', formatOptions: {style: 'medium'}}"/>
+							<ObjectNumber
+								number="{path: 'kx>totalValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, minFractionDigits: 0, maxFractionDigits: 0}}"
+								unit="AED"/>
+							<ObjectStatus text="{kx>status}" state="{= ${kx>status} === 'Approved' ? 'Success' : 'Warning' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+
 			<Table
 				id="worklistTable"
+				visible="{= ${view>/docType} !== 'RR' }"
 				items="{path: 'view>/rows', templateShareable: false}"
 				growing="true"
 				growingThreshold="25"
@@ -106,6 +163,7 @@
 					</ColumnListItem>
 				</items>
 			</Table>
+		  </VBox>
 		</f:content>
 	</f:DynamicPage>
 </mvc:View>

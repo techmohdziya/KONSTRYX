@@ -11,6 +11,13 @@
       "konstryxData": {
         "uri": "model/data.json",
         "type": "JSON"
+      },
+      "workflowService": {
+        "uri": "/odata/v4/workflow/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
       }
     }
   },
@@ -50,6 +57,16 @@
         "dataSource": "konstryxData",
         "preload": true,
         "settings": { "defaultBindingMode": "TwoWay" }
+      },
+      "kx": {
+        "dataSource": "workflowService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true,
+          "groupId": "$auto"
+        }
       }
     },
 

@@ -1,7 +1,9 @@
 sap.ui.define([
 	"konstryx/controller/BaseController",
-	"sap/ui/model/json/JSONModel"
-], function (BaseController, JSONModel) {
+	"sap/ui/model/json/JSONModel",
+	"sap/ui/model/Filter",
+	"sap/ui/model/FilterOperator"
+], function (BaseController, JSONModel, Filter, FilterOperator) {
 	"use strict";
 
 	return BaseController.extend("konstryx.controller.Worklist", {
@@ -20,9 +22,9 @@ sap.ui.define([
 		},
 
 		/**
-		 * Step 1 (RR) lists the requests themselves. Steps 2–10 list the chain
-		 * documents of that type — each row still carries the request it belongs
-		 * to, so a click lands on the right document of the right thread.
+		 * Step 1 (RR) is bound straight to the CAP service — see requestTable in
+		 * the view. Steps 2–10 still render from the JSON fixture: MOB, OPL, VAR,
+		 * DMB and CLS have no CDS entities yet, so there is nothing to bind to.
 		 */
 		_render: function (sQuery) {
 			var oData = this.getData(),
@@ -30,17 +32,7 @@ sap.ui.define([
 				oDocType = oData.docTypes.filter(function (d) { return d.code === sType; })[0] || oData.docTypes[0],
 				aRows = [];
 
-			if (sType === "RR") {
-				aRows = oData.requests.map(function (r) {
-					return {
-						id: r.id, type: r.type, title: r.title, sub: r.dominantLine,
-						scope: r.lineCount + " lines · " + r.wbsCount + " WBS",
-						window: r.window, valueText: Number(r.value).toLocaleString("en-US"),
-						status: r.state, statusState: r.stateType,
-						date: r.raisedOn, requestId: r.id, step: 1
-					};
-				});
-			} else {
+			if (sType !== "RR") {
 				var oReq = oData.requests[0];
 				aRows = oData.chain.filter(function (c) { return c.code === sType; }).map(function (c) {
 					return {
@@ -51,17 +43,17 @@ sap.ui.define([
 						date: c.date, requestId: c.request, step: c.step
 					};
 				});
-			}
 
-			var sTypeFilter = this.byId("typeFilter") ? this.byId("typeFilter").getSelectedKey() : "ALL";
-			if (sTypeFilter && sTypeFilter !== "ALL") {
-				aRows = aRows.filter(function (r) { return r.type === sTypeFilter; });
-			}
-			if (sQuery) {
-				var q = sQuery.toLowerCase();
-				aRows = aRows.filter(function (r) {
-					return (r.id + " " + r.title).toLowerCase().indexOf(q) > -1;
-				});
+				var sTypeFilter = this.byId("typeFilter") ? this.byId("typeFilter").getSelectedKey() : "ALL";
+				if (sTypeFilter && sTypeFilter !== "ALL") {
+					aRows = aRows.filter(function (r) { return r.type === sTypeFilter; });
+				}
+				if (sQuery) {
+					var q = sQuery.toLowerCase();
+					aRows = aRows.filter(function (r) {
+						return (r.id + " " + r.title).toLowerCase().indexOf(q) > -1;
+					});
+				}
 			}
 
 			this._oViewModel.setData({
@@ -70,9 +62,41 @@ sap.ui.define([
 				title: oDocType.plural,
 				subtitle: "Step " + oDocType.step + " of the canonical chain · owned by " + oDocType.owner +
 					" · scoped to " + oData.project.id + " " + oData.project.name,
-				tableTitle: oDocType.plural + " (" + aRows.length + ")",
+				tableTitle: oDocType.plural + (sType === "RR" ? "" : " (" + aRows.length + ")"),
 				idColumn: oDocType.code === "RR" ? "Request ID" : oDocType.name + " ID"
 			});
+
+			if (sType === "RR") {
+				this._applyRequestFilters(sQuery);
+			}
+		},
+
+		/** Filters are pushed to the service, not applied over a client-side copy. */
+		_applyRequestFilters: function (sQuery) {
+			var oTable = this.byId("requestTable"),
+				oBinding = oTable && oTable.getBinding("items");
+
+			if (!oBinding) {
+				return;
+			}
+
+			var aFilters = [],
+				sTypeFilter = this.byId("typeFilter") ? this.byId("typeFilter").getSelectedKey() : "ALL";
+
+			if (sTypeFilter && sTypeFilter !== "ALL") {
+				aFilters.push(new Filter("verticalType", FilterOperator.EQ, sTypeFilter));
+			}
+			if (sQuery) {
+				aFilters.push(new Filter("docNo", FilterOperator.Contains, sQuery));
+			}
+
+			oBinding.filter(aFilters);
+
+			// header count comes from the service, once the request settles
+			oBinding.attachEventOnce("dataReceived", function () {
+				var iCount = oBinding.getLength();
+				this._oViewModel.setProperty("/tableTitle", "Resource Requests (" + iCount + ")");
+			}, this);
 		},
 
 		onSearch: function (oEvent) {
@@ -81,6 +105,12 @@ sap.ui.define([
 
 		onFilterChange: function () {
 			this._render(this.byId("worklistSearch").getValue());
+		},
+
+		/** Row press on the live request table — the OData context carries docNo. */
+		onRequestPress: function (oEvent) {
+			var oCtx = oEvent.getSource().getBindingContext("kx");
+			this.navTo("request", { requestId: oCtx.getProperty("docNo") });
 		},
 
 		onRowPress: function (oEvent) {
