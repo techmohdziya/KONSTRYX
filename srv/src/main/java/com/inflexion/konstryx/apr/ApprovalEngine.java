@@ -43,6 +43,9 @@ public class ApprovalEngine {
     private static final String E_INSTANCE = "konstryx.apr.ApprovalInstance";
     private static final String E_STEP = "konstryx.apr.ApprovalStepInstance";
     private static final String E_ASSIGNMENT = "konstryx.auth.UserAssignment";
+    private static final String E_AUTH_OBJECT = "konstryx.auth.AuthObject";
+    private static final String E_ATTACHMENT = "konstryx.sys.Attachment";
+    private static final String E_ATTACH_CATEGORY = "konstryx.sys.AttachmentCategory";
 
     @Autowired
     private PersistenceService db;
@@ -72,6 +75,8 @@ public class ApprovalEngine {
             throw new ServiceException(ErrorStatuses.CONFLICT,
                     docNo + " is already awaiting approval.");
         }
+
+        assertMandatoryAttachmentsPresent(entityName, objectID, docNo);
 
         Row scheme = findScheme(entityName, companyId);
         List<Row> steps = matchingSteps(String.valueOf(scheme.get("ID")), amount);
@@ -136,6 +141,47 @@ public class ApprovalEngine {
     }
 
     /**
+     * An administrator can mark an attachment category mandatory for an object
+     * type — a permit before a mobilization authorization, a signed drawing
+     * before a variation. Submission is the point where that has to bite: an
+     * approver asked to sign for something with no supporting document either
+     * refuses and the cycle repeats, or signs blind.
+     */
+    private void assertMandatoryAttachmentsPresent(String entityName, String objectID, String docNo) {
+        List<String> missing = new ArrayList<>();
+
+        for (Row category : db.run(Select.from(E_ATTACH_CATEGORY)
+                .where(c -> c.get("isMandatory").eq(true).and(c.get("isActive").eq(true))))) {
+
+            Object authObjectId = category.get("authObject_ID");
+            if (authObjectId == null) {
+                continue;   // applies to any object type, so it cannot be required of a specific one
+            }
+            Optional<Row> authObject = db.run(Select.from(E_AUTH_OBJECT)
+                    .where(a -> a.get("ID").eq(authObjectId.toString()))).first();
+            if (authObject.isEmpty() || !entityName.equals(str(authObject.get().get("entityName")))) {
+                continue;
+            }
+
+            String categoryId = str(category.get("ID"));
+            boolean present = db.run(Select.from(E_ATTACHMENT)
+                            .where(a -> a.get("entityName").eq(entityName)
+                                    .and(a.get("objectID").eq(objectID))
+                                    .and(a.get("category_ID").eq(categoryId))))
+                    .first().isPresent();
+            if (!present) {
+                missing.add(String.valueOf(category.get("name")));
+            }
+        }
+
+        if (!missing.isEmpty()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    docNo + " cannot be submitted without " + String.join(" and ", missing)
+                            + " attached.");
+        }
+    }
+
+    /**
      * The scheme for this object type. A company-specific scheme wins over a
      * group-wide one, so a legal entity can impose stricter approval without
      * everyone else inheriting it.
@@ -147,7 +193,7 @@ public class ApprovalEngine {
             if (authObjectId == null) {
                 continue;
             }
-            Optional<Row> authObject = db.run(Select.from("konstryx.auth.AuthObject")
+            Optional<Row> authObject = db.run(Select.from(E_AUTH_OBJECT)
                     .where(a -> a.get("ID").eq(authObjectId.toString()))).first();
             if (authObject.isPresent() && entityName.equals(String.valueOf(authObject.get().get("entityName")))) {
                 candidates.add(scheme);
