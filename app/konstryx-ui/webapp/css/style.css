@@ -5,6 +5,24 @@
    theme parameters so a theme switch stays correct.
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Full-height chain, required because the app no longer carries its own shell.
+
+   sap.tnt.ToolPage used to establish the layout height for everything beneath
+   it. With the shell removed for launchpad hosting, the root is a bare
+   NavContainer, and nothing between <html> and it declares a height — so the
+   document collapses to 0px. The content still renders into the DOM, which is
+   what makes this so easy to miss: reading the DOM shows a complete page while
+   the screen is blank.
+
+   Inside the Fiori launchpad the shell supplies this; standalone it must be
+   declared here.
+   -------------------------------------------------------------------------- */
+html, body { height: 100%; margin: 0; }
+/* The component container is not a direct child of body — body itself carries
+   id="content" — so match it wherever the framework places it. */
+.sapUiComponentContainer { height: 100%; }
+
 .kxShellLogo  { margin: 0 .5rem 0 .25rem; }
 .kxShellTitle { font-weight: 700; letter-spacing: .02em; }
 .kxShellContext { opacity: .85; }

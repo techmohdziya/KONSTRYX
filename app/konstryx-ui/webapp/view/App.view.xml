@@ -20,6 +20,6 @@
 		becomes tiles on a launchpad page, one intent per document type, which is
 		how S/4 surfaces task-focused apps.
 	-->
-	<NavContainer id="appContent" autoFocus="false"/>
+	<NavContainer id="appContent" autoFocus="false" height="100%"/>
 
 </mvc:View>
