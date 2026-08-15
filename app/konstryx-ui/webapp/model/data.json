@@ -35,6 +35,7 @@
     { "title": "CBS Library", "subtitle": "Cost breakdown, L1-L3", "icon": "sap-icon://org-chart", "value": "8", "unit": "nodes", "state": "Good", "route": "masterCBS" },
     { "title": "Rate Master", "subtitle": "Effective-dated cost rates", "icon": "sap-icon://money-bills", "value": "8", "unit": "rates", "state": "Good", "route": "masterRates" },
     { "title": "Norms", "subtitle": "Productivity & consumption", "icon": "sap-icon://trend-up", "value": "7", "unit": "norms", "state": "Good", "route": "masterNorms" },
+    { "title": "Project Templates", "subtitle": "CBS structure & default resources", "icon": "sap-icon://copy", "value": "2", "unit": "templates", "state": "Good", "route": "masterTemplates" },
     { "title": "Promotion Queue", "subtitle": "Company master to group scope", "icon": "sap-icon://arrow-top", "value": "1", "unit": "pending", "state": "Critical", "route": "promotionQueue" }
   ],
 

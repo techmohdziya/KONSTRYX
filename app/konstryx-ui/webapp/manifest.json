@@ -47,6 +47,13 @@
         "settings": {
           "odataVersion": "4.0"
         }
+      },
+      "projectService": {
+        "uri": "/odata/v4/project/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
       }
     }
   },
@@ -105,6 +112,15 @@
           "autoExpandSelect": true,
           "groupId": "$auto"
         }
+      },
+      "pj": {
+        "dataSource": "projectService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto"
+        }
       }
     },
 
@@ -133,7 +149,8 @@
         { "pattern": "masters/promotions",        "name": "promotionQueue",  "target": "promotionQueue"  },
         { "pattern": "masters/rates",             "name": "masterRates",     "target": "masterRates"     },
         { "pattern": "masters/resource/{code}",   "name": "resourceDetail",  "target": "resourceDetail"  },
-        { "pattern": "masters/norms",             "name": "masterNorms",     "target": "masterNorms"     }
+        { "pattern": "masters/norms",             "name": "masterNorms",     "target": "masterNorms"     },
+        { "pattern": "masters/templates",         "name": "masterTemplates", "target": "masterTemplates" }
       ],
       "targets": {
         "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
@@ -146,6 +163,7 @@
         "masterRates":     { "id": "masterRates",     "name": "MasterRates",     "title": "Rate Master" },
         "resourceDetail":  { "id": "resourceDetail",  "name": "ResourceDetail",  "title": "Resource" },
         "masterNorms":     { "id": "masterNorms",     "name": "MasterNorms",     "title": "Norms" },
+        "masterTemplates": { "id": "masterTemplates", "name": "MasterTemplates", "title": "Project Templates" },
         "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
       }
     }

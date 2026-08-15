@@ -1,0 +1,80 @@
+<mvc:View
+	controllerName="konstryx.controller.MasterTemplates"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="templatePage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Project Templates" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="A construction type with its cost breakdown structure and default resources. Instantiating copies them into a project — later edits to the library never reshape a project already being costed."/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Create" type="Emphasized" icon="sap-icon://add" press=".onNotImplemented"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:content>
+			<Table
+				id="templateTable"
+				items="{path: 'md>/ProjectTemplates', parameters: {'$orderby': 'code'}, templateShareable: false}"
+				growing="true"
+				sticky="ColumnHeaders"
+				mode="SingleSelectMaster"
+				selectionChange=".onSelect"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="Templates" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="14rem"><Text text="Template"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Name"/></Column>
+					<Column width="12rem"><Text text="Construction type"/></Column>
+					<Column width="7rem"><Text text="Version"/></Column>
+					<Column width="9rem"><Text text="Scope"/></Column>
+					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectIdentifier title="{md>code}"/>
+							<Text text="{md>name}"/>
+							<Text text="{md>constructionType}"/>
+							<Text text="{md>version}"/>
+							<ObjectStatus
+								text="{md>scope}"
+								state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+								icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+							<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+
+		<f:footer>
+			<OverflowToolbar>
+				<Text id="selectionHint" text="Select a template to instantiate it into a project."/>
+				<ToolbarSpacer/>
+				<Button id="instantiateButton" text="Instantiate into project" type="Emphasized"
+					icon="sap-icon://copy" enabled="false" press=".onInstantiate"/>
+			</OverflowToolbar>
+		</f:footer>
+	</f:DynamicPage>
+</mvc:View>
