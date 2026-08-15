@@ -2,8 +2,10 @@ package com.inflexion.konstryx.content;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sap.cds.ql.CQL;
 import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;
+import com.sap.cds.ql.cqn.CqnPredicate;
 import com.sap.cds.services.persistence.PersistenceService;
 import com.sap.cds.services.runtime.CdsRuntime;
 import org.slf4j.Logger;
@@ -17,8 +19,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -96,9 +100,21 @@ public class ContentDeploymentService {
             runtime.requestContext().privilegedUser().run(ctx -> {
                 for (Resource pack : packs) {
                     try {
-                        summary.append(applyPack(pack)).append('\n');
+                        // Each pack in its own change set: a pack that inserts
+                        // half its rows and then fails would otherwise leave the
+                        // tenant with content nothing has recorded as applied,
+                        // and no way to tell how far it got.
+                        runtime.changeSetContext().run(changeSet -> {
+                            try {
+                                summary.append(applyPack(pack)).append('\n');
+                            } catch (Exception e) {
+                                changeSet.markForCancel();
+                                throw new IllegalStateException(e.getMessage(), e);
+                            }
+                        });
                     } catch (Exception e) {
-                        log.error("Content pack {} failed to apply", pack.getFilename(), e);
+                        log.error("Content pack {} failed to apply — nothing from it was kept",
+                                pack.getFilename(), e);
                         summary.append(pack.getFilename()).append(": FAILED — ")
                                .append(e.getMessage()).append('\n');
                     }
@@ -134,27 +150,22 @@ public class ContentDeploymentService {
 
         for (JsonNode item : pack.path("items")) {
             String entity = item.path("entity").asText();
-            String naturalKey = item.path("naturalKey").asText();
+            List<String> keyFields = keyFieldsOf(item);
 
             for (JsonNode row : item.path("rows")) {
-                String keyValue = row.path(naturalKey).asText();
-
-                boolean exists = db.run(Select.from(entity)
-                        .where(e -> e.get(naturalKey).eq(keyValue)))
-                        .first().isPresent();
-
-                if (exists) {
-                    skipped++;    // the client owns this row now — leave it alone
-                    continue;
-                }
-
                 Map<String, Object> data = new HashMap<>();
-                data.put("ID", UUID.randomUUID().toString());
                 Iterator<Map.Entry<String, JsonNode>> fields = row.fields();
                 while (fields.hasNext()) {
                     Map.Entry<String, JsonNode> field = fields.next();
                     data.put(field.getKey(), toJavaValue(field.getValue()));
                 }
+
+                if (existsAlready(entity, keyFields, data)) {
+                    skipped++;    // the client owns this row now — leave it alone
+                    continue;
+                }
+
+                data.put("ID", UUID.randomUUID().toString());
                 db.run(Insert.into(entity).entry(data));
                 inserted++;
             }
@@ -174,6 +185,62 @@ public class ContentDeploymentService {
         log.info("Content pack {} {} applied: {} inserted, {} left untouched",
                 packId, version, inserted, skipped);
         return packId + " " + version + ": " + inserted + " inserted, " + skipped + " left untouched";
+    }
+
+    /**
+     * A pack may match on one field or several. Composite keys exist because
+     * some delivered rows have no code of their own — an approval step is
+     * identified by its scheme and its step number, nothing else.
+     */
+    private List<String> keyFieldsOf(JsonNode item) {
+        if (item.has("naturalKeys")) {
+            List<String> keys = new ArrayList<>();
+            item.path("naturalKeys").forEach(k -> keys.add(k.asText()));
+            return keys;
+        }
+        return List.of(item.path("naturalKey").asText());
+    }
+
+    private boolean existsAlready(String entity, List<String> keyFields, Map<String, Object> data) {
+        return db.run(Select.from(entity).where(e -> {
+            CqnPredicate predicate = null;
+            for (String field : keyFields) {
+                Object value = data.get(field);
+                CqnPredicate term = value == null
+                        ? e.get(field).isNull()
+                        : e.get(field).eq(value);
+                predicate = predicate == null ? term : CQL.and(predicate, term);
+            }
+            return predicate == null ? CQL.constant(true).eq(true) : predicate;
+        })).first().isPresent();
+    }
+
+    /**
+     * Resolves a reference to another row's key at deploy time.
+     *
+     * Content is authored before any UUID exists, so a delivered approval scheme
+     * cannot name the auth object it approves by key. This lets it name the row
+     * instead:
+     *
+     *   "authObject_ID": { "$ref": { "entity": "konstryx.auth.AuthObject",
+     *                                "key": "entityName",
+     *                                "value": "konstryx.bud.Budget" } }
+     *
+     * A reference that resolves to nothing fails the pack rather than inserting
+     * a dangling key — a scheme pointing at no object would be found only when
+     * someone tried to submit a document.
+     */
+    private Object resolveRef(JsonNode ref) {
+        String entity = ref.path("entity").asText();
+        String key = ref.path("key").asText();
+        String value = ref.path("value").asText();
+        return db.run(Select.from(entity).where(e -> e.get(key).eq(value)))
+                .first()
+                .map(r -> r.get("ID"))
+                .orElseThrow(() -> new IllegalStateException(
+                        "Content pack references " + entity + " where " + key + " = '" + value
+                                + "', which does not exist. Check the pack order: the row it "
+                                + "points at must be delivered first."));
     }
 
     private String packIdOf(Resource resource) {
@@ -205,6 +272,9 @@ public class ContentDeploymentService {
     }
 
     private Object toJavaValue(JsonNode node) {
+        if (node.isObject() && node.has("$ref")) {
+            return resolveRef(node.path("$ref"));
+        }
         if (node.isBoolean()) {
             return node.asBoolean();
         }

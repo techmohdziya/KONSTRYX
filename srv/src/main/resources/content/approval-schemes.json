@@ -1,0 +1,107 @@
+{
+  "packId": "APPROVAL_SCHEMES",
+  "version": "1.0.0",
+  "description": "Starting approval schemes for Budget and Resource Request. Value bands are a starting point, not a rule. Approver personas are left unset on purpose: personas are client configuration.",
+  "items": [
+    {
+      "entity": "konstryx.apr.ApprovalScheme",
+      "naturalKey": "code",
+      "rows": [
+        {
+          "code": "BUD-STD",
+          "name": "Budget approval",
+          "authObject_ID": {
+            "$ref": {
+              "entity": "konstryx.auth.AuthObject",
+              "key": "entityName",
+              "value": "konstryx.bud.Budget"
+            }
+          },
+          "isActive": true
+        },
+        {
+          "code": "RR-STD",
+          "name": "Resource request approval",
+          "authObject_ID": {
+            "$ref": {
+              "entity": "konstryx.auth.AuthObject",
+              "key": "entityName",
+              "value": "konstryx.wf.ResourceRequest"
+            }
+          },
+          "isActive": true
+        }
+      ]
+    },
+    {
+      "entity": "konstryx.apr.ApprovalStepDef",
+      "naturalKeys": ["scheme_ID", "stepNo"],
+      "rows": [
+        {
+          "scheme_ID": {
+            "$ref": { "entity": "konstryx.apr.ApprovalScheme", "key": "code", "value": "BUD-STD" }
+          },
+          "stepNo": 1,
+          "name": "Project manager review",
+          "mode": "SEQUENTIAL",
+          "isMandatory": true,
+          "allowChaining": false
+        },
+        {
+          "scheme_ID": {
+            "$ref": { "entity": "konstryx.apr.ApprovalScheme", "key": "code", "value": "BUD-STD" }
+          },
+          "stepNo": 2,
+          "name": "Commercial review",
+          "mode": "SEQUENTIAL",
+          "minAmount": 100000.00,
+          "isMandatory": true,
+          "allowChaining": false
+        },
+        {
+          "scheme_ID": {
+            "$ref": { "entity": "konstryx.apr.ApprovalScheme", "key": "code", "value": "BUD-STD" }
+          },
+          "stepNo": 3,
+          "name": "Director approval",
+          "mode": "SEQUENTIAL",
+          "minAmount": 1000000.00,
+          "isMandatory": true,
+          "allowChaining": false
+        },
+        {
+          "scheme_ID": {
+            "$ref": { "entity": "konstryx.apr.ApprovalScheme", "key": "code", "value": "RR-STD" }
+          },
+          "stepNo": 1,
+          "name": "Project manager approval",
+          "mode": "SEQUENTIAL",
+          "isMandatory": true,
+          "allowChaining": false
+        },
+        {
+          "scheme_ID": {
+            "$ref": { "entity": "konstryx.apr.ApprovalScheme", "key": "code", "value": "RR-STD" }
+          },
+          "stepNo": 2,
+          "name": "Commercial review",
+          "mode": "SEQUENTIAL",
+          "minAmount": 250000.00,
+          "isMandatory": true,
+          "allowChaining": false
+        },
+        {
+          "scheme_ID": {
+            "$ref": { "entity": "konstryx.apr.ApprovalScheme", "key": "code", "value": "RR-STD" }
+          },
+          "stepNo": 3,
+          "name": "Director approval",
+          "mode": "SEQUENTIAL",
+          "minAmount": 1000000.00,
+          "isMandatory": true,
+          "allowChaining": false
+        }
+      ]
+    }
+  ]
+}

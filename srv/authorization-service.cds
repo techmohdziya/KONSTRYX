@@ -94,15 +94,29 @@ service CollaborationService @(path:'/collaboration') {
   /** Approvals addressed to the current user, and their history. */
   entity ApprovalInstances as projection on apr.ApprovalInstance
     actions {
-      action withdraw(reason : String(500));
+      action withdraw(reason : String(500)) returns String;
     };
 
   entity ApprovalSteps as projection on apr.ApprovalStepInstance
     actions {
-      action approve(comment : String(1000));
-      action reject(comment : String(1000));
-      action delegate(to : String(120), comment : String(1000));
+      action approve(comment : String(1000)) returns String;
+      action reject(comment : String(1000))  returns String;
+      action delegate(to : String(120), comment : String(1000)) returns String;
     };
+
+  /**
+   * Starts an approval for any business object. The scheme is chosen by object
+   * type and company, and the steps whose value bands cover the amount are
+   * frozen onto the instance at submission — a scheme edited later does not
+   * rewrite what an in-flight approval requires.
+   */
+  action submitForApproval(
+    entityName : String(120),
+    objectID   : UUID,
+    docNo      : String(20),
+    amount     : Decimal(15,2),
+    companyID  : UUID
+  ) returns String;
 
   /** Attachments on any object. */
   entity Attachments as projection on sys.Attachment;
