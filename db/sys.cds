@@ -38,6 +38,39 @@ entity ContentPack : cuid, managed {
   rowsSkipped  : Integer;         // already present, left untouched
 }
 
+// ------------------------------------------------------------------ imports
+
+/**
+ * One upload. Every import is kept — what was loaded, by whom, from which
+ * file, and what happened to each row — because "who changed the rates last
+ * Tuesday" is asked far more often than anyone expects, and a load that left
+ * no trace cannot answer it.
+ */
+entity ImportRun : cuid, managed {
+  target       : String(120);   // MasterDataService.Resources
+  fileName     : String(255);
+  rowsTotal    : Integer;
+  rowsAccepted : Integer;
+  rowsRejected : Integer;
+  /** PARTIAL keeps the good rows; nothing is kept when a VALIDATED run fails. */
+  mode         : String enum { VALIDATE_ONLY; ALL_OR_NOTHING; PARTIAL; } default 'ALL_OR_NOTHING';
+  status       : String enum { RUNNING; COMPLETED; REJECTED; FAILED; } default 'RUNNING';
+  message      : String(1000);
+  rows         : Composition of many ImportRow on rows.run = $self;
+}
+
+/**
+ * A staged row. The raw payload is kept alongside the error so a user can see
+ * exactly what they uploaded rather than guessing which line the message meant.
+ */
+entity ImportRow : cuid {
+  run       : Association to ImportRun;
+  lineNo    : Integer;
+  payload   : LargeString;      // the source line, verbatim
+  accepted  : Boolean default false;
+  error     : String(1000);
+}
+
 // -------------------------------------------------------------- attachments
 
 entity Attachment : cuid, managed {

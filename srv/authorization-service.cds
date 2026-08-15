@@ -48,6 +48,33 @@ service AuthorizationService @(path:'/authorization') {
   /** Which delivered content packs this tenant has received, and when. */
   @readonly entity ContentPacks as projection on sys.ContentPack;
 
+  // -- upload / download ----------------------------------------------------
+  /** Every upload, and the fate of each of its rows. */
+  @readonly entity ImportRuns as projection on sys.ImportRun;
+  @readonly entity ImportRows as projection on sys.ImportRow;
+
+  /**
+   * Current rows as CSV. With templateOnly it returns the header alone, which
+   * is the upload template — so the columns a user sees are by definition the
+   * ones the importer accepts.
+   */
+  action exportCsv(target : String(120), templateOnly : Boolean) returns LargeString;
+
+  /**
+   * Loads a CSV through the target's own service, so every rule that service
+   * enforces applies to the upload too.
+   *
+   * mode:  ALL_OR_NOTHING (default) keeps nothing unless every row is valid
+   *        PARTIAL        keeps the valid rows and reports the rest
+   *        VALIDATE_ONLY  changes nothing; reports what would happen
+   */
+  action importCsv(
+    target   : String(120),
+    fileName : String(255),
+    content  : LargeString,
+    mode     : String(20)
+  ) returns String;
+
   /**
    * Re-runs delivered content deployment without restarting the service.
    * Needed after an upgrade ships a new pack version, and safe to call at any
