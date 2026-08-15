@@ -1,0 +1,68 @@
+{
+  "packId": "NUMBER_RANGES",
+  "version": "1.0.0",
+  "description": "Default document number ranges. Clients may change scope and pattern; an upgrade must never revert their choice.",
+  "items": [
+    {
+      "entity": "konstryx.nr.NumberRangeObject",
+      "naturalKey": "code",
+      "rows": [
+        {
+          "code": "RR",
+          "name": "Resource Request",
+          "entityName": "konstryx.wf.ResourceRequest",
+          "scope": "GLOBAL",
+          "pattern": "{OBJ}-{YYYY}-{SEQ}",
+          "resetPolicy": "YEARLY",
+          "seqLength": 4,
+          "startAt": 1,
+          "isActive": true
+        },
+        {
+          "code": "AVC",
+          "name": "Availability Check",
+          "entityName": "konstryx.wf.AvailabilityCheck",
+          "scope": "GLOBAL",
+          "pattern": "{OBJ}-{YYYY}-{SEQ}",
+          "resetPolicy": "YEARLY",
+          "seqLength": 4,
+          "startAt": 1,
+          "isActive": true
+        },
+        {
+          "code": "RES",
+          "name": "Reservation",
+          "entityName": "konstryx.wf.Reservation",
+          "scope": "GLOBAL",
+          "pattern": "{OBJ}-{YYYY}-{SEQ}",
+          "resetPolicy": "YEARLY",
+          "seqLength": 4,
+          "startAt": 1,
+          "isActive": true
+        },
+        {
+          "code": "BUD",
+          "name": "Budget",
+          "entityName": "konstryx.bud.Budget",
+          "scope": "COMPANY",
+          "pattern": "{OBJ}-{CC}-{YYYY}-{SEQ}",
+          "resetPolicy": "YEARLY",
+          "seqLength": 4,
+          "startAt": 1,
+          "isActive": true
+        },
+        {
+          "code": "MA",
+          "name": "Mobilization Authorization",
+          "entityName": "konstryx.bud.MobilizationAuth",
+          "scope": "COMPANY",
+          "pattern": "{OBJ}-{CC}-{YYYY}-{SEQ}",
+          "resetPolicy": "YEARLY",
+          "seqLength": 4,
+          "startAt": 1,
+          "isActive": true
+        }
+      ]
+    }
+  ]
+}

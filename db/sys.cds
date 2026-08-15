@@ -13,6 +13,31 @@ namespace konstryx.sys;
 using { cuid, managed } from '@sap/cds/common';
 using { konstryx.auth } from './auth';
 
+// ---------------------------------------------------------- delivered content
+
+/**
+ * Record of which delivered content packs have been applied to this tenant.
+ *
+ * Content that a client may edit cannot ship in db/data. CAP turns those CSVs
+ * into .hdbtabledata, and HDI re-imports the rows it manages on every deploy —
+ * so a client who changed a number range scope or a rate would silently have it
+ * reverted at the next upgrade. db/data is therefore reserved for the immutable
+ * catalogue the runtime cannot start without.
+ *
+ * Everything else is a versioned pack applied once, insert-if-missing, never
+ * update. An upgrade that adds rows to a pack ships a new version; existing
+ * rows the client has since edited are left exactly as they are.
+ */
+entity ContentPack : cuid, managed {
+  packId       : String(40);      // NUMBER_RANGES · ECO_STARTER
+  version      : String(20);
+  description  : String(255);
+  appliedAt    : Timestamp;
+  appliedBy    : String(120);
+  rowsInserted : Integer;
+  rowsSkipped  : Integer;         // already present, left untouched
+}
+
 // -------------------------------------------------------------- attachments
 
 entity Attachment : cuid, managed {

@@ -44,6 +44,17 @@ service AuthorizationService @(path:'/authorization') {
   entity NumberRangeObjects as projection on nr.NumberRangeObject;
   /** Live counters. Read-only: numbers are issued by the runtime, never keyed. */
   @readonly entity NumberRangeCounters as projection on nr.NumberRangeCounter;
+
+  /** Which delivered content packs this tenant has received, and when. */
+  @readonly entity ContentPacks as projection on sys.ContentPack;
+
+  /**
+   * Re-runs delivered content deployment without restarting the service.
+   * Needed after an upgrade ships a new pack version, and safe to call at any
+   * time: packs already applied are skipped, and rows that already exist are
+   * never overwritten.
+   */
+  action applyContentPacks() returns String;
 }
 
 /**

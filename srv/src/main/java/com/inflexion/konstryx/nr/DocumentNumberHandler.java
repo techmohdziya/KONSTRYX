@@ -39,6 +39,14 @@ public class DocumentNumberHandler implements EventHandler {
 
     @Before(event = CqnService.EVENT_CREATE)
     public void assignDocumentNumber(CdsCreateEventContext context, List<CdsData> entries) {
+        // Only entities that actually carry docNo. A range can be configured
+        // against an entity without one — konstryx.wf.AdvisoryDecision has no
+        // document number — and blindly writing the field would fail the create
+        // rather than the misconfiguration.
+        if (context.getTarget().findElement("docNo").isEmpty()) {
+            return;
+        }
+
         String entityName = context.getTarget().getQualifiedName();
 
         String objectCode = objectCodeFor(entityName);
