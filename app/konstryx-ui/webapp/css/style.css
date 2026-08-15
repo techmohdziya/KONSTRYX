@@ -19,9 +19,18 @@
    declared here.
    -------------------------------------------------------------------------- */
 html, body { height: 100%; margin: 0; }
-/* The component container is not a direct child of body — body itself carries
-   id="content" — so match it wherever the framework places it. */
-.sapUiComponentContainer { height: 100%; }
+
+/* Every link in the chain, or the whole thing collapses. UI5 injects a UIArea
+   div between the component container and the view, and that div takes no
+   height of its own — the container can be 841px while the UIArea inside it is
+   0px. The NavContainer below sets overflow:hidden, so a zero-height ancestor
+   does not merely shrink the page, it clips every control to nothing while each
+   one still reports a correct size to getBoundingClientRect. */
+.sapUiComponentContainer,
+.sapUiComponentContainer > div,                  /* the UIArea */
+.sapUiComponentContainer > div > .sapUiView {
+	height: 100%;
+}
 
 .kxShellLogo  { margin: 0 .5rem 0 .25rem; }
 .kxShellTitle { font-weight: 700; letter-spacing: .02em; }
