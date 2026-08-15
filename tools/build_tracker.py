@@ -243,6 +243,7 @@ issues = [
     ("I-13", "Demo data", "Wireframe request header (716,044) does not reconcile with its own line values (685,080)", "Any stakeholder demo shows inconsistent totals", "—", "Open", "2026-08-15"),
     ("I-14", "Plan", "Personalization, attachments and approvals on every object were not in the 22-week MVP estimate", "Plan credibility; 434 screens each inherit this layer", "—", "Open", "2026-08-15"),
     ("I-15", "Authorization", "Admin persona cannot read workflow/project services", "Service-level @requires still gates entry by XSUAA role; the Admin mock user lacks those roles", "By design today, but role collections need reviewing before go-live", "Open", "2026-08-15"),
+    ("I-16", "Upgrade safety", "Client configuration in db/data is reset on every upgrade", "cds build --production generates konstryx.nr-NumberRangeObject.hdbtabledata. HDI re-imports managed rows on redeploy, so a client who changes a number range scope or pattern would silently have it reverted at the next upgrade. NumberRangeObjects is writable in the service, so this is reachable", "Move client-configurable rows out of db/data into the one-time onboarding import; keep db/data for immutable delivered catalogue only (Activity, Module, AuthObject, Currencies - all @readonly)", "Open", "2026-08-15"),
 ]
 body(ws, 6, issues, [8, 16, 62, 50, 56, 10, 12], status_col=6)
 ws.freeze_panes = "A6"
