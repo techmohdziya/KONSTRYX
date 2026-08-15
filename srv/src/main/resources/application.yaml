@@ -14,6 +14,15 @@ cds:
   data-source:
     auto-config:
       enabled: false
+    csv:
+      # KONSTRYX ships to multiple clients. db/data holds only content every
+      # tenant legitimately receives (code lists); test/data holds the demo
+      # threads and is development-only. Both are listed here because
+      # initialization-mode defaults to `embedded`, so this applies to the
+      # in-memory H2 database and never to a provisioned tenant.
+      paths:
+        - db/data
+        - test/data
   # Local development only. Personas mirror the xs-security.json role templates
   # one-for-one; the cloud profile takes its roles from XSUAA instead.
   security:
@@ -41,6 +50,11 @@ spring:
     activate:
       on-profile: cloud
 cds:
+  data-source:
+    csv:
+      # Explicit belt-and-braces: no CSV fixture may ever reach a client
+      # tenant's database, whatever the paths above happen to contain.
+      initialization-mode: never
   security:
     authentication:
       mode: model-relaxed

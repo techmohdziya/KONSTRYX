@@ -16,7 +16,10 @@
   "cds": {
     "requires": {
       "db": {
-        "kind": "sql"
+        "kind": "sql",
+        "//": "KONSTRYX is a product shipped to multiple clients. db/data holds only content every tenant legitimately receives (code lists). Everything client- or demo-specific lives in test/data and must never reach a tenant database.",
+        "[development]": { "data": [ "db/data", "test/data" ] },
+        "[production]": { "data": [ "db/data" ] }
       },
       "auth": {
         "kind": "mocked",

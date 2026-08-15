@@ -28,7 +28,9 @@ modules:
 
   - name: konstryx-db-deployer
     type: hdb
-    path: gen/db
+    # `cds build --production` writes the HDI artifacts to db/src/gen, not
+    # gen/db — the latter is the Node.js layout and does not exist here.
+    path: db
     parameters:
       buildpack: nodejs_buildpack
     requires:
