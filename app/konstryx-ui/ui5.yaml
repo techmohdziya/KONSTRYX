@@ -1,0 +1,16 @@
+specVersion: "3.0"
+metadata:
+  name: konstryx
+type: application
+framework:
+  name: OpenUI5
+  version: "1.150.0"
+  libraries:
+    - name: sap.ui.core
+    - name: sap.m
+    - name: sap.f
+    - name: sap.tnt
+    - name: sap.uxap
+    - name: sap.ui.layout
+    - name: sap.ui.unified
+    - name: themelib_sap_horizon

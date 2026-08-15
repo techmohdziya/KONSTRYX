@@ -1,0 +1,294 @@
+{
+  "project": {
+    "id": "PRJ-001",
+    "name": "Marina Heights Tower",
+    "client": "Emaar Marina LLC",
+    "contract": "MHT-CON-2024-014",
+    "contractValue": 47300000,
+    "currency": "AED",
+    "dataDate": "2026-08-22"
+  },
+
+  "user": { "name": "Sridhar Iyer", "initials": "SI", "role": "Plant Allocation Lead", "company": "INFC" },
+
+  "companies": [
+    { "key": "INFC", "text": "INFC · Inflexion Contracting" },
+    { "key": "PMI", "text": "PMI · Precision Metal Industries" },
+    { "key": "IFO", "text": "IFO · Inflexion Fitout" },
+    { "key": "MJN", "text": "MJN · Majan Joinery" },
+    { "key": "GROUP", "text": "Group · consolidated" }
+  ],
+
+  "tiles": [
+    { "title": "Resource Requests", "subtitle": "Awaiting my advisory", "icon": "sap-icon://activity-items", "value": "4", "unit": "open", "state": "Critical", "route": "worklist", "arg": "RR" },
+    { "title": "Availability Checks", "subtitle": "Gate before reservation", "icon": "sap-icon://check-availability", "value": "2", "unit": "due", "state": "Neutral", "route": "worklist", "arg": "AVC" },
+    { "title": "Reservations", "subtitle": "Active across 3 types", "icon": "sap-icon://sales-order", "value": "38", "unit": "active", "state": "Good", "route": "worklist", "arg": "RES" },
+    { "title": "Mobilizations", "subtitle": "Next 7 days", "icon": "sap-icon://shipping-status", "value": "6", "unit": "planned", "state": "Neutral", "route": "worklist", "arg": "MOB" },
+    { "title": "Operation Logs", "subtitle": "Yesterday · unsigned", "icon": "sap-icon://time-entry-request", "value": "3", "unit": "to sign", "state": "Critical", "route": "worklist", "arg": "OPL" },
+    { "title": "Variation Orders", "subtitle": "Pending approval", "icon": "sap-icon://request", "value": "1", "unit": "open", "state": "Critical", "route": "worklist", "arg": "VAR" },
+    { "title": "Budget Encumbrance", "subtitle": "S/4 PS commitment", "icon": "sap-icon://money-bills", "value": "4.8", "unit": "AED M", "state": "Good", "route": "worklist", "arg": "CMT" },
+    { "title": "Closures", "subtitle": "Awaiting reconciliation", "icon": "sap-icon://complete", "value": "2", "unit": "open", "state": "Neutral", "route": "worklist", "arg": "CLS" }
+  ],
+
+  "docTypes": [
+    { "code": "RR",  "step": 1,  "name": "Resource Request",   "plural": "Resource Requests",    "owner": "KONSTRYX", "icon": "sap-icon://activity-items" },
+    { "code": "ADV", "step": 2,  "name": "Advisory Decision",  "plural": "Advisory Decisions",   "owner": "KONSTRYX", "icon": "sap-icon://decision" },
+    { "code": "AVC", "step": 3,  "name": "Availability Check", "plural": "Availability Checks",  "owner": "KONSTRYX", "icon": "sap-icon://check-availability" },
+    { "code": "RES", "step": 4,  "name": "Reservation",        "plural": "Reservations",         "owner": "KONSTRYX", "icon": "sap-icon://sales-order" },
+    { "code": "CMT", "step": 5,  "name": "Budget Commitment",  "plural": "Budget Commitments",   "owner": "S/4 PS",   "icon": "sap-icon://money-bills" },
+    { "code": "MOB", "step": 6,  "name": "Mobilization",       "plural": "Mobilizations",        "owner": "KONSTRYX", "icon": "sap-icon://shipping-status" },
+    { "code": "OPL", "step": 7,  "name": "Operation Log",      "plural": "Operation Logs",       "owner": "KONSTRYX", "icon": "sap-icon://time-entry-request" },
+    { "code": "VAR", "step": 8,  "name": "Variation Order",    "plural": "Variation Orders",     "owner": "KONSTRYX", "icon": "sap-icon://request" },
+    { "code": "DMB", "step": 9,  "name": "De-mobilization",    "plural": "De-mobilizations",     "owner": "KONSTRYX", "icon": "sap-icon://undo" },
+    { "code": "CLS", "step": 10, "name": "Closure",            "plural": "Closures",             "owner": "KONSTRYX", "icon": "sap-icon://complete" }
+  ],
+
+  "requests": [
+    {
+      "id": "RR-2026-0188",
+      "type": "EQR",
+      "typeName": "Equipment / Plant",
+      "title": "Site Plant Mobilization",
+      "project": "PRJ-001",
+      "projectName": "Marina Heights Tower",
+      "raisedBy": "Daud Patel · Site Engineer",
+      "raisedOn": "2026-05-02",
+      "approvedBy": "Vikram Rao · Project Manager",
+      "committee": "Plant Allocation Committee",
+      "state": "Approved",
+      "stateType": "Success",
+      "lineCount": 5,
+      "instances": 18,
+      "wbsCount": 3,
+      "value": 716044,
+      "window": "14 Jun 2026 → 14 Dec 2026",
+      "dominantLine": "L1 · Tower Crane LB280 (12T) · 39% of value",
+      "lines": [
+        { "no": "L1", "resource": "Tower Crane LB280 (12T)", "code": "EQ-TWC-12T", "wbs": "WBS-2.04", "wbsName": "Super-structure", "cbs": "02.10", "qty": 2, "unit": "inst", "days": 180, "source": "Own", "sourceDetail": "Fleet Yard A", "sourceState": "Success", "rate": 320, "value": 276480, "dominant": true, "status": "Mobilized", "statusState": "Success" },
+        { "no": "L2", "resource": "Mobile Crane GMK3050 (50T)", "code": "EQ-MBC-50T", "wbs": "WBS-2.04", "wbsName": "Super-structure", "cbs": "02.10", "qty": 1, "unit": "inst", "days": 90, "source": "Rental", "sourceDetail": "ARM Cranes", "sourceState": "Warning", "rate": 1450, "value": 130500, "dominant": false, "status": "Mobilized", "statusState": "Success" },
+        { "no": "L3", "resource": "Concrete vibrator kits", "code": "EQ-VIB-KIT", "wbs": "WBS-1.02", "wbsName": "Sub-structure", "cbs": "01.20", "qty": 8, "unit": "inst", "days": 45, "source": "Own", "sourceDetail": "Fleet Yard B", "sourceState": "Success", "rate": 55, "value": 19800, "dominant": false, "status": "Mobilized", "statusState": "Success" },
+        { "no": "L4", "resource": "Site office Portacabin", "code": "EQ-POR-STD", "wbs": "WBS-0.10", "wbsName": "Site Establishment", "cbs": "00.10", "qty": 4, "unit": "inst", "days": 180, "source": "Rental", "sourceDetail": "Modulux", "sourceState": "Warning", "rate": 145, "value": 104400, "dominant": false, "status": "Mobilized", "statusState": "Success" },
+        { "no": "L5", "resource": "Power generators 250 kVA", "code": "EQ-GEN-250", "wbs": "WBS-0.10", "wbsName": "Site Establishment", "cbs": "00.10", "qty": 3, "unit": "inst", "days": 180, "source": "Rental", "sourceDetail": "ARM Power", "sourceState": "Warning", "rate": 285, "value": 153900, "dominant": false, "status": "Partially mobilized", "statusState": "Warning" }
+      ]
+    },
+    {
+      "id": "RR-2026-0148", "type": "MR", "typeName": "Material", "title": "Concrete Works Package",
+      "project": "PRJ-001", "projectName": "Marina Heights Tower",
+      "raisedBy": "Daud Patel · Site Engineer", "raisedOn": "2026-05-05",
+      "approvedBy": "Vikram Rao · Project Manager", "committee": "Material Procurement Cell",
+      "state": "Approved", "stateType": "Success",
+      "lineCount": 5, "instances": 0, "wbsCount": 2, "value": 404931,
+      "window": "18 – 22 May 2026", "dominantLine": "L1 · Rebar 16 mm BS4449 · 73% of value", "lines": []
+    },
+    {
+      "id": "RR-2026-0162", "type": "MPR", "typeName": "Manpower", "title": "Sub-structure Trade Package",
+      "project": "PRJ-001", "projectName": "Marina Heights Tower",
+      "raisedBy": "Daud Patel · Site Engineer", "raisedOn": "2026-05-04",
+      "approvedBy": "Vikram Rao · Project Manager", "committee": "HR Allocation Team",
+      "state": "Approved", "stateType": "Success",
+      "lineCount": 5, "instances": 24, "wbsCount": 2, "value": 814484,
+      "window": "14 May 2026 → 14 Aug 2026", "dominantLine": "L1 · Steel Fixer G1 (own) · 49% of value", "lines": []
+    },
+    {
+      "id": "RR-2026-0205", "type": "VR", "typeName": "Vehicle", "title": "Concrete-Pour Logistics",
+      "project": "PRJ-001", "projectName": "Marina Heights Tower",
+      "raisedBy": "Ahmed Hassan · Site Logistics", "raisedOn": "2026-05-20",
+      "approvedBy": "Vikram Rao · Project Manager", "committee": "Fleet Ops Committee",
+      "state": "In advisory", "stateType": "Warning",
+      "lineCount": 5, "instances": 15, "wbsCount": 2, "value": 342400,
+      "window": "01 Jun 2026 → 30 Nov 2026", "dominantLine": "L1 · Mixer Truck 10 m³ · 51% of value", "lines": []
+    }
+  ],
+
+  "chain": [
+    {
+      "step": 1, "code": "RR", "id": "RR-2026-0188", "request": "RR-2026-0188",
+      "title": "Resource Request", "owner": "KONSTRYX", "date": "2026-05-02",
+      "status": "Approved", "statusState": "Success", "persona": "Daud Patel · Site Engineer",
+      "intro": "Site originator submits the plant need for the super-structure phase. Header plus five line items; each line carries one equipment class, one WBS, an instance count and a mobilization window.",
+      "fields": [
+        { "label": "Request ID", "value": "RR-2026-0188" },
+        { "label": "Request Type", "value": "EQR · Equipment / Plant" },
+        { "label": "Title", "value": "Site Plant Mobilization" },
+        { "label": "Line Count", "value": "5 lines · 18 instances · 3 WBS" },
+        { "label": "Project", "value": "PRJ-001 · Marina Heights Tower" },
+        { "label": "Need-by Window", "value": "14 Jun 2026 → 14 Dec 2026" },
+        { "label": "Raised By", "value": "Daud Patel · Site Engineer" },
+        { "label": "Approved By", "value": "Vikram Rao · Project Manager" }
+      ],
+      "lineExtra": { "label": "Requested", "path": "reqText" },
+      "actions": [ { "text": "Open Advisory", "target": 2, "type": "Emphasized" } ]
+    },
+    {
+      "step": 2, "code": "ADV", "id": "ADV-2026-0188", "request": "RR-2026-0188",
+      "title": "Advisory Decision", "owner": "KONSTRYX", "date": "2026-05-08",
+      "status": "Decided", "statusState": "Success", "persona": "Plant Allocation Committee",
+      "intro": "The Plant Allocation Committee decides the routing per line — own fleet or rental — and nominates the vendor where the line is procured. Two lines route to own fleet, three to rental.",
+      "fields": [
+        { "label": "Advisory ID", "value": "ADV-2026-0188" },
+        { "label": "Committee", "value": "Plant Allocation Committee" },
+        { "label": "Members", "value": "Plant Manager · Lifting Supervisor · Project Plant Coordinator · Cost Engineer" },
+        { "label": "Decision Date", "value": "08 May 2026" },
+        { "label": "Routing Split", "value": "2 lines own fleet · 3 lines rental" },
+        { "label": "Own-fleet Value", "value": "AED 296,280" },
+        { "label": "Rental Value", "value": "AED 388,800" },
+        { "label": "Recommendation", "value": "Approve with rental rate re-negotiation on L5" }
+      ],
+      "lineExtra": { "label": "Routing decision", "path": "advText" },
+      "actions": [ { "text": "Run Availability Check", "target": 3, "type": "Emphasized" }, { "text": "Back to Request", "target": 1, "type": "Transparent" } ]
+    },
+    {
+      "step": 3, "code": "AVC", "id": "AVC-2026-0188", "request": "RR-2026-0188",
+      "title": "Availability Check", "owner": "KONSTRYX", "date": "2026-05-12",
+      "status": "Cleared", "statusState": "Success", "persona": "Sridhar Iyer · Plant Allocation Lead",
+      "intro": "The gate between advisory and reservation. Re-validates fleet pool, vendor frame agreement and site readiness in real time. A line that fails here goes back to advisory rather than forward to reservation.",
+      "fields": [
+        { "label": "Check ID", "value": "AVC-2026-0188" },
+        { "label": "Checked On", "value": "12 May 2026 · 09:14" },
+        { "label": "Pool Availability", "value": "Own fleet: 10 of 10 instances free in window" },
+        { "label": "Frame Agreement", "value": "ARM Cranes FA-PLANT-2025/11 · valid to 31 Dec 2026" },
+        { "label": "Site Readiness", "value": "Crane base cast · power distribution live" },
+        { "label": "Operator Cover", "value": "4 certified operators assigned · 2 TC, 1 MC, 1 relief" },
+        { "label": "Outcome", "value": "All 5 lines cleared" },
+        { "label": "Budget Headroom", "value": "AED 1.24 M available on WBS-2.04" }
+      ],
+      "lineExtra": { "label": "Availability", "path": "avcText" },
+      "actions": [ { "text": "Create Reservation", "target": 4, "type": "Emphasized" }, { "text": "Back to Advisory", "target": 2, "type": "Transparent" } ]
+    },
+    {
+      "step": 4, "code": "RES", "id": "RES-2026-0188", "request": "RR-2026-0188",
+      "title": "Reservation", "owner": "KONSTRYX", "date": "2026-05-12",
+      "status": "Active", "statusState": "Success", "persona": "Sridhar Iyer · Plant Allocation Lead",
+      "intro": "The operational reservation, driven by a state machine. This is the umbrella document the rest of the chain hangs from — every mobilization, log, variation and de-mobilization refers back to it.",
+      "fields": [
+        { "label": "Reservation ID", "value": "RES-2026-0188" },
+        { "label": "Type", "value": "EQR · Equipment / Plant" },
+        { "label": "State", "value": "Active · 18 instances" },
+        { "label": "Period", "value": "14 Jun 2026 → 14 Dec 2026" },
+        { "label": "Budget Encumbered", "value": "AED 716,044" },
+        { "label": "Cost to Date", "value": "AED 177,580 · 24.8% consumed" },
+        { "label": "S/4 Reference", "value": "Activity Type EQ-TWC-12T · Service Product SVC-EQ-TWC-12T" },
+        { "label": "Source Request", "value": "RR-2026-0188" }
+      ],
+      "lineExtra": { "label": "Reservation state", "path": "resText" },
+      "actions": [ { "text": "View Budget Commitment", "target": 5, "type": "Emphasized" }, { "text": "Back to Availability Check", "target": 3, "type": "Transparent" } ]
+    },
+    {
+      "step": 5, "code": "CMT", "id": "CMT-2026-0188", "request": "RR-2026-0188",
+      "title": "Budget Commitment", "owner": "S/4 PS", "date": "2026-05-12",
+      "status": "Posted", "statusState": "Success", "persona": "Rohan Menon · Cost Engineer",
+      "readOnly": true,
+      "intro": "Owned by S/4HANA Project System, not by KONSTRYX. The per-line encumbrance is posted against the WBS through the Universal Journal. KONSTRYX reads it and shows the sync state; it never authors it.",
+      "fields": [
+        { "label": "Commitment Doc", "value": "CMT-2026-0188" },
+        { "label": "System of Record", "value": "S/4HANA Public Cloud · Project System" },
+        { "label": "Posting Date", "value": "12 May 2026" },
+        { "label": "Total Encumbered", "value": "AED 716,044" },
+        { "label": "WBS-2.04 Super-structure", "value": "AED 406,980" },
+        { "label": "WBS-1.02 Sub-structure", "value": "AED 19,800" },
+        { "label": "WBS-0.10 Site Establishment", "value": "AED 258,300" },
+        { "label": "Last Sync", "value": "22 Aug 2026 · 06:00 · SAP_COM_0308" }
+      ],
+      "lineExtra": { "label": "Encumbered", "path": "cmtText" },
+      "actions": [ { "text": "Open Mobilization", "target": 6, "type": "Emphasized" }, { "text": "Back to Reservation", "target": 4, "type": "Transparent" } ]
+    },
+    {
+      "step": 6, "code": "MOB", "id": "MOB-2026-0188", "request": "RR-2026-0188",
+      "title": "Mobilization", "owner": "KONSTRYX", "date": "2026-06-14",
+      "status": "Complete", "statusState": "Success", "persona": "Sridhar Iyer · Plant Allocation Lead",
+      "intro": "Assets arrive on site. Each instance gets a 15-item condition checklist at mobilization; the identical checklist runs again at de-mobilization so the mob-vs-demob delta is clean. Sub-components bind to the parent here.",
+      "fields": [
+        { "label": "Mobilization Doc", "value": "MOB-2026-0188" },
+        { "label": "First Arrival", "value": "14 Jun 2026 · Tower Crane LB280 #1" },
+        { "label": "Last Arrival", "value": "28 Jun 2026 · Generators 250 kVA" },
+        { "label": "Instances On Site", "value": "17 of 18 · 1 generator deferred" },
+        { "label": "Inspection", "value": "15-item condition checklist · 17 passed" },
+        { "label": "Operators Mobilized", "value": "4 · M. Rahman, J. Singh, A. Fahad, relief pool" },
+        { "label": "Lifting Gear Bound", "value": "6 sub-components bound to TC-002 (S/4 SuperiorEquipment)" },
+        { "label": "Site Handover", "value": "Signed by Daud Patel · 28 Jun 2026" }
+      ],
+      "lineExtra": { "label": "On site", "path": "mobText" },
+      "actions": [ { "text": "Open Operation Log", "target": 7, "type": "Emphasized" }, { "text": "Back to Commitment", "target": 5, "type": "Transparent" } ]
+    },
+    {
+      "step": 7, "code": "OPL", "id": "OPL-2026-0188", "request": "RR-2026-0188",
+      "title": "Operation Log", "owner": "KONSTRYX", "date": "2026-08-21",
+      "status": "Signed", "statusState": "Success", "persona": "S. Kumar · Time Keeper",
+      "intro": "The daily record. Asset utilization and operator timesheet are deliberately separate tabs — they feed different SAP cost elements: the asset side posts a Service Entry Sheet, the operator side posts CATS. They are never merged.",
+      "fields": [
+        { "label": "Log Date", "value": "21 Aug 2026 · Day shift 06:00–18:00" },
+        { "label": "Asset Hours", "value": "142.5 productive · 11.0 idle · 4.5 standby" },
+        { "label": "Operator Hours", "value": "96.0 productive · 8.0 idle" },
+        { "label": "Utilization", "value": "90.1% against available hours" },
+        { "label": "Asset Posting", "value": "Service Entry Sheet SES-2026-08-0188" },
+        { "label": "Operator Posting", "value": "CATS · CAT2 batch 2026-08-21" },
+        { "label": "Signed Off By", "value": "Daud Patel · Site Engineer · 21 Aug 2026 19:40" },
+        { "label": "Cost to Date", "value": "AED 177,580" }
+      ],
+      "lineExtra": { "label": "Hours logged", "path": "oplText" },
+      "actions": [ { "text": "Open Variation Order", "target": 8, "type": "Emphasized" }, { "text": "Back to Mobilization", "target": 6, "type": "Transparent" } ]
+    },
+    {
+      "step": 8, "code": "VAR", "id": "VAR-2026-0188-A", "request": "RR-2026-0188",
+      "title": "Variation Order", "owner": "KONSTRYX", "date": "2026-08-18",
+      "status": "Approved", "statusState": "Success", "persona": "Vikram Rao · Project Manager",
+      "intro": "A per-line change order. Slab cycle slipped on the super-structure, so both cranes need a 30-day extension. The variation re-encumbers budget on WBS-2.04 and feeds the project cost variance.",
+      "fields": [
+        { "label": "Variation ID", "value": "VAR-2026-0188-A" },
+        { "label": "Reason", "value": "Slab cycle extension · super-structure L12–L18" },
+        { "label": "Lines Affected", "value": "L1 Tower Crane · L2 Mobile Crane" },
+        { "label": "Duration Change", "value": "+30 days on both lines" },
+        { "label": "Cost Impact", "value": "AED +97,500" },
+        { "label": "New End Date", "value": "13 Jan 2027 (was 14 Dec 2026)" },
+        { "label": "Budget Re-encumbrance", "value": "Posted to WBS-2.04 · CMT-2026-0188-A" },
+        { "label": "Approved By", "value": "Vikram Rao · 18 Aug 2026" }
+      ],
+      "lineExtra": { "label": "Variation", "path": "varText" },
+      "actions": [ { "text": "Open De-mobilization", "target": 9, "type": "Emphasized" }, { "text": "Back to Operation Log", "target": 7, "type": "Transparent" } ]
+    },
+    {
+      "step": 9, "code": "DMB", "id": "DMB-2026-0188", "request": "RR-2026-0188",
+      "title": "De-mobilization", "owner": "KONSTRYX", "date": "2027-01-13",
+      "status": "Planned", "statusState": "Warning", "persona": "Sridhar Iyer · Plant Allocation Lead",
+      "intro": "Assets return to the pool or to the rental vendor. The off-hire inspection uses the same 15-item checklist as mobilization, so damage attributable to this project is evident from the delta rather than argued after the fact.",
+      "fields": [
+        { "label": "De-mob Doc", "value": "DMB-2026-0188" },
+        { "label": "Planned Start", "value": "13 Jan 2027" },
+        { "label": "Own Fleet Return", "value": "10 instances → Fleet Yard A / B" },
+        { "label": "Rental Off-hire", "value": "8 instances → ARM Cranes, Modulux, ARM Power" },
+        { "label": "Off-hire Inspection", "value": "15-item checklist · delta vs mobilization" },
+        { "label": "Expected Damage Claim", "value": "None flagged at planning stage" },
+        { "label": "Operator Release", "value": "4 operators → back to Plant pool" },
+        { "label": "Final Meter Reading", "value": "Pending de-mob execution" }
+      ],
+      "lineExtra": { "label": "De-mob plan", "path": "dmbText" },
+      "actions": [ { "text": "Open Closure", "target": 10, "type": "Emphasized" }, { "text": "Back to Variation", "target": 8, "type": "Transparent" } ]
+    },
+    {
+      "step": 10, "code": "CLS", "id": "CLS-2026-0188", "request": "RR-2026-0188",
+      "title": "Closure", "owner": "KONSTRYX", "date": "2027-01-31",
+      "status": "Not started", "statusState": "None", "persona": "Rohan Menon · Cost Engineer",
+      "intro": "Final reconciliation. Actual cost is set against the encumbrance and the residual is released back to the WBS, which is what closes the loop between the operational chain and the project's cost position.",
+      "fields": [
+        { "label": "Closure Doc", "value": "CLS-2026-0188" },
+        { "label": "Planned Closure", "value": "31 Jan 2027" },
+        { "label": "Original Encumbrance", "value": "AED 716,044" },
+        { "label": "Variation Uplift", "value": "AED +97,500" },
+        { "label": "Revised Encumbrance", "value": "AED 813,544" },
+        { "label": "Forecast Actual", "value": "AED 806,200" },
+        { "label": "Residual to Release", "value": "AED 7,344" },
+        { "label": "Reconciliation Status", "value": "Awaiting de-mobilization completion" }
+      ],
+      "lineExtra": { "label": "Closure", "path": "clsText" },
+      "actions": [ { "text": "Back to De-mobilization", "target": 9, "type": "Transparent" } ]
+    }
+  ],
+
+  "lineTexts": {
+    "L1": { "reqText": "2 inst × 180 d", "advText": "Own fleet · Yard A", "avcText": "Available · 2 of 2", "resText": "Active", "cmtText": "AED 276,480", "mobText": "2 of 2 on site", "oplText": "58.0 h", "varText": "+30 d · AED +64,000", "dmbText": "Return Yard A", "clsText": "Reconcile" },
+    "L2": { "reqText": "1 inst × 90 d", "advText": "Rental · ARM Cranes", "avcText": "FA valid · quoted", "resText": "Active", "cmtText": "AED 130,500", "mobText": "1 of 1 on site", "oplText": "22.5 h", "varText": "+30 d · AED +33,500", "dmbText": "Off-hire ARM", "clsText": "Reconcile" },
+    "L3": { "reqText": "8 inst × 45 d", "advText": "Own fleet · Yard B", "avcText": "Available · 8 of 8", "resText": "Active", "cmtText": "AED 19,800", "mobText": "8 of 8 on site", "oplText": "36.0 h", "varText": "—", "dmbText": "Return Yard B", "clsText": "Reconcile" },
+    "L4": { "reqText": "4 inst × 180 d", "advText": "Rental · Modulux", "avcText": "FA valid · quoted", "resText": "Active", "cmtText": "AED 104,400", "mobText": "4 of 4 on site", "oplText": "—", "varText": "—", "dmbText": "Off-hire Modulux", "clsText": "Reconcile" },
+    "L5": { "reqText": "3 inst × 180 d", "advText": "Rental · ARM Power", "avcText": "2 of 3 · 1 deferred", "resText": "Partial", "cmtText": "AED 153,900", "mobText": "2 of 3 on site", "oplText": "26.0 h", "varText": "—", "dmbText": "Off-hire ARM Power", "clsText": "Reconcile" }
+  }
+}

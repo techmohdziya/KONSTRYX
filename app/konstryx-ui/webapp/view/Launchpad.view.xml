@@ -1,0 +1,51 @@
+<mvc:View
+	controllerName="konstryx.controller.Launchpad"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<Page id="launchpadPage" showHeader="false" class="kxLaunchpad">
+		<content>
+			<VBox class="kxLaunchpadHeader">
+				<Title text="Plant Operations" level="H2"/>
+				<Text text="{/user/name} · {/user/role} · {/project/id} {/project/name} · data date {/project/dataDate}"/>
+			</VBox>
+
+			<MessageStrip
+				text="S/4HANA Public Cloud is the system of record for budget, procurement and finance. KONSTRYX owns the resource workflow on top of it and reads S/4 through the SAP_COM_* scenarios."
+				type="Information"
+				showIcon="true"
+				class="kxLaunchpadStrip"/>
+
+			<Title text="My Work" level="H4" class="kxGroupTitle"/>
+			<f:GridContainer id="tileGrid" snapToRow="true" items="{path: '/tiles', templateShareable: false}">
+				<f:layout>
+					<f:GridContainerSettings rowSize="5.5rem" columnSize="5.5rem" gap="0.5rem"/>
+				</f:layout>
+				<GenericTile
+					header="{title}"
+					subheader="{subtitle}"
+					press=".onTilePress">
+					<layoutData>
+						<f:GridContainerItemLayoutData columns="2" rows="2"/>
+					</layoutData>
+					<TileContent unit="{unit}">
+						<NumericContent value="{value}" valueColor="{state}" icon="{icon}" withMargin="false"/>
+					</TileContent>
+				</GenericTile>
+			</f:GridContainer>
+
+			<Title text="Canonical thread" level="H4" class="kxGroupTitle"/>
+			<Text
+				text="The Equipment chain for RR-2026-0188 · Site Plant Mobilization is built end to end. Open it to walk all ten steps."
+				class="kxGroupSub"/>
+			<Button
+				text="Open RR-2026-0188 · Site Plant Mobilization"
+				type="Emphasized"
+				icon="sap-icon://activity-items"
+				press=".onOpenCanonical"
+				class="sapUiSmallMarginTop sapUiSmallMarginBegin"/>
+		</content>
+	</Page>
+</mvc:View>

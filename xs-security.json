@@ -1,0 +1,38 @@
+{
+  "xsappname": "konstryx",
+  "tenant-mode": "dedicated",
+  "description": "KONSTRYX security descriptor — personas as scopes/role templates",
+  "scopes": [
+    { "name": "$XSAPPNAME.Admin", "description": "Platform / group administration" },
+    { "name": "$XSAPPNAME.MasterDataSteward", "description": "Master data governance" },
+    { "name": "$XSAPPNAME.ProjectManager", "description": "Project & BOQ setup" },
+    { "name": "$XSAPPNAME.BudgetController", "description": "Budget create / approve / baseline" },
+    { "name": "$XSAPPNAME.ResourceCoordinator", "description": "Resource request / advisory / reservation" },
+    { "name": "$XSAPPNAME.SiteEngineer", "description": "Material execution: issue / receipt / consumption" }
+  ],
+  "role-templates": [
+    { "name": "Admin", "description": "Administrator", "scope-references": ["$XSAPPNAME.Admin"] },
+    { "name": "MasterDataSteward", "description": "Master Data Steward", "scope-references": ["$XSAPPNAME.MasterDataSteward"] },
+    { "name": "ProjectManager", "description": "Project Manager", "scope-references": ["$XSAPPNAME.ProjectManager"] },
+    { "name": "BudgetController", "description": "Budget Controller", "scope-references": ["$XSAPPNAME.BudgetController"] },
+    { "name": "ResourceCoordinator", "description": "Resource Coordinator", "scope-references": ["$XSAPPNAME.ResourceCoordinator"] },
+    { "name": "SiteEngineer", "description": "Site Engineer", "scope-references": ["$XSAPPNAME.SiteEngineer"] }
+  ],
+  "role-collections": [
+    {
+      "name": "KONSTRYX_Administrator",
+      "description": "KONSTRYX Administrator",
+      "role-template-references": ["$XSAPPNAME.Admin", "$XSAPPNAME.MasterDataSteward"]
+    },
+    {
+      "name": "KONSTRYX_ProjectControls",
+      "description": "Project Manager + Budget Controller",
+      "role-template-references": ["$XSAPPNAME.ProjectManager", "$XSAPPNAME.BudgetController"]
+    },
+    {
+      "name": "KONSTRYX_SiteOperations",
+      "description": "Resource Coordinator + Site Engineer",
+      "role-template-references": ["$XSAPPNAME.ResourceCoordinator", "$XSAPPNAME.SiteEngineer"]
+    }
+  ]
+}

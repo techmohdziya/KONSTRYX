@@ -1,0 +1,32 @@
+{
+  "name": "konstryx",
+  "version": "0.1.0",
+  "description": "KONSTRYX — SAP BTP extension for Engineering & Construction (CAP Java)",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^9"
+  },
+  "devDependencies": {
+    "@sap/cds-dk": "^9"
+  },
+  "scripts": {
+    "build": "cds build",
+    "watch": "cds watch"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sql"
+      },
+      "auth": {
+        "kind": "mocked",
+        "[production]": { "kind": "xsuaa" }
+      }
+    },
+    "[production]": {
+      "requires": {
+        "db": { "kind": "hana-cloud" }
+      }
+    }
+  }
+}

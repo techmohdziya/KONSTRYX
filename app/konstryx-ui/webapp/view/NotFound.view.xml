@@ -1,0 +1,18 @@
+<mvc:View
+	controllerName="konstryx.controller.NotFound"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	height="100%">
+
+	<MessagePage
+		title="Document not found"
+		text="That document is not part of this slice"
+		description="The EQR thread RR-2026-0188 is built end to end across all ten chain steps. Other threads are listed but not yet drilled."
+		icon="sap-icon://document"
+		showNavButton="true"
+		navButtonPress=".onNavBack">
+		<buttons>
+			<Button text="Go to Home" type="Emphasized" press=".onHome"/>
+		</buttons>
+	</MessagePage>
+</mvc:View>

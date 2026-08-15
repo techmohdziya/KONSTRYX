@@ -1,0 +1,111 @@
+<mvc:View
+	controllerName="konstryx.controller.Worklist"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="worklistPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="{view>/title}" level="H2"/>
+				</f:heading>
+				<f:snappedHeading>
+					<Title text="{view>/title}" level="H2"/>
+				</f:snappedHeading>
+				<f:expandedContent>
+					<Text text="{view>/subtitle}"/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Create" type="Emphasized" icon="sap-icon://add" press=".onNotImplemented"/>
+					<Button text="Export" icon="sap-icon://excel-attachment" press=".onNotImplemented"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Project"/>
+						<Select selectedKey="PRJ-001" autoAdjustWidth="true" change=".onFilterChange">
+							<core:Item key="PRJ-001" text="PRJ-001 · Marina Heights Tower"/>
+							<core:Item key="ALL" text="All projects"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Resource type"/>
+						<Select id="typeFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All types"/>
+							<core:Item key="EQR" text="EQR · Equipment / Plant"/>
+							<core:Item key="MR" text="MR · Material"/>
+							<core:Item key="MPR" text="MPR · Manpower"/>
+							<core:Item key="VR" text="VR · Vehicle"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Search"/>
+						<SearchField id="worklistSearch" width="16rem" liveChange=".onSearch" placeholder="Document ID or title"/>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text=" "/>
+						<Button text="Go" type="Emphasized" press=".onFilterChange"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="worklistTable"
+				items="{path: 'view>/rows', templateShareable: false}"
+				growing="true"
+				growingThreshold="25"
+				sticky="ColumnHeaders"
+				mode="None"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="{view>/tableTitle}" level="H4"/>
+						<ToolbarSpacer/>
+						<Button icon="sap-icon://sort" type="Transparent" press=".onNotImplemented" tooltip="Sort"/>
+						<Button icon="sap-icon://filter" type="Transparent" press=".onNotImplemented" tooltip="Filter"/>
+						<Button icon="sap-icon://action-settings" type="Transparent" press=".onNotImplemented" tooltip="Table settings"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="11rem"><Text text="{view>/idColumn}"/></Column>
+					<Column width="5.5rem"><Text text="Type"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+					<Column width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Scope"/></Column>
+					<Column width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Window"/></Column>
+					<Column width="10rem" hAlign="End"><Text text="Value"/></Column>
+					<Column width="9rem"><Text text="Status"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Navigation" press=".onRowPress">
+						<cells>
+							<ObjectIdentifier title="{view>id}" text="{view>date}"/>
+							<ObjectStatus text="{view>type}" inverted="true" state="Information"/>
+							<VBox>
+								<Text text="{view>title}"/>
+								<Text text="{view>sub}" class="kxSubText"/>
+							</VBox>
+							<Text text="{view>scope}"/>
+							<Text text="{view>window}"/>
+							<ObjectNumber number="{view>valueText}" unit="AED"/>
+							<ObjectStatus text="{view>status}" state="{view>statusState}"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

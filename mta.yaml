@@ -1,0 +1,52 @@
+_schema-version: "3.2"
+ID: konstryx
+version: 0.1.0
+description: "KONSTRYX — SAP BTP extension for Engineering & Construction"
+
+parameters:
+  enable-parallel-deployments: true
+
+modules:
+  - name: konstryx-srv
+    type: java
+    path: srv
+    parameters:
+      buildpack: sap_java_buildpack_jakarta
+      memory: 1024M
+    properties:
+      SPRING_PROFILES_ACTIVE: cloud,prod
+      JBP_CONFIG_SAP_MACHINE_JRE: '{ jre: { version: 17.+ } }'
+    build-parameters:
+      builder: custom
+      commands: [ "mvn clean package -DskipTests" ]
+      build-result: target/*-exec.jar
+    requires:
+      - name: konstryx-db
+      - name: konstryx-auth
+      - name: konstryx-destination
+
+  - name: konstryx-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: konstryx-db
+
+resources:
+  - name: konstryx-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+  - name: konstryx-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+  - name: konstryx-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite

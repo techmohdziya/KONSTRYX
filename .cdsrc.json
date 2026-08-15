@@ -1,0 +1,11 @@
+{
+  "build": {
+    "target": "gen"
+  },
+  "odata": {
+    "version": "v4"
+  },
+  "sql": {
+    "native_hana_associations": false
+  }
+}

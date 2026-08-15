@@ -1,0 +1,16 @@
+node_modules/
+gen/
+target/
+dist/
+*.db
+*.sqlite
+.cdsrc-private.json
+default-*.json
+mta_archives/
+*.mtar
+.env
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

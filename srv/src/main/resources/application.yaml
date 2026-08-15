@@ -1,0 +1,24 @@
+spring:
+  config:
+    activate:
+      on-profile: default
+---
+# Cloud profile — XSUAA security + HANA Cloud + remote S/4 destinations
+spring:
+  config:
+    activate:
+      on-profile: cloud
+cds:
+  security:
+    authentication:
+      mode: model-relaxed
+  remote.services:
+    - name: "S4"
+      destination:
+        name: "S4HANA_CLOUD"
+    - name: "ARIBA"
+      destination:
+        name: "ARIBA"
+    - name: "SF"
+      destination:
+        name: "SUCCESSFACTORS"

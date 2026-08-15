@@ -1,0 +1,57 @@
+/* ==========================================================================
+   KONSTRYX — application styles.
+   Everything here sits on top of the SAP Horizon theme; only spacing and a
+   few text roles are set. No colours are hard-coded: they come from the
+   theme parameters so a theme switch stays correct.
+   ========================================================================== */
+
+.kxShellLogo  { margin: 0 .5rem 0 .25rem; }
+.kxShellTitle { font-weight: 700; letter-spacing: .02em; }
+.kxShellContext { opacity: .85; }
+
+/* ---------- launchpad ---------- */
+.kxLaunchpad .sapMPageEnableScrolling { background: var(--sapBackgroundColor); }
+.kxLaunchpadHeader { padding: 1.5rem 2rem .25rem; }
+.kxLaunchpadStrip  { margin: .75rem 2rem 0; }
+.kxGroupTitle { padding: 1.5rem 2rem .25rem; }
+.kxGroupSub   { padding: 0 2rem; color: var(--sapContent_LabelColor); }
+#container-konstryx---launchpad--tileGrid { padding: .5rem 2rem 0; }
+
+/* ---------- worklist filter bar ---------- */
+.kxFilterBar   { padding: .5rem 0 .25rem; gap: 1rem; }
+.kxFilterField { margin-right: 1rem; }
+.kxFilterField > .sapMLabel { padding-bottom: .125rem; }
+
+/* ---------- object page header KPIs ---------- */
+.kxHeaderKpis { gap: 2.5rem; }
+.kxKpi { min-width: 9rem; }
+.kxKpi > .sapMLabel {
+	font-size: var(--sapFontSmallSize);
+	color: var(--sapContent_LabelColor);
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	padding-bottom: .125rem;
+}
+
+/* ---------- document flow strip ---------- */
+.kxChainWrap  { width: 100%; }
+.kxChainHead  { padding-bottom: .5rem; }
+.kxChainLegend { color: var(--sapContent_LabelColor); font-size: var(--sapFontSmallSize); }
+.kxChainScroll { padding-bottom: .25rem; }
+.kxChainRow   { gap: .5rem; }
+.kxChainNode  {
+	min-width: 10.5rem;
+	padding: .5rem .625rem .625rem;
+	border: 1px solid var(--sapGroup_ContentBorderColor);
+	border-radius: var(--sapElement_BorderCornerRadius);
+	background: var(--sapGroup_ContentBackground);
+}
+.kxChainNode .sapMBtn { margin: 0 0 .25rem; }
+.kxChainId     { font-family: var(--sapContent_MonospaceFontFamily); font-size: var(--sapFontSmallSize); }
+.kxChainStatus { padding-top: .125rem; }
+.kxChainMeta   { color: var(--sapContent_LabelColor); font-size: var(--sapFontSmallSize); padding-top: .125rem; }
+
+/* ---------- text roles ---------- */
+.kxSubText { color: var(--sapContent_LabelColor); font-size: var(--sapFontSmallSize); }
+.kxMono    { font-family: var(--sapContent_MonospaceFontFamily); }
+.kxIntro   { max-width: 110ch; display: block; }

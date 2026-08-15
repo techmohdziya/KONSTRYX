@@ -1,0 +1,86 @@
+{
+  "_version": "1.60.0",
+
+  "sap.app": {
+    "id": "konstryx",
+    "type": "application",
+    "title": "KONSTRYX",
+    "description": "Engineering & Construction Operations on SAP BTP",
+    "applicationVersion": { "version": "1.0.0" },
+    "dataSources": {
+      "konstryxData": {
+        "uri": "model/data.json",
+        "type": "JSON"
+      }
+    }
+  },
+
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": { "desktop": true, "tablet": true, "phone": false }
+  },
+
+  "sap.ui5": {
+    "rootView": {
+      "viewName": "konstryx.view.App",
+      "type": "XML",
+      "async": true
+    },
+
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.ui.core": {},
+        "sap.m": {},
+        "sap.f": {},
+        "sap.tnt": {},
+        "sap.uxap": {},
+        "sap.ui.layout": {}
+      }
+    },
+
+    "contentDensities": { "compact": true, "cozy": false },
+
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": { "bundleName": "konstryx.i18n.i18n", "supportedLocales": [""], "fallbackLocale": "" }
+      },
+      "": {
+        "dataSource": "konstryxData",
+        "preload": true,
+        "settings": { "defaultBindingMode": "TwoWay" }
+      }
+    },
+
+    "resources": { "css": [ { "uri": "css/style.css" } ] },
+
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "type": "View",
+        "viewType": "XML",
+        "path": "konstryx.view",
+        "viewPath": "konstryx.view",
+        "controlId": "appContent",
+        "controlAggregation": "pages",
+        "transition": "slide",
+        "async": true,
+        "bypassed": { "target": "notFound" }
+      },
+      "routes": [
+        { "pattern": "",                          "name": "launchpad", "target": "launchpad" },
+        { "pattern": "worklist/{docType}",        "name": "worklist",  "target": "worklist"  },
+        { "pattern": "request/{requestId}",       "name": "request",   "target": "request"   },
+        { "pattern": "doc/{requestId}/{step}",    "name": "doc",       "target": "doc"       }
+      ],
+      "targets": {
+        "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
+        "worklist":  { "id": "worklist",  "name": "Worklist"  },
+        "request":   { "id": "request",   "name": "RequestDetail" },
+        "doc":       { "id": "doc",       "name": "ChainStep" },
+        "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
+      }
+    }
+  }
+}

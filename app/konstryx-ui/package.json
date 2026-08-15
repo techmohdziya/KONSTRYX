@@ -1,0 +1,11 @@
+{
+  "name": "konstryx-ui5",
+  "version": "1.0.0",
+  "description": "KONSTRYX — Engineering & Construction Operations · SAPUI5 application",
+  "private": true,
+  "scripts": {
+    "start": "python serve.py 8080",
+    "start:ui5": "ui5 serve --port 8080"
+  },
+  "devDependencies": { "@ui5/cli": "^4" }
+}

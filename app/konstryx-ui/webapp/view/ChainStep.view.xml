@@ -1,0 +1,170 @@
+<mvc:View
+	controllerName="konstryx.controller.ChainStep"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	xmlns:uxap="sap.uxap"
+	xmlns:form="sap.ui.layout.form"
+	xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+	height="100%">
+
+	<uxap:ObjectPageLayout
+		id="docObjectPage"
+		showTitleInHeaderContent="true"
+		headerContentPinnable="true"
+		isChildPage="true"
+		upperCaseAnchorBar="false">
+
+		<uxap:headerTitle>
+			<uxap:ObjectPageDynamicHeaderTitle>
+				<uxap:breadcrumbs>
+					<Breadcrumbs currentLocationText="{view>/doc/id}">
+						<Link text="Home" press=".onBreadcrumbHome"/>
+						<Link text="{view>/doc/title}" press=".onBreadcrumbWorklist"/>
+						<Link text="{view>/requestId}" press=".onBreadcrumbRequest"/>
+					</Breadcrumbs>
+				</uxap:breadcrumbs>
+
+				<uxap:expandedHeading>
+					<HBox alignItems="Center" wrap="Wrap">
+						<Title text="{view>/doc/id} · {view>/doc/title}" wrapping="true" level="H2"/>
+						<ObjectStatus text="Step {view>/doc/step} of 10" inverted="true" state="Information" class="sapUiTinyMarginBegin"/>
+						<ObjectStatus text="{view>/doc/status}" state="{view>/doc/statusState}" class="sapUiTinyMarginBegin"/>
+					</HBox>
+				</uxap:expandedHeading>
+				<uxap:snappedHeading>
+					<HBox alignItems="Center">
+						<Title text="{view>/doc/id}" level="H2"/>
+						<ObjectStatus text="{view>/doc/status}" state="{view>/doc/statusState}" class="sapUiTinyMarginBegin"/>
+					</HBox>
+				</uxap:snappedHeading>
+
+				<uxap:actions>
+					<Button text="{view>/primaryText}" type="Emphasized" visible="{view>/hasPrimary}" press=".onPrimaryAction"/>
+					<Button text="Print" icon="sap-icon://print" press=".onNotImplemented"/>
+				</uxap:actions>
+			</uxap:ObjectPageDynamicHeaderTitle>
+		</uxap:headerTitle>
+
+		<uxap:headerContent>
+			<HBox wrap="Wrap" class="kxHeaderKpis">
+				<VBox class="kxKpi">
+					<Label text="Owned by"/>
+					<Title text="{view>/doc/owner}" level="H4"/>
+					<Text text="{view>/ownerNote}" class="kxSubText"/>
+				</VBox>
+				<VBox class="kxKpi">
+					<Label text="Document date"/>
+					<Title text="{view>/doc/date}" level="H4"/>
+					<Text text="{view>/doc/status}" class="kxSubText"/>
+				</VBox>
+				<VBox class="kxKpi">
+					<Label text="Responsible"/>
+					<Title text="{view>/doc/persona}" level="H5"/>
+					<Text text="persona for this step" class="kxSubText"/>
+				</VBox>
+				<VBox class="kxKpi">
+					<Label text="Source request"/>
+					<Link text="{view>/requestId}" press=".onBreadcrumbRequest"/>
+					<Text text="{view>/req/title}" class="kxSubText"/>
+				</VBox>
+			</HBox>
+		</uxap:headerContent>
+
+		<uxap:sections>
+
+			<uxap:ObjectPageSection title="Document Flow" id="secFlow">
+				<uxap:subSections>
+					<uxap:ObjectPageSubSection>
+						<uxap:blocks>
+							<core:Fragment fragmentName="konstryx.view.ProcessChain" type="XML"/>
+						</uxap:blocks>
+					</uxap:ObjectPageSubSection>
+				</uxap:subSections>
+			</uxap:ObjectPageSection>
+
+			<uxap:ObjectPageSection title="Overview" id="secOverview">
+				<uxap:subSections>
+					<uxap:ObjectPageSubSection>
+						<uxap:blocks>
+							<MessageStrip
+								text="{view>/readOnlyText}"
+								type="Warning"
+								showIcon="true"
+								visible="{view>/doc/readOnly}"
+								class="sapUiSmallMarginBottom"/>
+							<Text text="{view>/doc/intro}" class="kxIntro"/>
+							<form:SimpleForm
+								editable="false"
+								layout="ColumnLayout"
+								columnsM="2"
+								columnsL="2"
+								columnsXL="3"
+								class="sapUiSmallMarginTop"
+								content="{path: 'view>/doc/fields', templateShareable: false}">
+								<Label text="{view>label}"/>
+								<Text text="{view>value}"/>
+							</form:SimpleForm>
+						</uxap:blocks>
+					</uxap:ObjectPageSubSection>
+				</uxap:subSections>
+			</uxap:ObjectPageSection>
+
+			<uxap:ObjectPageSection title="Line Items" id="secLines">
+				<uxap:subSections>
+					<uxap:ObjectPageSubSection>
+						<uxap:blocks>
+							<Table
+								items="{path: 'view>/lines', templateShareable: false}"
+								mode="None"
+								sticky="ColumnHeaders">
+								<headerToolbar>
+									<OverflowToolbar>
+										<Title text="Per-line view at this step ({view>/lineCount})" level="H4"/>
+										<ToolbarSpacer/>
+										<Text text="The chain repeats per line — each line carries its own state through all ten steps." class="kxSubText"/>
+									</OverflowToolbar>
+								</headerToolbar>
+								<columns>
+									<Column width="3.5rem"><Text text="#"/></Column>
+									<Column><Text text="Equipment"/></Column>
+									<Column width="11rem" minScreenWidth="Tablet" demandPopin="true"><Text text="WBS"/></Column>
+									<Column width="11rem"><Text text="Source"/></Column>
+									<Column width="14rem"><Text text="{view>/stepColumn}"/></Column>
+									<Column width="9rem" hAlign="End"><Text text="Line value"/></Column>
+								</columns>
+								<items>
+									<ColumnListItem>
+										<cells>
+											<ObjectStatus text="{view>no}" state="{= ${view>dominant} ? 'Information' : 'None'}" inverted="{view>dominant}"/>
+											<Text text="{view>resource}"/>
+											<VBox>
+												<Text text="{view>wbs}"/>
+												<Text text="{view>wbsName}" class="kxSubText"/>
+											</VBox>
+											<ObjectStatus text="{view>source} · {view>sourceDetail}" state="{view>sourceState}"/>
+											<Text text="{view>stepText}"/>
+											<ObjectNumber number="{path: 'view>value', formatter: '.formatNumber'}" unit="AED" emphasized="{view>dominant}"/>
+										</cells>
+									</ColumnListItem>
+								</items>
+							</Table>
+						</uxap:blocks>
+					</uxap:ObjectPageSubSection>
+				</uxap:subSections>
+			</uxap:ObjectPageSection>
+
+		</uxap:sections>
+
+		<uxap:footer>
+			<OverflowToolbar>
+				<Button text="Previous step" icon="sap-icon://navigation-left-arrow" press=".onPrevStep" visible="{view>/hasPrev}"/>
+				<ToolbarSpacer/>
+				<Text text="{view>/footerNote}" class="kxSubText"/>
+				<ToolbarSpacer/>
+				<Button text="{view>/nextText}" type="Emphasized" icon="sap-icon://navigation-right-arrow" iconFirst="false" press=".onNextStep" visible="{view>/hasNext}"/>
+			</OverflowToolbar>
+		</uxap:footer>
+
+	</uxap:ObjectPageLayout>
+</mvc:View>

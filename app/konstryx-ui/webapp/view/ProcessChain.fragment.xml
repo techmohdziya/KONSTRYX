@@ -1,0 +1,33 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+
+	<!--
+	  The canonical 10-step document chain, rendered as a live strip.
+	  Every node is a real navigation target for THIS request, which is what
+	  turns a set of screens into a process you can walk.
+	-->
+	<VBox class="kxChainWrap">
+		<HBox justifyContent="SpaceBetween" alignItems="Center" class="kxChainHead">
+			<Title text="Document Flow — EQR canonical chain" level="H5"/>
+			<Text text="RR → ADV → AVC → RES → CMT → MOB → OPL → VAR → DMB → CLS" class="kxChainLegend"/>
+		</HBox>
+
+		<ScrollContainer horizontal="true" vertical="false" width="100%" class="kxChainScroll">
+			<HBox items="{path: '/chain', templateShareable: false}" class="kxChainRow">
+				<VBox class="kxChainNode">
+					<Button
+						text="{step}. {code}"
+						type="{path: 'step', formatter: '.formatChainButton'}"
+						icon="{path: 'statusState', formatter: '.formatChainIcon'}"
+						width="100%"
+						press=".onChainStepPress"/>
+					<Text text="{id}" class="kxChainId"/>
+					<ObjectStatus text="{status}" state="{statusState}" class="kxChainStatus"/>
+					<Text text="{owner} · {date}" class="kxChainMeta"/>
+				</VBox>
+			</HBox>
+		</ScrollContainer>
+	</VBox>
+
+</core:FragmentDefinition>
