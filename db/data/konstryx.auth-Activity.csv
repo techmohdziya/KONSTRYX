@@ -1,0 +1,7 @@
+code;name;descr
+01;Create;Create a new object
+02;Change;Change an existing object
+03;Display;Read-only access
+06;Delete;Delete an object
+43;Release;Release, baseline or lock an object
+44;Approve;Act on an approval step for the object

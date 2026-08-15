@@ -88,16 +88,58 @@ role templates one-for-one:
 A 403 from a service is usually correct behaviour, not a bug — check the
 `@requires` annotation on the service before assuming otherwise.
 
+## Architecture decisions
+
+Recorded 2026-08-15, and binding until revisited:
+
+1. **Runtime — CAP Java.** Not Node.js. Consistent with the skeleton, the
+   phase plan's staffing, and an integration-heavy, long-lived workload.
+2. **Tenancy — dedicated, one deployment per client.** `tenant-mode` stays
+   `dedicated`; no MTX sidecar, no SaaS registry. The model stays
+   tenancy-neutral so this can be revisited without a data migration.
+3. **Delivered content — code lists ship, business content does not.**
+   `db/data` carries only what every client legitimately receives: currencies
+   and the authorization catalogue the runtime cannot function without. The
+   EC&O starter pack (resource hierarchy, CBS library, rate norms) is a
+   separately versioned import applied at onboarding, not baked into the schema.
+4. **Verticals — extension entity per line.** Vertical-specific attributes hang
+   off `wf.ResourceRequestLine` as `konstryx.eq`, `konstryx.mat`, … rather than
+   being flattened onto the spine or inferred from the advisory decision.
+5. **Authorization — configured, not compiled.** XSUAA authenticates and grants
+   coarse entry; everything finer is data an administrator maintains at runtime.
+
 ## What is wired to CAP, and what is not
 
 | Area | State |
 |---|---|
 | RR worklist | **Live** on `WorkflowService.RequestOverview`, filters pushed to the service |
 | RR → ADV → AVC → RES | Modelled and seeded; queryable over OData |
+| EQR line extension | **Live** — `$expand=equipment,wbs` returns routing, mob window, vendor |
+| Authorization model | Modelled + catalogue shipped (7 modules, 21 objects, 6 activities). **Not enforced yet** — no runtime handler |
+| Approval framework | Modelled (schemes, value-band steps, runtime instances). **No engine yet** |
+| Attachments | Modelled with media-type content. **No upload handler, no object store** |
+| Table personalization | Store modelled. **Not wired into any UI5 table** |
 | Request detail page | Still reads `webapp/model/data.json` |
-| Chain steps 2–10 | Still read `data.json`; MOB/OPL/VAR/DMB/CLS have no CDS entities |
+| Chain steps 5–10 | Still read `data.json`; CMT/MOB/OPL/VAR/DMB/CLS have no CDS entities |
 | S/4 integration | Mirror entities exist; no connector implemented |
 | Handlers | Stub only — no submit/approve/baseline, no encumbrance logic |
+
+### Authorization model
+
+`konstryx.auth` follows the S/4 shape deliberately, so it reads familiar to an
+SAP administrator:
+
+| S/4 concept | KONSTRYX |
+|---|---|
+| Authorization object | `auth.AuthObject` — `KX_BUDGET`, `KX_RESERVATION`, … |
+| Activity (ACTVT) | `auth.Activity` — 01 Create, 02 Change, 03 Display, 06 Delete, 43 Release, 44 Approve |
+| Organisational level | `company` + `project` on `auth.UserAssignment` |
+| Role | `auth.Persona`, with `auth.PersonaPermission` grants |
+
+`auth.EffectivePermission` flattens the whole thing to answer "what can this
+person actually do?" — the question a matrix spread across personas and scoped
+assignments is otherwise very hard to answer. A null company means all
+companies; a null project means all projects in that company.
 
 ## Seed data
 
