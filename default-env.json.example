@@ -1,0 +1,68 @@
+{
+  "_comment": [
+    "CAP Java reads default-env.json to emulate the VCAP_SERVICES a Cloud",
+    "Foundry application would receive. It is how you run the service on your",
+    "machine against REAL BTP services - a HANA Cloud HDI container, the",
+    "destination service, XSUAA - instead of the in-memory H2 database.",
+    "",
+    "Copy to default-env.json and fill in from a service key:",
+    "    cf create-service-key konstryx-db konstryx-db-key",
+    "    cf service-key konstryx-db konstryx-db-key",
+    "",
+    "default-*.json is gitignored. This file contains live credentials once",
+    "filled in - treat it exactly as you would a password file, and delete it",
+    "when you are finished rather than leaving it on disk.",
+    "",
+    "You do not need this to run KONSTRYX locally. Without it the service uses",
+    "H2 in memory, which is the normal development path."
+  ],
+
+  "VCAP_SERVICES": {
+    "hana": [
+      {
+        "name": "konstryx-db",
+        "label": "hana",
+        "plan": "hdi-shared",
+        "tags": ["hana", "database"],
+        "credentials": {
+          "host": "<from the service key>",
+          "port": "<from the service key>",
+          "user": "<from the service key>",
+          "password": "<from the service key>",
+          "schema": "<from the service key>",
+          "driver": "com.sap.db.jdbc.Driver",
+          "url": "<from the service key>"
+        }
+      }
+    ],
+    "destination": [
+      {
+        "name": "konstryx-destination",
+        "label": "destination",
+        "plan": "lite",
+        "tags": ["destination"],
+        "credentials": {
+          "clientid": "<from the service key>",
+          "clientsecret": "<from the service key>",
+          "uri": "<from the service key>",
+          "url": "<from the service key>"
+        }
+      }
+    ],
+    "xsuaa": [
+      {
+        "name": "konstryx-auth",
+        "label": "xsuaa",
+        "plan": "application",
+        "tags": ["xsuaa"],
+        "credentials": {
+          "clientid": "<from the service key>",
+          "clientsecret": "<from the service key>",
+          "url": "<from the service key>",
+          "identityzone": "<from the service key>",
+          "xsappname": "konstryx"
+        }
+      }
+    ]
+  }
+}

@@ -34,7 +34,15 @@ RUNTIME = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("UI5_RUNTIME", DE
 # The CAP Java service. /odata/... is reverse-proxied there so the app and the
 # service share one origin — no CORS, and relative URIs in manifest.json work
 # unchanged when the app is later served by the approuter in Cloud Foundry.
-BACKEND = os.environ.get("KX_BACKEND", "http://localhost:8090")
+#
+# KX_PORT is the single source of truth for where the service listens, so the
+# proxy follows it. Hard-coding the port here meant that moving the service
+# left the proxy pointing at nothing, and every OData call returned 502 while
+# both processes looked healthy.
+BACKEND = os.environ.get(
+    "KX_BACKEND",
+    "http://localhost:%s" % os.environ.get("KX_PORT", "8090"),
+)
 
 # Local development only: the CAP service runs with mocked auth, so the proxy
 # signs requests as a mock user. In Cloud Foundry the approuter forwards the
