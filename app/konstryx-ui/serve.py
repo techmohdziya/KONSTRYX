@@ -169,8 +169,11 @@ def main():
         daemon_threads = True
         allow_reuse_address = True
 
+    # Bind every interface rather than 127.0.0.1 only. On Windows "localhost"
+    # often resolves to ::1 first, and a server bound to IPv4 loopback alone
+    # answers some browsers and not others.
     url = "http://localhost:%d/index.html" % PORT
-    with ThreadingServer(("127.0.0.1", PORT), Handler) as httpd:
+    with ThreadingServer(("", PORT), Handler) as httpd:
         print("\n  KONSTRYX is running at  %s" % url)
         print("  UI5 runtime            %s" % RUNTIME)
         print("  OData proxy            /odata/  ->  %s  (as %s)" % (BACKEND, MOCK_USER))

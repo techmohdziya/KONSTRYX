@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>KONSTRYX — local diagnostic</title>
+	<style>
+		body { font: 14px/1.5 Arial, sans-serif; margin: 2rem; color: #223; }
+		h1 { font-size: 1.25rem; }
+		table { border-collapse: collapse; margin-top: 1rem; }
+		td, th { border: 1px solid #ccc; padding: .4rem .7rem; text-align: left; }
+		.ok { color: #0a6b989; color: #0a6b3d; font-weight: bold; }
+		.bad { color: #b00; font-weight: bold; }
+		code { background: #f4f4f4; padding: .1rem .3rem; }
+	</style>
+</head>
+<body>
+	<h1>KONSTRYX — local diagnostic</h1>
+	<p>This page uses no framework. If you can read this, the UI server is reachable
+	   from your browser and the problem is in the application bootstrap, not the network.</p>
+	<table id="results">
+		<tr><th>Check</th><th>Result</th></tr>
+	</table>
+	<p id="verdict"></p>
+
+	<script>
+		var checks = [
+			["UI server responds",        "index.html"],
+			["SAPUI5 runtime reachable",  "resources/sap-ui-core.js"],
+			["App manifest",              "manifest.json"],
+			["Root view",                 "view/App.view.xml"],
+			["OData proxy to CAP",        "odata/v4/workflow/RequestOverview"]
+		];
+		var table = document.getElementById("results");
+		var failures = 0;
+		var done = 0;
+
+		checks.forEach(function (c) {
+			var row = table.insertRow();
+			row.insertCell().textContent = c[0];
+			var cell = row.insertCell();
+			cell.textContent = "checking…";
+			fetch(c[1], { cache: "no-store" })
+				.then(function (r) {
+					cell.textContent = r.status + " " + r.statusText;
+					cell.className = r.ok ? "ok" : "bad";
+					if (!r.ok) { failures++; }
+				})
+				.catch(function (e) {
+					cell.textContent = "unreachable — " + e.message;
+					cell.className = "bad";
+					failures++;
+				})
+				.finally(function () {
+					if (++done === checks.length) {
+						document.getElementById("verdict").innerHTML = failures === 0
+							? "<b>All green.</b> Open <code>index.html</code> and hard-refresh with Ctrl+Shift+R."
+							: "<b>" + failures + " check(s) failed.</b> Send this page's results back.";
+					}
+				});
+		});
+	</script>
+</body>
+</html>
