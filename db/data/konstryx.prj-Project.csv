@@ -1,0 +1,2 @@
+ID;code;name;company_ID;customerParent;contractValue;ccy_code;startDate;endDate;stage;executingCompany_ID;s4Key;s4System;lastSyncedAt;syncStatus
+30000000-0000-0000-0000-000000000001;PRJ-001;Marina Heights Tower;20000000-0000-0000-0000-000000000001;Emaar Marina LLC;47300000.00;AED;2024-11-01;2027-06-30;Execution;20000000-0000-0000-0000-000000000001;MHT-CON-2024-014;S4HC_100;2026-08-22T06:00:00Z;OK
