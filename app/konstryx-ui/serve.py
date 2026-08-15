@@ -80,7 +80,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         req.add_header("Authorization", "Basic " + token)
 
         try:
-            with urllib.request.urlopen(req) as res:
+            # Always bounded: without a timeout a slow or restarting backend
+            # blocks this request forever, and with a single-threaded server
+            # that used to take the whole dev server down with it.
+            with urllib.request.urlopen(req, timeout=30) as res:
                 payload, status, headers = res.read(), res.status, res.headers
         except urllib.error.HTTPError as err:
             payload, status, headers = err.read(), err.code, err.headers
@@ -159,9 +162,15 @@ def main():
         )
         sys.exit(1)
 
-    socketserver.TCPServer.allow_reuse_address = True
+    # Threaded: UI5 opens several requests at once, and every /odata call blocks
+    # its thread on the backend. A single-threaded server serialises all of that
+    # behind the slowest proxy call and appears to hang.
+    class ThreadingServer(socketserver.ThreadingTCPServer):
+        daemon_threads = True
+        allow_reuse_address = True
+
     url = "http://localhost:%d/index.html" % PORT
-    with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
+    with ThreadingServer(("127.0.0.1", PORT), Handler) as httpd:
         print("\n  KONSTRYX is running at  %s" % url)
         print("  UI5 runtime            %s" % RUNTIME)
         print("  OData proxy            /odata/  ->  %s  (as %s)" % (BACKEND, MOCK_USER))
