@@ -1,0 +1,15 @@
+{
+  "name": "konstryx-approuter",
+  "version": "0.1.0",
+  "description": "KONSTRYX application router — XSUAA login and token forwarding",
+  "private": true,
+  "engines": {
+    "node": "^20 || ^22"
+  },
+  "dependencies": {
+    "@sap/approuter": "^20"
+  },
+  "scripts": {
+    "start": "node node_modules/@sap/approuter/approuter.js"
+  }
+}

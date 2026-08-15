@@ -1,0 +1,28 @@
+{
+  "welcomeFile": "/konstryx-ui/webapp/index.html",
+  "authenticationMethod": "route",
+  "sessionTimeout": 30,
+  "routes": [
+    {
+      "source": "^/odata/(.*)$",
+      "target": "/odata/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": true
+    },
+    {
+      "source": "^/konstryx-ui/(.*)$",
+      "target": "/konstryx-ui/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/(.*)$",
+      "target": "/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    }
+  ]
+}
