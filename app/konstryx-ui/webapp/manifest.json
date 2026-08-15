@@ -7,6 +7,28 @@
     "title": "KONSTRYX",
     "description": "Engineering & Construction Operations on SAP BTP",
     "applicationVersion": { "version": "1.0.0" },
+
+    "crossNavigation": {
+      "inbounds": {
+        "konstryx-display": {
+          "semanticObject": "KonstryxResourceRequest",
+          "action": "display",
+          "title": "Resource Requests",
+          "subTitle": "Engineering & Construction",
+          "icon": "sap-icon://activity-items",
+          "signature": { "parameters": {}, "additionalParameters": "allowed" }
+        },
+        "konstryx-reservations": {
+          "semanticObject": "KonstryxReservation",
+          "action": "display",
+          "title": "Reservations",
+          "subTitle": "Engineering & Construction",
+          "icon": "sap-icon://sales-order",
+          "signature": { "parameters": {}, "additionalParameters": "allowed" }
+        }
+      }
+    },
+
     "dataSources": {
       "konstryxData": {
         "uri": "model/data.json",
