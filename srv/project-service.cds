@@ -23,6 +23,14 @@ service ProjectService @(path:'/project') {
        * PENDING and the project is visibly not in S/4 until it is.
        */
       action releaseToS4() returns String;
+
+      /**
+       * Copies the CBS library into this project. A project costs against its
+       * own copy, not the library, so that a later library change cannot
+       * silently reshape a project already being costed — the same rule the
+       * templates follow.
+       */
+      action instantiateCBS() returns String;
       /** Records the outcome of a sync attempt. Called by the connector. */
       action recordSyncResult(success : Boolean, s4Key : String(60),
                               s4System : String(20), message : String(1000)) returns String;
@@ -78,8 +86,33 @@ service ProjectService @(path:'/project') {
   @readonly entity CBSLibrary      as projection on master.CBSNode;
 
   @odata.draft.enabled
-  entity BOQs              as projection on prj.BOQ;
-  entity BOQItems         as projection on prj.BOQItem;
+  entity BOQs as projection on prj.BOQ
+    actions {
+      /**
+       * Loads priced items from a CSV. A bill arrives as a spreadsheet from the
+       * QS in every case, so this is the normal way a BOQ enters the system,
+       * not an exception path.
+       *
+       * All-or-nothing: a bill that loaded 400 of its 600 lines still adds up
+       * to a contract value, and it is the wrong one.
+       */
+      action importItems(fileName : String(255), content : LargeString,
+                         validateOnly : Boolean) returns String;
+
+      /** Recomputes the header value from the priced lines. */
+      action recalculate() returns String;
+    };
+
+  entity BOQItems as projection on prj.BOQItem
+    actions {
+      /**
+       * Allocates part of this item's quantity to a WBS element and a CBS node.
+       * This is the join between what was sold and where the cost lands.
+       */
+      action allocate(wbsCode : String(24), cbsCode : String(40),
+                      qty : Decimal(15,3)) returns String;
+    };
+
   entity CBS              as projection on prj.CBSInstance;
   entity Allocations      as projection on prj.Allocation;
   entity ProjectResources as projection on prj.ProjectResource;
