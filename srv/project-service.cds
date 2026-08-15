@@ -101,6 +101,17 @@ service ProjectService @(path:'/project') {
 
       /** Recomputes the header value from the priced lines. */
       action recalculate() returns String;
+
+      /**
+       * Resolves every mapped line's build-up from the CBS recipes: the norms
+       * keyed to the line's CBS leaf, company override beating the group
+       * default. Difficulty applies on top of the productivity norms,
+       * most-specific-wins; the master norm itself is never adjusted
+       * (KX-BUD-014). Returns the coverage the wireframe reports: recipe-found,
+       * no-recipe, unmapped, rate-missing. MANUAL rows survive a regeneration —
+       * they are someone's judgement, flagged, not overwritten.
+       */
+      action generateBuildUp(difficultyPct : Decimal(5,2)) returns String;
     };
 
   entity BOQItems as projection on prj.BOQItem
@@ -113,6 +124,7 @@ service ProjectService @(path:'/project') {
                       qty : Decimal(15,3)) returns String;
     };
 
+  entity BOQItemResources as projection on prj.BOQItemResource;
   entity CBS              as projection on prj.CBSInstance;
   entity Allocations      as projection on prj.Allocation;
   entity ProjectResources as projection on prj.ProjectResource;

@@ -57,6 +57,14 @@ entity ProjectTemplateResource : cuid {
 
 entity ProductivityRate : cuid, managed, common.scoped {
   resource           : Association to ResourceNode;
+  /**
+   * The recipe key (wireframe m-prodrates): a norm belongs to a CBS leaf, and
+   * the build-up of a BOQ line resolves through the line's CBS, never through
+   * the line itself — nobody keys resources per BOQ line. A row with no
+   * linkedCBS is a plain resource norm and takes no part in recipes.
+   */
+  linkedCBS          : Association to CBSNode;
+  activity           : String(40);
   crewComposition    : String(255);
   outputPerHr        : Decimal(15,3);
   outputPerManday8h  : Decimal(15,3);
@@ -67,6 +75,9 @@ entity ProductivityRate : cuid, managed, common.scoped {
 
 entity ConsumptionRate : cuid, managed, common.scoped {
   material           : Association to ResourceNode;   // material modeled as resource
+  /** Same recipe key as productivity: Material x Linked CBS x Activity. */
+  linkedCBS          : Association to CBSNode;
+  activity           : String(40);
   consRate           : Decimal(15,4);
   consUoM            : String(10);
   wastageAllowancePct: Decimal(5,2);

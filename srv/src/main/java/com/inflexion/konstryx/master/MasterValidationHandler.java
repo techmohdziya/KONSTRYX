@@ -263,6 +263,12 @@ public class MasterValidationHandler implements EventHandler {
         }
 
         String owner = merged(entry, stored, "owningCompany_ID");
+        // The norm's key is subject x linked CBS x activity x company
+        // (wireframe m-prodrates / m-consrates). Only a row matching on ALL of
+        // those and the same start date is a duplicate; the same material with
+        // a different linked CBS is a different recipe line, not a clash.
+        String cbs = merged(entry, stored, "linkedCBS_ID");
+        String activity = merged(entry, stored, "activity");
         for (Row other : db.run(Select.from(entity)
                 .where(e -> e.get(subjectField).eq(subject).and(e.get("effectiveFrom").eq(from))))) {
             String otherId = str(other.get("ID"));
@@ -271,9 +277,13 @@ public class MasterValidationHandler implements EventHandler {
             }
             String otherOwner = str(other.get("owningCompany_ID"));
             boolean sameScope = owner == null ? otherOwner == null : owner.equals(otherOwner);
-            if (sameScope) {
+            boolean sameCbs = cbs == null ? other.get("linkedCBS_ID") == null
+                    : cbs.equals(str(other.get("linkedCBS_ID")));
+            boolean sameActivity = activity == null ? other.get("activity") == null
+                    : activity.equals(str(other.get("activity")));
+            if (sameScope && sameCbs && sameActivity) {
                 throw new ServiceException(ErrorStatuses.CONFLICT,
-                        "A " + what + " for this resource already takes effect on " + from
+                        "A " + what + " with this key already takes effect on " + from
                                 + " in the same scope.");
             }
         }

@@ -72,6 +72,28 @@ entity BOQItem : cuid, managed {
   cumDonePct   : Decimal(5,2);
   certifiedPct : Decimal(5,2);
   cbs          : Association to CBSInstance;
+  buildUp      : Composition of many BOQItemResource on buildUp.boqItem = $self;
+}
+
+/**
+ * The resource build-up of one bill line: which resources, in what quantity,
+ * the line consumes. An instance, not a master — it is generated from the CBS
+ * recipe (the norms keyed to the line's CBS leaf) and is editable afterwards,
+ * but a MANUAL row is an exception to flag for recipe creation, not a way of
+ * working (wireframe cost-mapping step 3).
+ */
+entity BOQItemResource : cuid, managed {
+  boqItem     : Association to BOQItem;
+  resource    : Association to master.ResourceNode;
+  /** Cost nature, one of the six verticals — taken from the resource. */
+  category    : String(10);
+  /** Quantity per one unit of the bill line, before scaling by the line qty. */
+  qtyPerUom   : Decimal(15,4);
+  totalQty    : Decimal(15,3);
+  uom         : String(10);
+  source      : String enum { RECIPE; MANUAL; } default 'RECIPE';
+  /** How the number was reached — norm, wastage, difficulty — for audit. */
+  basis       : String(255);
 }
 
 // Project CBS instantiated from the library.
