@@ -24,3 +24,7 @@ Thumbs.db
 
 # Excel lock files created while the tracker is open
 ~$*.xlsx
+test/verify/results.txt
+test/verify/out_*.txt
+test/verify/kx.log
+test/verify/runner.log

@@ -11,7 +11,16 @@
 		<f:title>
 			<f:DynamicPageTitle>
 				<f:heading>
-					<Title text="{view>/title}" level="H2"/>
+					<!-- The saved view sits in the title, where S/4 puts it. Its
+					     variants live in KONSTRYX's own UserVariant table rather
+					     than in the Flexibility service, so they back up and
+					     restore with the rest of the tenant's data. -->
+					<VariantManagement id="worklistVariant"
+					                   showSetAsDefault="true"
+					                   supportFavorites="false"
+					                   supportPublic="true"
+					                   select=".onVariantSelect"
+					                   save=".onVariantSave"/>
 				</f:heading>
 				<f:snappedHeading>
 					<Title text="{view>/title}" level="H2"/>
@@ -21,7 +30,6 @@
 				</f:expandedContent>
 				<f:actions>
 					<Button text="Create" type="Emphasized" icon="sap-icon://add" press=".onNotImplemented"/>
-					<Button text="Export" icon="sap-icon://excel-attachment" press=".onNotImplemented"/>
 				</f:actions>
 			</f:DynamicPageTitle>
 		</f:title>
@@ -52,7 +60,12 @@
 					</VBox>
 					<VBox class="kxFilterField">
 						<Label text=" "/>
-						<Button text="Go" type="Emphasized" press=".onFilterChange"/>
+						<HBox>
+							<Button text="Adapt Filters" icon="sap-icon://filter"
+							        tooltip="Choose which filters appear here"
+							        press=".onAdaptFilters"/>
+							<Button text="Go" type="Emphasized" press=".onFilterChange" class="sapUiTinyMarginBegin"/>
+						</HBox>
 					</VBox>
 				</HBox>
 			</f:DynamicPageHeader>
@@ -81,18 +94,29 @@
 					<OverflowToolbar>
 						<Title text="{view>/tableTitle}" level="H4"/>
 						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here"
+						        press=".onExportExcel"/>
+						<Button icon="sap-icon://print" text="Print"
+						        tooltip="Print, or save as PDF from the print dialog"
+						        press=".onPrint"/>
+						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter"
+						        press=".onTableSettings"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 
+				<!-- Column ids are the personalization keys: the engine identifies a
+				     column by id, so these must match the field keys the controller
+				     registers. -->
 				<columns>
-					<Column width="11rem"><Text text="{view>/idColumn}"/></Column>
-					<Column width="5.5rem"><Text text="Type"/></Column>
-					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Project"/></Column>
-					<Column width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Scope"/></Column>
-					<Column width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Need by"/></Column>
-					<Column width="10rem" hAlign="End"><Text text="Value"/></Column>
-					<Column width="9rem"><Text text="Status"/></Column>
+					<Column id="docNo" width="11rem"><Text text="{view>/idColumn}"/></Column>
+					<Column id="verticalType" width="5.5rem"><Text text="Type"/></Column>
+					<Column id="projectName" minScreenWidth="Tablet" demandPopin="true"><Text text="Project"/></Column>
+					<Column id="lineCount" width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Scope"/></Column>
+					<Column id="needBy" width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Need by"/></Column>
+					<Column id="totalValue" width="10rem" hAlign="End"><Text text="Value"/></Column>
+					<Column id="status" width="9rem"><Text text="Status"/></Column>
 				</columns>
 
 				<items>

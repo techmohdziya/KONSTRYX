@@ -59,6 +59,13 @@
         "settings": {
           "odataVersion": "4.0"
         }
+      },
+      "collaborationService": {
+        "uri": "/odata/v4/collaboration/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
       }
     }
   },
@@ -85,7 +92,8 @@
         "sap.tnt": {},
         "sap.uxap": {},
         "sap.ui.layout": {},
-        "sap.ui.table": {}
+        "sap.ui.table": {},
+        "sap.ui.export": {}
       }
     },
     "contentDensities": {
@@ -131,6 +139,15 @@
       },
       "pj": {
         "dataSource": "projectService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto"
+        }
+      },
+      "collab": {
+        "dataSource": "collaborationService",
         "preload": true,
         "settings": {
           "operationMode": "Server",
