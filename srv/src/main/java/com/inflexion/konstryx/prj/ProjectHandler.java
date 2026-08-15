@@ -56,6 +56,9 @@ public class ProjectHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
+    @Autowired
+    private P6ImportService p6;
+
     // ------------------------------------------------------------- validation
 
     @Before(event = { CqnService.EVENT_CREATE, CqnService.EVENT_UPDATE }, entity = ENTITY)
@@ -243,6 +246,31 @@ public class ProjectHandler implements EventHandler {
                     "A project with no WBS has nothing to post against. Add at least one "
                             + "WBS element before releasing.");
         }
+    }
+
+    @On(event = "importP6")
+    public void onImportP6(EventContext context) {
+        Object content = context.get("content");
+        if (content == null || String.valueOf(content).isBlank()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST, "The file is empty.");
+        }
+        String companyId = str(context.get("companyID"));
+        if (companyId == null) {
+            // P6 has no notion of our legal entities, so the caller has to say
+            // which one the project belongs to. Guessing would put a project in
+            // the wrong company's books.
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "Say which company the project belongs to — a P6 file does not carry that.");
+        }
+
+        Map<String, Object> result = p6.importXml(
+                str(context.get("fileName")) == null ? "p6-export.xml" : str(context.get("fileName")),
+                String.valueOf(content),
+                companyId.toLowerCase(),
+                Boolean.TRUE.equals(context.get("validateOnly")));
+
+        return_(context, result.get("message") + " Import run " + result.get("runId")
+                + " holds the detail.");
     }
 
     @On(event = "recordSyncResult")

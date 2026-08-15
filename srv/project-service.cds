@@ -31,6 +31,21 @@ service ProjectService @(path:'/project') {
    *  inside the project that owns it. Mastered here (D-17), so writable. */
   entity WBS as projection on prj.WBSElement;
 
+  /**
+   * Imports a project and its WBS tree from a Primavera P6 XML export.
+   *
+   * Deliberately has no PARTIAL mode. A P6 file is one project with a tree
+   * hanging off it, and a project that imported its header and two thirds of
+   * its WBS is worse than one that did not import at all — the missing branches
+   * are invisible until someone tries to budget against them.
+   */
+  action importP6(
+    fileName     : String(255),
+    content      : LargeString,
+    companyID    : UUID,
+    validateOnly : Boolean
+  ) returns String;
+
   // Sync state belongs to the connector. Marked read-only here so the write is
   // refused when it is made, rather than at activation: a user who typed into
   // the field and found out only when they pressed Save would have to unpick a

@@ -118,6 +118,16 @@ service CollaborationService @(path:'/collaboration') {
     companyID  : UUID
   ) returns String;
 
+  /**
+   * The uploads this person ran, and why each row was rejected.
+   *
+   * Every importer answers with "import run X holds the detail", and until now
+   * that detail lived on the administrator's service. Telling someone where to
+   * look and then refusing them entry is worse than not telling them.
+   */
+  @readonly entity MyImportRuns as projection on sys.ImportRun;
+  @readonly entity MyImportRows as projection on sys.ImportRow;
+
   /** Attachments on any object. */
   entity Attachments as projection on sys.Attachment;
 
