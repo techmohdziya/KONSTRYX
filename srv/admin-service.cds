@@ -15,15 +15,11 @@ service AdminService @(path:'/admin') {
   entity SyncConfigs        as projection on admin.S4SyncConfig;
 
   /**
-   * The steward queue. Approving promotes the referenced master to GROUP
-   * scope and clears its owning company; the request itself is kept as the
-   * record of who decided and why.
+   * Visible here for platform oversight, but the decision lives on
+   * MasterDataService: the person who judges whether a master should be shared
+   * group-wide is the master data steward, not the platform administrator.
    */
-  entity PromotionRequests  as projection on admin.PromotionRequest
-    actions {
-      action approve(comment : String(500)) returns String;
-      action reject(comment : String(500))  returns String;
-    };
+  @readonly entity PromotionRequests as projection on admin.PromotionRequest;
 
   // Integration monitoring (read-only)
   @readonly entity SyncRuns   as projection on int.SyncRun;

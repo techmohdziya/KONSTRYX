@@ -1,0 +1,111 @@
+<mvc:View
+	controllerName="konstryx.controller.MasterCBS"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="cbsPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="CBS Library" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Cost breakdown structure, L1 to L3. Projects instantiate their own CBS from this library."/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Create" type="Emphasized" icon="sap-icon://add" press=".onNotImplemented"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Scope"/>
+						<Select id="scopeFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All scopes"/>
+							<core:Item key="GROUP" text="Group - shared"/>
+							<core:Item key="COMPANY" text="Company - local"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Level"/>
+						<Select id="levelFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All levels"/>
+							<core:Item key="L1" text="L1 - phase"/>
+							<core:Item key="L2" text="L2"/>
+							<core:Item key="L3" text="L3"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text="Search"/>
+						<SearchField id="cbsSearch" width="16rem" liveChange=".onSearch" placeholder="Code or phase"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="cbsTable"
+				items="{path: 'md>/CBSLibrary', parameters: {'$orderby': 'code'}, templateShareable: false}"
+				growing="true"
+				growingThreshold="50"
+				sticky="ColumnHeaders"
+				mode="SingleSelectMaster"
+				selectionChange=".onSelect"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="CBS nodes" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="10rem"><Text text="Code"/></Column>
+					<Column width="5rem"><Text text="Level"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Phase"/></Column>
+					<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Construction type"/></Column>
+					<Column width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Resource affinity"/></Column>
+					<Column width="9rem"><Text text="Scope"/></Column>
+					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectIdentifier title="{md>code}"/>
+							<Text text="{md>level}"/>
+							<Text text="{md>phase}"/>
+							<Text text="{md>constructionType}"/>
+							<Text text="{md>resourceAffinity}"/>
+							<ObjectStatus
+								text="{md>scope}"
+								state="{= ${md>scope} === 'GROUP' ? 'Success' : 'Warning' }"
+								icon="{= ${md>scope} === 'GROUP' ? 'sap-icon://group' : 'sap-icon://building' }"/>
+							<Text text="{= ${md>owningCompany/code} ? ${md>owningCompany/code} + ' · ' + ${md>owningCompany/legalName} : 'Whole group' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+
+		<f:footer>
+			<OverflowToolbar>
+				<Text id="selectionHint" text="Select a company-scoped node to request promotion to group scope."/>
+				<ToolbarSpacer/>
+				<Button id="promoteButton" text="Request promotion" type="Emphasized"
+					icon="sap-icon://arrow-top" enabled="false" press=".onRequestPromotion"/>
+			</OverflowToolbar>
+		</f:footer>
+	</f:DynamicPage>
+</mvc:View>

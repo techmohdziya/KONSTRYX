@@ -1,0 +1,101 @@
+<mvc:View
+	controllerName="konstryx.controller.PromotionQueue"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="queuePage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Promotion Queue" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Requests to share a company-local master across the whole group. Approving changes every company's costing, so it is a decision with an owner and a record."/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Status"/>
+						<Select id="statusFilter" selectedKey="PENDING" change=".onFilterChange">
+							<core:Item key="PENDING" text="Awaiting a decision"/>
+							<core:Item key="APPROVED" text="Approved"/>
+							<core:Item key="REJECTED" text="Rejected"/>
+							<core:Item key="ALL" text="All"/>
+						</Select>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="queueTable"
+				items="{path: 'md>/PromotionRequests', templateShareable: false}"
+				growing="true"
+				growingThreshold="50"
+				sticky="ColumnHeaders"
+				mode="SingleSelectMaster"
+				selectionChange=".onSelect"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="Requests" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="12rem"><Text text="Master"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Object type"/></Column>
+					<Column width="12rem"><Text text="Scope change"/></Column>
+					<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Requested by"/></Column>
+					<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Reason"/></Column>
+					<Column width="10rem"><Text text="Status"/></Column>
+					<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Decided by"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectIdentifier title="{md>objectKey}"/>
+							<Text text="{md>objectType}"/>
+							<HBox alignItems="Center">
+								<ObjectStatus text="{md>currentScope}" state="Warning"/>
+								<core:Icon src="sap-icon://arrow-right" class="sapUiTinyMarginBeginEnd"/>
+								<ObjectStatus text="{md>proposedScope}" state="Success"/>
+							</HBox>
+							<Text text="{md>requester}"/>
+							<Text text="{md>comment}"/>
+							<ObjectStatus
+								text="{md>status}"
+								state="{= ${md>status} === 'APPROVED' ? 'Success' : ${md>status} === 'REJECTED' ? 'Error' : 'Warning' }"/>
+							<Text text="{= ${md>decidedBy} ? ${md>decidedBy} : '—' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+
+		<f:footer>
+			<OverflowToolbar>
+				<Text id="selectionHint" text="Select a pending request to decide it."/>
+				<ToolbarSpacer/>
+				<Button id="rejectButton" text="Reject" type="Reject" icon="sap-icon://decline"
+					enabled="false" press=".onReject"/>
+				<Button id="approveButton" text="Approve" type="Accept" icon="sap-icon://accept"
+					enabled="false" press=".onApprove"/>
+			</OverflowToolbar>
+		</f:footer>
+	</f:DynamicPage>
+</mvc:View>

@@ -4,6 +4,7 @@
  * templates, vendor & material mirrors. Stewarded master data.
  */
 using { konstryx.master } from '../db/master';
+using { konstryx.admin } from '../db/admin';
 
 @requires: 'MasterDataSteward'
 service MasterDataService @(path:'/masterdata') {
@@ -37,4 +38,20 @@ service MasterDataService @(path:'/masterdata') {
   // S/4 mirrors — read-only in Konstryx
   @readonly entity Vendors    as projection on master.Vendor;
   @readonly entity Materials  as projection on master.Material;
+
+  /**
+   * The steward queue. Approving promotes the referenced master to GROUP scope
+   * and clears its owning company; the request is kept as the record of who
+   * decided and why.
+   *
+   * It sits on this service rather than AdminService because the judgement —
+   * should this master be shared across every company — belongs to the master
+   * data steward, not to a platform administrator.
+   */
+  @cds.redirection.target
+  entity PromotionRequests as projection on admin.PromotionRequest
+    actions {
+      action approve(comment : String(500)) returns String;
+      action reject(comment : String(500))  returns String;
+    };
 }

@@ -128,7 +128,9 @@
         { "pattern": "worklist/{docType}",        "name": "worklist",  "target": "worklist"  },
         { "pattern": "request/{requestId}",       "name": "request",   "target": "request"   },
         { "pattern": "doc/{requestId}/{step}",    "name": "doc",       "target": "doc"       },
-        { "pattern": "masters/resources",         "name": "masterResources", "target": "masterResources" }
+        { "pattern": "masters/resources",         "name": "masterResources", "target": "masterResources" },
+        { "pattern": "masters/cbs",               "name": "masterCBS",       "target": "masterCBS"       },
+        { "pattern": "masters/promotions",        "name": "promotionQueue",  "target": "promotionQueue"  }
       ],
       "targets": {
         "launchpad": { "id": "launchpad", "name": "Launchpad", "title": "Home" },
@@ -136,6 +138,8 @@
         "request":   { "id": "request",   "name": "RequestDetail" },
         "doc":       { "id": "doc",       "name": "ChainStep" },
         "masterResources": { "id": "masterResources", "name": "MasterResources", "title": "Resource Hierarchy" },
+        "masterCBS":       { "id": "masterCBS",       "name": "MasterCBS",       "title": "CBS Library" },
+        "promotionQueue":  { "id": "promotionQueue",  "name": "PromotionQueue",  "title": "Promotion Queue" },
         "notFound":  { "id": "notFound",  "name": "NotFound", "transition": "show" }
       }
     }

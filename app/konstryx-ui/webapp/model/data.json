@@ -30,6 +30,12 @@
     { "title": "Closures", "subtitle": "Awaiting reconciliation", "icon": "sap-icon://complete", "value": "2", "unit": "open", "state": "Neutral", "route": "worklist", "arg": "CLS" }
   ],
 
+  "masterTiles": [
+    { "title": "Resource Hierarchy", "subtitle": "L1-L5 resource master", "icon": "sap-icon://tree", "value": "7", "unit": "codes", "state": "Good", "route": "masterResources" },
+    { "title": "CBS Library", "subtitle": "Cost breakdown, L1-L3", "icon": "sap-icon://org-chart", "value": "8", "unit": "nodes", "state": "Good", "route": "masterCBS" },
+    { "title": "Promotion Queue", "subtitle": "Company master to group scope", "icon": "sap-icon://arrow-top", "value": "1", "unit": "pending", "state": "Critical", "route": "promotionQueue" }
+  ],
+
   "docTypes": [
     { "code": "RR",  "step": 1,  "name": "Resource Request",   "plural": "Resource Requests",    "owner": "KONSTRYX", "icon": "sap-icon://activity-items" },
     { "code": "ADV", "step": 2,  "name": "Advisory Decision",  "plural": "Advisory Decisions",   "owner": "KONSTRYX", "icon": "sap-icon://decision" },

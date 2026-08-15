@@ -99,7 +99,7 @@ public class PromotionHandler implements EventHandler {
     // -------------------------------------------------------- decide (steward side)
 
     @Component
-    @ServiceName("AdminService")
+    @ServiceName("MasterDataService")
     public static class DecisionSide implements EventHandler {
 
         @Autowired
