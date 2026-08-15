@@ -43,6 +43,13 @@ cds:
         - name: jin             # Material Buyer — Jin Lee
           password: jin
           roles: [ ResourceCoordinator ]
+        # Two stewards in different legal entities, to exercise scoped masters
+        - name: steward_infc
+          password: steward_infc
+          roles: [ MasterDataSteward ]
+        - name: steward_pmi
+          password: steward_pmi
+          roles: [ MasterDataSteward ]
 ---
 # Cloud profile — XSUAA security + HANA Cloud + remote S/4 destinations
 spring:

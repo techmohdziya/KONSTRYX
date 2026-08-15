@@ -102,6 +102,39 @@ public class PermissionService {
     }
 
     /**
+     * The company codes a user is assigned to, across all their personas.
+     *
+     * An empty set means unrestricted — at least one assignment carries no
+     * company, so the user works group-wide. Callers must treat empty as "all",
+     * not as "none", or a group-wide steward would see nothing.
+     */
+    public java.util.Set<String> companiesFor(String user) {
+        java.util.Set<String> companies = new java.util.HashSet<>();
+        if (user == null) {
+            return companies;
+        }
+        LocalDate today = LocalDate.now();
+        boolean[] unrestricted = { false };
+
+        runtime.requestContext().privilegedUser().run(ctx -> {
+            Result rows = db.run(Select.from(V_PERMISSION)
+                    .where(p -> p.get("user").eq(user)));
+            for (Row r : rows) {
+                if (!withinValidity(r, today)) {
+                    continue;
+                }
+                String code = str(r, "companyCode");
+                if (code == null || code.isBlank()) {
+                    unrestricted[0] = true;
+                } else {
+                    companies.add(code);
+                }
+            }
+        });
+        return unrestricted[0] ? java.util.Collections.emptySet() : companies;
+    }
+
+    /**
      * Validity is filtered here rather than in the view's WHERE clause because
      * the view is also the administration UI's answer to "what does this person
      * have?", where an assignment that starts next month must still be visible.

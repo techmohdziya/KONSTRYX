@@ -14,8 +14,16 @@ service AdminService @(path:'/admin') {
   entity UserAccess         as projection on admin.UserCompanyAccess;
   entity SyncConfigs        as projection on admin.S4SyncConfig;
 
-  @odata.draft.enabled
-  entity PromotionRequests  as projection on admin.PromotionRequest;
+  /**
+   * The steward queue. Approving promotes the referenced master to GROUP
+   * scope and clears its owning company; the request itself is kept as the
+   * record of who decided and why.
+   */
+  entity PromotionRequests  as projection on admin.PromotionRequest
+    actions {
+      action approve(comment : String(500)) returns String;
+      action reject(comment : String(500))  returns String;
+    };
 
   // Integration monitoring (read-only)
   @readonly entity SyncRuns   as projection on int.SyncRun;
