@@ -1,0 +1,145 @@
+<mvc:View
+	controllerName="konstryx.controller.ReservationOverview"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="reservationPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Reservation Overview" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Chain progress and S/4 connection state per reservation"/>
+				</f:expandedContent>
+				<f:actions>
+					<Button icon="sap-icon://refresh" tooltip="Recompute from the live documents" press=".onRefresh"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<VBox>
+					<!-- The KPI strip a coordinator reads first: how many threads,
+					     how far they stand, how much money is encumbered. -->
+					<HBox wrap="Wrap" class="sapUiSmallMarginBottom">
+						<VBox class="kxKpiTile sapUiMediumMarginEnd">
+							<Label text="Active reservations"/>
+							<ObjectNumber number="{view>/kpi/count}" emphasized="true"/>
+						</VBox>
+						<VBox class="kxKpiTile sapUiMediumMarginEnd">
+							<Label text="Average chain progress"/>
+							<ObjectNumber number="{view>/kpi/avgDone}" unit="of 10 steps" emphasized="true"/>
+						</VBox>
+						<VBox class="kxKpiTile sapUiMediumMarginEnd">
+							<Label text="Encumbered"/>
+							<ObjectNumber number="{view>/kpi/encumbered}" unit="AED" emphasized="true"/>
+						</VBox>
+						<VBox class="kxKpiTile sapUiMediumMarginEnd">
+							<Label text="Consumed to date"/>
+							<ObjectNumber number="{view>/kpi/consumed}" unit="AED"
+							              state="{= ${view>/kpi/burnPct} > 100 ? 'Error' : 'Success' }"/>
+						</VBox>
+					</HBox>
+
+					<!-- S/4 connectivity, honestly. One outbound path is live;
+					     the commitment leg is not, and this panel says which. -->
+					<Panel headerText="S/4HANA connection status" expandable="true" expanded="true" class="sapUiNoContentPadding">
+						<HBox wrap="Wrap" class="sapUiSmallMargin">
+							<ObjectStatus class="sapUiMediumMarginEnd"
+								title="Enterprise Project (SAP_COM_0308)"
+								text="LIVE · S4-SANDBOX"
+								state="Success" icon="sap-icon://connected"/>
+							<ObjectStatus class="sapUiMediumMarginEnd"
+								title="Budget Commitment · CMT"
+								text="Connector pending — encumbrance is KONSTRYX-side only"
+								state="Warning" icon="sap-icon://disconnected"/>
+							<ObjectStatus class="sapUiMediumMarginEnd"
+								title="Procurement (PR/PO/GR)"
+								text="Not connected — S/4-owned steps, seams built"
+								state="Warning" icon="sap-icon://disconnected"/>
+							<ObjectStatus
+								title="Business Partner (SAP_COM_0008)"
+								text="Arrangement active · mirror not built"
+								state="Information" icon="sap-icon://chain-link"/>
+						</HBox>
+					</Panel>
+				</VBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="reservationTable"
+				items="{path: 'view>/rows', templateShareable: false}"
+				growing="true"
+				growingThreshold="25"
+				sticky="ColumnHeaders"
+				mode="None"
+				busy="{view>/busy}"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="Reservations ({view>/kpi/count})" level="H4"/>
+						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here"
+						        press=".onExportExcel"/>
+						<ObjectStatus text="live · computed from documents" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="11rem"><Text text="Reservation"/></Column>
+					<Column width="10rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Request"/></Column>
+					<Column width="12rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Project"/></Column>
+					<Column width="7rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Flow"/></Column>
+					<Column width="12rem" hAlign="End"><Text text="Encumbered"/></Column>
+					<Column><Text text="Chain progress"/></Column>
+					<Column width="13rem"><Text text="S/4 commitment"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Navigation" press=".onRowPress">
+						<cells>
+							<VBox>
+								<ObjectIdentifier title="{view>docNo}"/>
+								<ObjectStatus text="{view>status}"
+									state="{= ${view>status} === 'Closed' ? 'None' : 'Success' }"/>
+							</VBox>
+							<Link text="{view>rrDocNo}" press=".onRequestLink" wrapping="false"/>
+							<VBox>
+								<Text text="{view>projectCode}"/>
+								<ObjectStatus
+									text="{= ${view>projectSync} === 'SENT' ? 'Project in S/4' : 'Project not sent' }"
+									state="{= ${view>projectSync} === 'SENT' ? 'Success' : 'Warning' }"
+									icon="{= ${view>projectSync} === 'SENT' ? 'sap-icon://connected' : 'sap-icon://disconnected' }"/>
+							</VBox>
+							<Text text="{view>executionFlow}"/>
+							<VBox>
+								<ObjectNumber number="{view>encumberedText}" unit="AED"/>
+								<Text text="{view>lines} lines · {view>burnPct}% consumed" class="kxSubText"/>
+							</VBox>
+							<VBox>
+								<ProgressIndicator
+									percentValue="{view>progressPct}"
+									displayValue="{view>stepsDone} of {view>stepsTotal} steps"
+									state="{= ${view>stepsDone} >= 4 ? 'Success' : 'Warning' }"
+									height="1.25rem"/>
+								<Text text="Pending: {view>pendingSteps}" class="kxSubText"/>
+							</VBox>
+							<ObjectStatus text="{view>s4Commitment}" state="Warning" icon="sap-icon://disconnected"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

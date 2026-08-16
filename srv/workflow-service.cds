@@ -60,6 +60,32 @@ service WorkflowService @(path:'/workflow') {
     };
   entity ReservationLines as projection on wf.ReservationLine;
 
+  /**
+   * The reservation overview a coordinator actually needs: per reservation,
+   * how far its thread has come through the ten-step chain, what is still
+   * pending, and — honestly — its S/4 connection state. The project sync is
+   * live; the CMT budget commitment is not connected yet, and the screen says
+   * so per row rather than implying otherwise.
+   */
+  action reservationOverview() returns array of {
+    reservationID  : UUID;
+    docNo          : String(20);
+    rrID           : UUID;
+    rrDocNo        : String(20);
+    projectCode    : String(24);
+    projectSync    : String(20);
+    executionFlow  : String(20);
+    status         : String(20);
+    lines          : Integer;
+    encumbered     : Decimal(15,2);
+    consumed       : Decimal(15,2);
+    burnPct        : Decimal(5,2);
+    stepsDone      : Integer;
+    stepsTotal     : Integer;
+    pendingSteps   : String(255);
+    s4Commitment   : String(40);
+  };
+
   @readonly entity StatusHistory as projection on wf.StatusHistory;
   @readonly entity DocumentLinks as projection on wf.DocumentLink;
 

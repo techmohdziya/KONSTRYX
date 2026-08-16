@@ -1099,13 +1099,12 @@
       "tiles": [
         {
           "title": "Reservations",
-          "subtitle": "Active across 3 types",
+          "subtitle": "Chain progress & S/4 state",
           "icon": "sap-icon://sales-order",
           "value": "38",
           "unit": "active",
           "state": "Good",
-          "route": "worklist",
-          "arg": "RES"
+          "route": "reservations"
         },
         {
           "title": "Mobilizations",

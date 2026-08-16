@@ -90,3 +90,6 @@ html, body { height: 100%; margin: 0; }
    treegrid with all 35 rows bound to it. That is the same shape of failure as
    the blank screen in I-25 and just as invisible without looking. A CSS height
    does not fix it: the control writes its own inline height. */
+
+/* KPI tiles on overview headers */
+.kxKpiTile { min-width: 10rem; padding: 0.25rem 0; }

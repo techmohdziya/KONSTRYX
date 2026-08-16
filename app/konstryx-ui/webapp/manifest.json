@@ -210,6 +210,11 @@
           "target": "worklist"
         },
         {
+          "pattern": "reservations",
+          "name": "reservations",
+          "target": "reservations"
+        },
+        {
           "pattern": "request/{requestId}",
           "name": "request",
           "target": "request"
@@ -260,6 +265,10 @@
           "id": "launchpad",
           "name": "Launchpad",
           "title": "Home"
+        },
+        "reservations": {
+          "id": "reservations",
+          "name": "ReservationOverview"
         },
         "worklist": {
           "id": "worklist",
