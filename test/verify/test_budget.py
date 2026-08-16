@@ -121,11 +121,16 @@ make_master("ConsumptionRates", {
     "effectiveFrom": "2026-01-01", "scope": "GROUP"})
 make_master("ProductivityRates", {
     "resource_ID": vibro, "linkedCBS_ID": slab["libraryNode_ID"],
-    "outputPerHr": 12, "outputUoM": "m3", "crewComposition": "1 OP + 1 HLP",
+    "outputPerHr": 12, "outputUoM": "m3",
     "effectiveFrom": "2026-01-01", "scope": "GROUP"})
 call(f"/project/BOQs(ID={boq_id},IsActiveEntity=true)/ProjectService.generateBuildUp",
      method="POST", body={"difficultyPct": 110})
-print(f"  fixtures ready on {project['code']}: build-up = 1230 m3 concrete + 110 hr vibro crew")
+# Allocate the line fully so VAL-02 and VAL-03 pass at the gate: 1200 to the
+# substructure WBS against the slab CBS.
+call(f"/project/BOQItems(ID={items['value'][0]['ID']},IsActiveEntity=true)"
+     "/ProjectService.allocate", method="POST",
+     body={"wbsCode": "PRJ-002.1", "cbsCode": "02.10", "qty": 1200})
+print(f"  fixtures ready on {project['code']}: build-up = 1230 m3 concrete + 110 hr vibro")
 
 head("1. A budget is generated from the build-up, or not at all")
 s, d = call("/budget/Budgets", method="POST", body={
@@ -138,11 +143,19 @@ act = check(200, "budget activated", *call(
 docno = act.get("docNo") if isinstance(act, dict) else None
 assert_(docno and docno.startswith("BUD-"), "drew a company-scoped number", docno)
 
-check(400, "generation refused while a resource is unpriced", *bud_action(bid, "generateLines"))
+s, refusal = bud_action(bid, "generateLines")
+ok = s == 409 and "GATE_FAILED" in str(refusal) and "VAL-04" in str(refusal)
+print(f"  {'ok  ' if ok else 'FAIL'} [{s}] gate refuses while the recipe is unpriced:"
+      f" {str(refusal)[:130]}")
+results.append(ok)
 check(200, "a rate for the concrete is maintained", *make_master("Rates", {
     "resource_ID": concrete, "rateValue": 285.00, "basis": "m3", "ccy_code": "AED",
     "effectiveFrom": "2026-01-01", "scope": "GROUP"}))
-msg = check(200, "generated", *bud_action(bid, "generateLines"))
+# A rate correction propagates by re-running the generation (IT-05).
+check(200, "build-up regenerated with the rate in force", *call(
+    f"/project/BOQs(ID={boq_id},IsActiveEntity=true)/ProjectService.generateBuildUp",
+    method="POST", body={"difficultyPct": 110}))
+msg = check(200, "generated — the gate passes", *bud_action(bid, "generateLines"))
 
 s, lines = call(f"/budget/BudgetLines?$filter=budget_ID eq {bid}"
                 "&$select=ID,category,amount,available&$orderby=category")

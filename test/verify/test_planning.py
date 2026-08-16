@@ -1,7 +1,9 @@
-"""Phase 3: the resource build-up, generated from CBS recipes.
+"""Planning slice against SPEC-planning-budget.md.
 
-The join under test is the one the wireframe specifies: BOQ line -> its CBS
-leaf -> every norm keyed to that leaf. Nobody keys resources per BOQ line."""
+CALC-01 netRate derived and inbound ignored; CALC-02 crew expansion, hours
+never divided; CALC-03 difficulty once with its source recorded; CALC-05
+budget qty vs contract qty never crossed; IT-08 rate-missing writes no line;
+KX-GOV-002 gate including VAL-05, the rule that guards the whole design."""
 import json, urllib.request, base64, sys
 
 BASE = "http://localhost:8090/odata/v4"
@@ -48,7 +50,7 @@ def check(expected, label, status, payload):
     if isinstance(payload, dict):
         payload = payload.get("value", payload)
     ok = status == expected
-    print(f"  {'ok  ' if ok else 'FAIL'} [{status}] {label}: {str(payload)[:180]}")
+    print(f"  {'ok  ' if ok else 'FAIL'} [{status}] {label}: {str(payload)[:170]}")
     results.append(ok)
     return payload
 
@@ -73,6 +75,19 @@ def make_norm(entity, body, user="steward_infc"):
                 "/MasterDataService.draftActivate", method="POST", body={}, user=user)
 
 
+def generate(bid, pct=110):
+    return call(f"/project/BOQs(ID={bid},IsActiveEntity=true)/ProjectService.generateBuildUp",
+                method="POST", body={"difficultyPct": pct})
+
+
+def buildup_of(item_id):
+    s, bu = call(f"/project/BOQItemResources?$filter=boqItem_ID eq {item_id}"
+                 "&$select=ID,category,qtyPerUom,totalQty,uom,unitRate,amountPerUnit,"
+                 "totalAmount,source,sourceNorm,difficultyPct,difficultySrc,basis"
+                 "&$orderby=basis")
+    return bu.get("value", []) if s == 200 else []
+
+
 # ------------------------------------------------------------------- fixtures
 s, ps = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'PRJ-002'"
              "&$select=ID,code,company_ID")
@@ -84,8 +99,7 @@ call(f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.instantiat
 s, cbs = call(f"/project/CBS?$filter=project_ID eq {pid}&$select=ID,code,libraryNode_ID"
               "&$orderby=code")
 leaves = {c["code"]: c for c in cbs["value"] if c["libraryNode_ID"]}
-slab = leaves["02.10"]          # the leaf that will carry the recipe
-bare = leaves["01.20"]          # a leaf with no recipe at all
+slab, bare = leaves["02.10"], leaves["01.20"]
 
 s, d = call("/project/BOQs", method="POST", body={
     "boqId": "BOQ-PLN", "project_ID": pid, "version": "A", "status": "Draft"})
@@ -94,10 +108,9 @@ call(f"/project/BOQs(ID={bid},IsActiveEntity=false)/ProjectService.draftActivate
      method="POST", body={})
 call(f"/project/BOQs(ID={bid},IsActiveEntity=true)/ProjectService.importItems",
      method="POST", body={"fileName": "bill.csv", "content": BILL})
-s, items = call(f"/project/BOQItems?$filter=boq_ID eq {bid}&$select=ID,itemNo,qty&$orderby=itemNo")
+s, items = call(f"/project/BOQItems?$filter=boq_ID eq {bid}&$select=ID,itemNo,qty,amount"
+                "&$orderby=itemNo")
 item = {i["itemNo"]: i for i in items["value"]}
-
-# Map 2.01 to the recipe leaf and 2.02 to the bare one; 3.01 stays unmapped.
 call(f"/project/BOQItems(ID={item['2.01']['ID']},IsActiveEntity=true)", method="PATCH",
      body={"cbs_ID": slab["ID"]})
 call(f"/project/BOQItems(ID={item['2.02']['ID']},IsActiveEntity=true)", method="PATCH",
@@ -109,89 +122,126 @@ concrete = res["value"][0]["ID"]
 s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and code eq 'EQ-VIB-KIT'"
               "&$select=ID")
 vibro = res["value"][0]["ID"]
-print(f"  fixtures: BOQ-PLN on {project['code']}, recipe leaf {slab['code']},"
-      f" bare leaf {bare['code']}")
+s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and code eq 'MT-REB-16'"
+              "&$select=ID")
+rebar = res["value"][0]["ID"]
+print(f"  fixtures: BOQ-PLN on {project['code']}, recipe leaf {slab['code']}")
 
-head("1. The recipe lives on the CBS leaf, not the BOQ line")
-check(200, "group consumption norm on the leaf", *make_norm("ConsumptionRates", {
+head("1. netRate is derived and an inbound value is ignored (CALC-01 / UT-03)")
+check(200, "consumption norm asserting netRate 9.999", *make_norm("ConsumptionRates", {
     "material_ID": concrete, "linkedCBS_ID": slab["libraryNode_ID"],
     "consRate": 1.0, "consUoM": "m3", "wastageAllowancePct": 2.5,
+    "netRate": 9.999,
     "effectiveFrom": "2026-01-01", "scope": "GROUP"}))
-check(200, "group productivity norm on the leaf", *make_norm("ProductivityRates", {
+# Filter on the recipe key, not just the material: seeded rows for the same
+# material exist with no linkedCBS and a null netRate (they were CSV-loaded and
+# never passed through the derivation), and list order is not deterministic.
+s, norm = call("/masterdata/ConsumptionRates?$filter=IsActiveEntity eq true"
+               f" and material_ID eq {concrete}"
+               f" and linkedCBS_ID eq {slab['libraryNode_ID']}"
+               "&$select=netRate,wastageAllowancePct",
+               user="steward_infc")
+stored = norm["value"][0]
+assert_(abs(float(stored["netRate"]) - 1.0250) < 0.00005,
+        "persisted netRate is 1.0250 — the inbound 9.999 was discarded",
+        stored["netRate"])
+
+check(200, "productivity norm with a crew", *make_norm("ProductivityRates", {
     "resource_ID": vibro, "linkedCBS_ID": slab["libraryNode_ID"],
     "outputPerHr": 12, "outputUoM": "m3", "crewComposition": "1 OP + 1 HLP",
     "effectiveFrom": "2026-01-01", "scope": "GROUP"}))
 
-msg = check(200, "generated at difficulty 110%", *call(
-    f"/project/BOQs(ID={bid},IsActiveEntity=true)/ProjectService.generateBuildUp",
-    method="POST", body={"difficultyPct": 110}))
-assert_("1 recipe-found" in str(msg) and "1 no-recipe" in str(msg)
-        and "1 unmapped" in str(msg),
-        "the coverage report matches the mapping", str(msg)[:120])
+head("2. Rate-missing writes no line (IT-08); pricing rides on the row (B.4)")
+msg = check(200, "generated — concrete has no money rate yet", *generate(bid))
+assert_("rate-missing" in str(msg) and "1 recipe-found" in str(msg),
+        "the gap is counted, not papered over", str(msg)[:120])
+bu = buildup_of(item["2.01"]["ID"])
+assert_(all(r["category"] != "MR" for r in bu),
+        "no material row exists — a silent zero never entered the build-up",
+        f"{len(bu)} row(s), categories {[r['category'] for r in bu]}")
 
-s, bu = call(f"/project/BOQItemResources?$filter=boqItem_ID eq {item['2.01']['ID']}"
-             "&$select=category,qtyPerUom,totalQty,uom,source,basis&$orderby=category")
-for r in bu["value"]:
-    print(f"        {r['category']:4} {r['qtyPerUom']:>9}/uom  total {r['totalQty']:>10}"
-          f" {r['uom']:3} [{r['source']}]  {r['basis']}")
+check(200, "money rate for the concrete", *make_norm("Rates", {
+    "resource_ID": concrete, "rateValue": 285.00, "basis": "m3", "ccy_code": "AED",
+    "effectiveFrom": "2026-01-01", "scope": "GROUP"}))
+check(200, "regenerated", *generate(bid))
+bu = buildup_of(item["2.01"]["ID"])
+for r in bu:
+    print(f"        {r['category']:4} {r['qtyPerUom']:>8}/uom x {r['unitRate']:>7}"
+          f" = {r['amountPerUnit']:>9}/uom  total {r['totalAmount']:>11}"
+          f"  [{r['difficultySrc']}] {r['basis'][:44]}")
+mr = [r for r in bu if r["category"] == "MR"]
+assert_(len(mr) == 1 and abs(float(mr[0]["totalAmount"]) - 1230 * 285) < 0.01,
+        "material priced on the row: 1230 x 285 = 350,550",
+        mr[0]["totalAmount"] if mr else "no MR row")
+assert_(mr and abs(float(mr[0]["amountPerUnit"]) - 1.025 * 285) < 0.001,
+        "amountPerUnit = net consumption x unit rate", mr[0]["amountPerUnit"])
+assert_(all(r["sourceNorm"] for r in bu),
+        "every line names the norm it came from (IT-16)")
 
-mat = [r for r in bu["value"] if r["category"] == "MR"][0]
-eq = [r for r in bu["value"] if r["category"] == "EQR"][0]
-assert_(abs(float(mat["totalQty"]) - 1200 * 1.025) < 0.01,
-        "material = 1200 x 1.0 x (1 + 2.5% wastage)", mat["totalQty"])
-assert_(abs(float(eq["totalQty"]) - 1200 / 12 * 1.1) < 0.05,
-        "hours = 1200 / 12 x 110% difficulty — the norm itself untouched",
-        eq["totalQty"])
-assert_("110%" in eq["basis"] and "crew" in eq["basis"],
-        "the basis reads like the daily log: std x difficulty, crew named",
-        eq["basis"])
+head("3. Crew expansion: hours multiplied across the crew, never divided (UT-09)")
+eqr = [r for r in bu if r["category"] == "EQR"]
+assert_(len(eqr) == 2, "the crew of two produced two demand lines", len(eqr))
+hours = sorted(round(float(r["totalQty"]), 1) for r in eqr)
+assert_(hours == [110.0, 110.0],
+        "each role carries the full 110 crew-hours — expansion, not division",
+        hours)
+assert_(all(r["difficultySrc"] == "project" for r in eqr)
+        and mr[0]["difficultySrc"] == "none",
+        "difficulty source recorded: project on hours, none on material (CALC-03)")
 
-head("2. A company norm overrides the group default")
-check(200, "INFC consumption override, 1.05 + 5%", *make_norm("ConsumptionRates", {
-    "material_ID": concrete, "linkedCBS_ID": slab["libraryNode_ID"],
-    "consRate": 1.05, "consUoM": "m3", "wastageAllowancePct": 5,
-    "effectiveFrom": "2026-01-01", "scope": "COMPANY", "owningCompany_ID": company_id}))
+head("4. Budget qty scales cost; contract qty keeps revenue (CALC-05)")
+revenue_before = float(item["2.01"]["amount"])
+check(200, "budgetQty 1250 entered", *call(
+    f"/project/BOQItems(ID={item['2.01']['ID']},IsActiveEntity=true)", method="PATCH",
+    body={"budgetQty": 1250}))
+check(200, "regenerated", *generate(bid))
+bu = buildup_of(item["2.01"]["ID"])
+mr = [r for r in bu if r["category"] == "MR"][0]
+assert_(abs(float(mr["totalQty"]) - 1250 * 1.025) < 0.01,
+        "cost quantity now scales by the budget qty: 1250 x 1.025", mr["totalQty"])
+s, after = call(f"/project/BOQItems(ID={item['2.01']['ID']},IsActiveEntity=true)"
+                "?$select=amount,qty")
+assert_(abs(float(after["amount"]) - revenue_before) < 0.01,
+        "the revenue amount never moved — the two quantities were not crossed",
+        after["amount"])
 
-# A hand-added exception, before regenerating: it must survive. Created
-# through the parent navigation — a composition child has no free-standing
-# create of its own.
+head("5. A MANUAL exception survives regeneration and is counted")
 s, manual = call(f"/project/BOQItems(ID={item['2.01']['ID']},IsActiveEntity=true)/buildUp",
                  method="POST", body={
-    "resource_ID": vibro, "category": "EQR",
-    "qtyPerUom": 0.01, "totalQty": 12, "uom": "hr", "source": "MANUAL",
-    "basis": "hand-added pending recipe"})
-assert_(s == 201, "a MANUAL row was added by hand", str(manual)[:90] if s != 201 else "")
-
-msg = check(200, "regenerated", *call(
-    f"/project/BOQs(ID={bid},IsActiveEntity=true)/ProjectService.generateBuildUp",
-    method="POST", body={"difficultyPct": 110}))
-assert_("1 manual kept" in str(msg), "the manual exception is counted, not erased",
+    "resource_ID": vibro, "category": "EQR", "qtyPerUom": 0.01, "totalQty": 12,
+    "uom": "hr", "source": "MANUAL", "basis": "hand-added pending recipe"})
+assert_(s == 201, "a MANUAL row was added by hand")
+msg = check(200, "regenerated", *generate(bid))
+assert_("1 manual kept" in str(msg), "counted every run — the defect list never shrinks",
         str(msg)[:110])
 
-s, bu = call(f"/project/BOQItemResources?$filter=boqItem_ID eq {item['2.01']['ID']}"
-             "&$select=totalQty,source,basis&$orderby=totalQty")
-mats = [r for r in bu["value"] if "cons" in (r["basis"] or "")]
-assert_(any(abs(float(r["totalQty"]) - 1200 * 1.05 * 1.05) < 0.01 for r in mats),
-        "the INFC override (1.05 x 1.05) replaced the group figure",
-        str([r["totalQty"] for r in mats]))
-assert_(any(r["source"] == "MANUAL" for r in bu["value"]),
-        "the MANUAL row is still there after regeneration")
+head("6. The gate (KX-GOV-002), including the rule that guards the design")
+s, gate = call(f"/project/Projects(ID={pid},IsActiveEntity=true)"
+               "/ProjectService.validateForBudget", method="POST", body={})
+rows = gate.get("value") if isinstance(gate, dict) else gate
+rules = {r["ruleId"]: r for r in rows}
+for rid in sorted(rules):
+    r = rules[rid]
+    print(f"        {rid}  {r['result']:4}  {r['failing']}/{r['linesChecked']}"
+          f"  {r['description'][:52]}")
+assert_(rules["VAL-01"]["result"] == "Fail" and rules["VAL-01"]["failing"] == 1,
+        "VAL-01 fails: 3.01 has no CBS")
+assert_(rules["VAL-02"]["result"] == "Fail",
+        "VAL-02 fails: nothing is allocated yet")
+assert_(rules["VAL-05"]["result"] == "Pass",
+        "VAL-05 passes: one material grade per leaf")
 
-head("3. Two lines on one leaf share one recipe — the governance constraint")
-call(f"/project/BOQItems(ID={item['2.02']['ID']},IsActiveEntity=true)", method="PATCH",
-     body={"cbs_ID": slab["ID"]})
-msg = check(200, "regenerated with 2.02 moved onto the same leaf", *call(
-    f"/project/BOQs(ID={bid},IsActiveEntity=true)/ProjectService.generateBuildUp",
-    method="POST", body={"difficultyPct": 110}))
-assert_("2 recipe-found" in str(msg), "both lines now resolve", str(msg)[:100])
-
-s, bu2 = call(f"/project/BOQItemResources?$filter=boqItem_ID eq {item['2.02']['ID']}"
-              "&$select=totalQty,basis")
-# 180 t of rebar getting a concrete recipe is exactly the spec-variance trap:
-# same leaf, same recipe, wrong content. The system does what the model says;
-# the governance rule (distinct leaf per spec) is what prevents nonsense.
-assert_(len(bu2["value"]) == 2,
-        "line 2.02 received the leaf's recipe — same leaf, same build-up")
+check(200, "a second material grade lands on the same leaf", *make_norm("ConsumptionRates", {
+    "material_ID": rebar, "linkedCBS_ID": slab["libraryNode_ID"],
+    "consRate": 0.11, "consUoM": "t", "wastageAllowancePct": 3,
+    "effectiveFrom": "2026-01-01", "scope": "GROUP"}))
+s, gate = call(f"/project/Projects(ID={pid},IsActiveEntity=true)"
+               "/ProjectService.validateForBudget", method="POST", body={})
+rows = gate.get("value") if isinstance(gate, dict) else gate
+rules = {r["ruleId"]: r for r in rows}
+assert_(rules["VAL-05"]["result"] == "Fail" and rules["VAL-05"]["failing"] == 1,
+        "VAL-05 now fails: the leaf is unresolvable with two grades (Part A.3)",
+        f"{rules['VAL-05']['failing']} conflicted leaf")
 
 print()
 print("=" * 78)

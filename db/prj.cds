@@ -63,7 +63,14 @@ entity BOQItem : cuid, managed {
   itemNo       : String(20);
   code         : String(40);
   description  : String(500);
+  /** Contract quantity — the certification basis. Revenue always uses this. */
   qty          : Decimal(15,3);
+  /**
+   * Budgeted quantity — IFC take-off plus pour wastage and test cubes, entered
+   * in the conversion wizard. Cost always uses this; never crossed with qty
+   * (CALC-05). Null means not yet budgeted, and cost falls back to qty.
+   */
+  budgetQty    : Decimal(15,3);
   uom          : String(10);
   rate         : Decimal(15,2);
   amount       : Decimal(15,2);
@@ -83,17 +90,32 @@ entity BOQItem : cuid, managed {
  * working (wireframe cost-mapping step 3).
  */
 entity BOQItemResource : cuid, managed {
-  boqItem     : Association to BOQItem;
-  resource    : Association to master.ResourceNode;
+  boqItem       : Association to BOQItem;
+  resource      : Association to master.ResourceNode;
   /** Cost nature, one of the six verticals — taken from the resource. */
-  category    : String(10);
-  /** Quantity per one unit of the bill line, before scaling by the line qty. */
-  qtyPerUom   : Decimal(15,4);
-  totalQty    : Decimal(15,3);
-  uom         : String(10);
-  source      : String enum { RECIPE; MANUAL; } default 'RECIPE';
+  category      : String(10);
+  /** Quantity per one unit of the bill line, before scaling. */
+  qtyPerUom     : Decimal(15,4);
+  /** Scaled by budgetQty, not contract qty (CALC-05). */
+  totalQty      : Decimal(15,3);
+  uom           : String(10);
+  /** Money from the Rate Master at generation time — never from the norm. */
+  unitRate      : Decimal(15,2);
+  amountPerUnit : Decimal(15,4);
+  totalAmount   : Decimal(15,2);
+  /**
+   * The audit trail that makes the governance rule enforceable: a dashboard of
+   * MANUAL lines IS the flag-for-recipe-creation queue. Never drop this field.
+   */
+  source        : String enum { RECIPE; MANUAL; IMPORTED; } default 'RECIPE';
+  /** The norm row this line was generated from, resolvable. */
+  sourceNorm    : String(60);
+  /** Applied once, never multiplied (CALC-03 / KX-BUD-014). */
+  difficultyPct : Decimal(6,2) default 100;
+  /** Which precedence tier won: activity / activityLibrary / project / none. */
+  difficultySrc : String(20);
   /** How the number was reached — norm, wastage, difficulty — for audit. */
-  basis       : String(255);
+  basis         : String(255);
 }
 
 // Project CBS instantiated from the library.

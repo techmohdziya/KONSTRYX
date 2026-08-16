@@ -31,7 +31,7 @@ sap.ui.define([
 
 		_load: function () {
 			var oList = this.getModel("md").bindList("/CBSLibrary", null, null, null, {
-				$select: "ID,code,level,parent_ID,phase,constructionType,resourceAffinity,scope",
+				$select: "ID,code,level,parent_ID,phase,constructionType,scope",
 				$expand: "owningCompany($select=code,legalName)"
 			});
 

@@ -206,22 +206,76 @@ public class MasterValidationHandler implements EventHandler {
      */
     @Before(event = CqnService.EVENT_CREATE, entity = "MasterDataService.ProductivityRates")
     public void validateProductivityCreate(CdsCreateEventContext context, List<CdsData> entries) {
-        entries.forEach(e -> validateNorm(e, E_PRODUCTIVITY, "resource_ID", "productivity norm"));
+        entries.forEach(e -> {
+            deriveManday(e);
+            validateNorm(e, E_PRODUCTIVITY, "resource_ID", "productivity norm");
+        });
     }
 
     @Before(event = CqnService.EVENT_UPDATE, entity = "MasterDataService.ProductivityRates")
     public void validateProductivityUpdate(CdsUpdateEventContext context, List<CdsData> entries) {
-        entries.forEach(e -> validateNorm(e, E_PRODUCTIVITY, "resource_ID", "productivity norm"));
+        entries.forEach(e -> {
+            deriveManday(e);
+            validateNorm(e, E_PRODUCTIVITY, "resource_ID", "productivity norm");
+        });
+    }
+
+    /** The 8-hour man-day figure is derived from the hourly norm when absent. */
+    private void deriveManday(CdsData entry) {
+        Object perHour = entry.get("outputPerHr");
+        if (perHour == null || entry.get("outputPerManday8h") != null) {
+            return;
+        }
+        try {
+            entry.put("outputPerManday8h", new java.math.BigDecimal(perHour.toString())
+                    .multiply(new java.math.BigDecimal("8"))
+                    .setScale(3, java.math.RoundingMode.HALF_UP));
+        } catch (NumberFormatException ignored) { }
     }
 
     @Before(event = CqnService.EVENT_CREATE, entity = "MasterDataService.ConsumptionRates")
     public void validateConsumptionCreate(CdsCreateEventContext context, List<CdsData> entries) {
-        entries.forEach(e -> validateNorm(e, E_CONSUMPTION, "material_ID", "consumption norm"));
+        entries.forEach(e -> {
+            deriveNetRate(e, E_CONSUMPTION);
+            validateNorm(e, E_CONSUMPTION, "material_ID", "consumption norm");
+        });
     }
 
     @Before(event = CqnService.EVENT_UPDATE, entity = "MasterDataService.ConsumptionRates")
     public void validateConsumptionUpdate(CdsUpdateEventContext context, List<CdsData> entries) {
-        entries.forEach(e -> validateNorm(e, E_CONSUMPTION, "material_ID", "consumption norm"));
+        entries.forEach(e -> {
+            deriveNetRate(e, E_CONSUMPTION);
+            validateNorm(e, E_CONSUMPTION, "material_ID", "consumption norm");
+        });
+    }
+
+    /**
+     * netRate is derived, never keyed (CALC-01): theoretical x (1 + wastage/100),
+     * four decimals, half-up. Whatever the caller sent in that field is
+     * discarded before it can be believed — an importer asserting netRate 9.999
+     * against a 2.5% wastage persists 1.0250 (UT-03).
+     */
+    private void deriveNetRate(CdsData entry, String entity) {
+        String id = str(entry.get("ID"));
+        Row stored = id == null ? null : db.run(Select.from(entity)
+                .where(e -> e.get("ID").eq(id))).first().orElse(null);
+        String cons = merged(entry, stored, "consRate");
+        String wastage = merged(entry, stored, "wastageAllowancePct");
+        if (cons == null) {
+            entry.remove("netRate");
+            return;
+        }
+        try {
+            java.math.BigDecimal theoretical = new java.math.BigDecimal(cons);
+            java.math.BigDecimal pct = wastage == null
+                    ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(wastage);
+            entry.put("netRate", theoretical.multiply(
+                    java.math.BigDecimal.ONE.add(pct.divide(new java.math.BigDecimal("100"),
+                            8, java.math.RoundingMode.HALF_UP)))
+                    .setScale(4, java.math.RoundingMode.HALF_UP));
+        } catch (NumberFormatException e) {
+            // the validation below produces the readable refusal
+        }
     }
 
     private void validateNorm(CdsData entry, String entity, String subjectField, String what) {

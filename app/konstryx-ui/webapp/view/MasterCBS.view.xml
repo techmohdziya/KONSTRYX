@@ -97,10 +97,6 @@
 						<Label text="Construction type"/>
 						<t:template><Text text="{tree>constructionType}"/></t:template>
 					</t:Column>
-					<t:Column width="10rem">
-						<Label text="Resource affinity"/>
-						<t:template><Text text="{tree>resourceAffinity}"/></t:template>
-					</t:Column>
 					<t:Column width="9rem">
 						<Label text="Scope"/>
 						<t:template>

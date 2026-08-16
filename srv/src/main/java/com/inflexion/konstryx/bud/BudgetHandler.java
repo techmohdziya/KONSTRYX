@@ -68,6 +68,9 @@ public class BudgetHandler implements EventHandler {
     private ApprovalEngine approvals;
 
     @Autowired
+    private com.inflexion.konstryx.prj.BudgetGateService gate;
+
+    @Autowired
     private UserInfo userInfo;
 
     // ---------------------------------------------------------------- generate
@@ -90,6 +93,24 @@ public class BudgetHandler implements EventHandler {
         }
         String companyId = str(budget.get("company_ID"));
 
+        // The gate first (VAL-07): while any rule fails, no budget lines exist.
+        // 409 GATE_FAILED names every failing rule, so the refusal and the
+        // validation screen can never disagree.
+        List<com.inflexion.konstryx.prj.BudgetGateService.RuleResult> failing =
+                gate.failing(projectId);
+        if (!failing.isEmpty()) {
+            StringBuilder rules = new StringBuilder();
+            for (com.inflexion.konstryx.prj.BudgetGateService.RuleResult rule : failing) {
+                if (rules.length() > 0) {
+                    rules.append("; ");
+                }
+                rules.append(rule.ruleId).append(" (").append(rule.failing)
+                        .append(" failing: ").append(rule.description).append(")");
+            }
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    "GATE_FAILED — " + rules + ". Nothing was generated.");
+        }
+
         // The priced build-up, grouped by CBS x cost nature.
         Map<String, BigDecimal> amounts = new TreeMap<>();
         Map<String, String> cbsOf = new HashMap<>();
@@ -99,21 +120,19 @@ public class BudgetHandler implements EventHandler {
 
         for (Row buildUp : buildUpOf(projectId)) {
             rows++;
-            String resourceId = str(buildUp.get("resource_ID"));
-            BigDecimal qty = dec(buildUp.get("totalQty"));
             String category = str(buildUp.get("category"));
             String cbsId = cbsOfItem(str(buildUp.get("boqItem_ID")));
-            if (qty == null || cbsId == null) {
-                continue;
-            }
-            BigDecimal rate = rateFor(resourceId, companyId);
-            if (rate == null) {
-                unpriced.add(resourceCode(resourceId));
+            // Priced at build-up generation, from the Rate Master (B.4). The
+            // budget consumes those amounts rather than re-pricing, so the
+            // number an estimator saw on the build-up line is the number that
+            // lands in the budget.
+            BigDecimal amount = dec(buildUp.get("totalAmount"));
+            if (amount == null || cbsId == null) {
+                unpriced.add(resourceCode(str(buildUp.get("resource_ID"))));
                 continue;
             }
             String key = cbsId + "|" + category;
-            amounts.merge(key, qty.multiply(rate).setScale(2, RoundingMode.HALF_UP),
-                    BigDecimal::add);
+            amounts.merge(key, amount, BigDecimal::add);
             cbsOf.put(key, cbsId);
             categoryOf.put(key, category);
         }

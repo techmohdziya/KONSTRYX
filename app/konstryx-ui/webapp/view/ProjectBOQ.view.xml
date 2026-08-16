@@ -1,0 +1,129 @@
+<mvc:View
+	controllerName="konstryx.controller.ProjectBOQ"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="boqPage" headerExpanded="true" fitContent="false">
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title id="boqTitle" text="Bill of Quantities" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text id="boqSubtitle" text=""/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Generate Build-up" type="Emphasized" icon="sap-icon://refresh"
+					        tooltip="Resolve every mapped line from its CBS recipe (difficulty 110%)"
+					        press=".onGenerateBuildUp"/>
+					<Button text="Check Gate" icon="sap-icon://shield"
+					        tooltip="KX-GOV-002 — the rules budget generation is gated on"
+					        press=".onCheckGate"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:content>
+			<VBox>
+				<Table
+					id="itemTable"
+					items="{path: 'pj>/BOQItems', suspended: true, parameters: {$select: 'ID,itemNo,code,description,qty,budgetQty,uom,rate,amount', $expand: 'cbs($select=code)', $orderby: 'itemNo'}, templateShareable: false}"
+					sticky="ColumnHeaders"
+					mode="SingleSelectMaster"
+					selectionChange=".onItemSelect"
+					class="sapUiResponsiveMargin"
+					width="auto">
+
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title id="itemCount" text="Bill lines" level="H4"/>
+							<ToolbarSpacer/>
+							<Text text="Select a line to see its resource build-up below"/>
+						</OverflowToolbar>
+					</headerToolbar>
+
+					<columns>
+						<Column width="8rem"><Text text="Item"/></Column>
+						<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Contract qty"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Budget qty"/></Column>
+						<Column width="4rem"><Text text="UoM"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Rate"/></Column>
+						<Column width="10rem" hAlign="End"><Text text="Amount"/></Column>
+						<Column width="7rem"><Text text="CBS"/></Column>
+					</columns>
+
+					<items>
+						<ColumnListItem>
+							<cells>
+								<ObjectIdentifier title="{pj>itemNo}" text="{pj>code}"/>
+								<Text text="{pj>description}"/>
+								<ObjectNumber number="{path: 'pj>qty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"/>
+								<!-- Budget qty is the cost basis; contract qty the revenue
+								     basis. Shown side by side because crossing them is the
+								     classic mistake (CALC-05). -->
+								<ObjectNumber
+									number="{path: 'pj>budgetQty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"
+									state="{= ${pj>budgetQty} ? 'Information' : 'None' }"/>
+								<Text text="{pj>uom}"/>
+								<ObjectNumber number="{path: 'pj>rate', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true}}"/>
+								<ObjectNumber number="{path: 'pj>amount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"/>
+								<Link text="{pj>cbs/code}" press=".onCbsLink"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<Table
+					id="buildUpTable"
+					items="{path: 'pj>/BOQItemResources', suspended: true, parameters: {$select: 'ID,category,qtyPerUom,totalQty,uom,unitRate,totalAmount,source,basis,boqItem_ID', $expand: 'resource($select=code)'}, templateShareable: false}"
+					sticky="ColumnHeaders"
+					class="sapUiResponsiveMargin"
+					width="auto"
+					noDataText="Select a bill line above. If it has no build-up, generate it — or its CBS leaf has no recipe yet.">
+
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title id="buildUpTitle" text="Resource build-up" level="H4"/>
+							<ToolbarSpacer/>
+							<ObjectStatus id="buildUpOrigin" text="" state="Warning"/>
+						</OverflowToolbar>
+					</headerToolbar>
+
+					<columns>
+						<Column width="11rem"><Text text="Resource"/></Column>
+						<Column width="5rem"><Text text="Nature"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Qty / unit"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Total qty"/></Column>
+						<Column width="4rem"><Text text="UoM"/></Column>
+						<Column width="7rem" hAlign="End"><Text text="Rate"/></Column>
+						<Column width="10rem" hAlign="End"><Text text="Amount"/></Column>
+						<Column width="6rem"><Text text="Origin"/></Column>
+						<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Basis"/></Column>
+					</columns>
+
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Link text="{pj>resource/code}" press=".onResourceLink"/>
+								<Text text="{pj>category}"/>
+								<ObjectNumber number="{path: 'pj>qtyPerUom', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 4}}"/>
+								<ObjectNumber number="{path: 'pj>totalQty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 1}}"/>
+								<Text text="{pj>uom}"/>
+								<ObjectNumber number="{path: 'pj>unitRate', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true}}"/>
+								<ObjectNumber number="{path: 'pj>totalAmount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"/>
+								<!-- MANUAL is a flagged exception awaiting a recipe, and it
+								     must look like one. -->
+								<ObjectStatus text="{pj>source}"
+									state="{= ${pj>source} === 'RECIPE' ? 'Success' : 'Warning' }"/>
+								<Text text="{pj>basis}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</VBox>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

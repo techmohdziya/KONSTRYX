@@ -31,6 +31,19 @@ service ProjectService @(path:'/project') {
        * templates follow.
        */
       action instantiateCBS() returns String;
+      /**
+       * The gate (KX-GOV-002). Nothing generates budget lines until every rule
+       * passes. Returns each rule with its counts, so the screen shows what is
+       * failing rather than a mute disabled button.
+       */
+      action validateForBudget() returns array of {
+        ruleId       : String(10);
+        description  : String(120);
+        linesChecked : Integer;
+        failing      : Integer;
+        result       : String(4);
+      };
+
       /** Records the outcome of a sync attempt. Called by the connector. */
       action recordSyncResult(success : Boolean, s4Key : String(60),
                               s4System : String(20), message : String(1000)) returns String;

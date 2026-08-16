@@ -96,19 +96,19 @@ public class BuildUpHandler implements EventHandler {
             }
 
             List<Map<String, Object>> rows = new ArrayList<>();
-            BigDecimal qty = dec(item.get("qty"));
-            if (qty == null) {
-                qty = BigDecimal.ZERO;
-            }
+            // Cost scales by the budgeted quantity, never the contract quantity
+            // (CALC-05). Where no budget quantity has been entered yet, the
+            // contract quantity stands in - visibly, via the basis string.
+            BigDecimal contractQty = orZero(dec(item.get("qty")));
+            BigDecimal budgetQty = dec(item.get("budgetQty"));
+            boolean budgeted = budgetQty != null && budgetQty.signum() > 0;
+            BigDecimal qty = budgeted ? budgetQty : contractQty;
 
             for (Row norm : recipeRows(E_CONSUMPTION, "material_ID", libraryLeaf, companyId)) {
                 rows.add(materialRow(itemId, norm, qty));
             }
             for (Row norm : recipeRows(E_PRODUCTIVITY, "resource_ID", libraryLeaf, companyId)) {
-                Map<String, Object> row = productivityRow(itemId, norm, qty, difficulty);
-                if (row != null) {
-                    rows.add(row);
-                }
+                rows.addAll(productivityRows(itemId, norm, qty, difficulty));
             }
 
             if (rows.isEmpty()) {
@@ -117,13 +117,33 @@ public class BuildUpHandler implements EventHandler {
                 continue;
             }
 
+            // A demand line without a money rate is an exception, not a row.
+            // Writing it priced at nothing would flow a silent zero into the
+            // budget (IT-08); the gate is where the gap becomes visible.
+            List<Map<String, Object>> priced = new ArrayList<>();
             for (Map<String, Object> row : rows) {
-                if (!hasMoneyRate(str(row.get("resource_ID")))) {
+                BigDecimal unitRate = moneyRate(str(row.get("resource_ID")), companyId);
+                if (unitRate == null) {
                     rateMissing++;
-                    row.put("basis", row.get("basis") + " · RATE MISSING");
+                    gaps.add(item.get("itemNo") + ": no rate for "
+                            + resourceCode(str(row.get("resource_ID"))));
+                    continue;
                 }
+                BigDecimal perUom = orZero(dec(row.get("qtyPerUom")));
+                BigDecimal totalQty = orZero(dec(row.get("totalQty")));
+                row.put("unitRate", unitRate);
+                row.put("amountPerUnit", perUom.multiply(unitRate)
+                        .setScale(4, RoundingMode.HALF_UP));
+                row.put("totalAmount", totalQty.multiply(unitRate)
+                        .setScale(2, RoundingMode.HALF_UP));
+                if (!budgeted) {
+                    row.put("basis", row.get("basis") + " · qty=contract (no budget qty yet)");
+                }
+                priced.add(row);
             }
-            db.run(Insert.into(E_BUILDUP).entries(rows));
+            if (!priced.isEmpty()) {
+                db.run(Insert.into(E_BUILDUP).entries(priced));
+            }
             recipeFound++;
         }
 
@@ -156,35 +176,109 @@ public class BuildUpHandler implements EventHandler {
         row.put("qtyPerUom", perUom.setScale(4, RoundingMode.HALF_UP));
         row.put("totalQty", qty.multiply(perUom).setScale(3, RoundingMode.HALF_UP));
         row.put("uom", norm.get("consUoM"));
+        row.put("sourceNorm", "ConsumptionRate/" + str(norm.get("ID")));
+        // Difficulty never touches material consumption; wastage is the
+        // material-side allowance (KX-BUD-014).
+        row.put("difficultyPct", new BigDecimal("100"));
+        row.put("difficultySrc", "none");
         row.put("basis", "cons " + cons.stripTrailingZeros().toPlainString()
                 + " + wastage " + wastage.stripTrailingZeros().toPlainString() + "%");
         return row;
     }
 
     /**
-     * Manpower and equipment: hours = qty / output x difficulty. The norm is
-     * the central standard; difficulty rides on top and is recorded in the
-     * basis so "std 0.20 x 110%" is readable on the row itself.
+     * Manpower and equipment: hours = qty / output x difficulty, once (CALC-03).
+     *
+     * The crew composition then EXPANDS the hours across the crew, it does not
+     * divide them (CALC-02): "1 SK + 1 HLP" on 800 crew-hours is 800
+     * skilled-hours AND 800 helper-hours - every member of the crew is present
+     * for every crew-hour. Each role becomes its own demand line; a role token
+     * that matches a resource code resolves to that resource, otherwise the
+     * line stays on the norm resource with the role named, because a
+     * role-to-resource mapping master does not exist yet and inventing one
+     * silently would hide the gap.
      */
-    private Map<String, Object> productivityRow(String itemId, Row norm, BigDecimal qty,
-                                                BigDecimal difficulty) {
+    private List<Map<String, Object>> productivityRows(String itemId, Row norm, BigDecimal qty,
+                                                       BigDecimal difficulty) {
+        List<Map<String, Object>> rows = new ArrayList<>();
         BigDecimal output = dec(norm.get("outputPerHr"));
         if (output == null || output.signum() <= 0) {
-            return null;   // validation refuses these now; legacy rows are skipped
+            return rows;   // validation refuses these now; legacy rows are skipped
         }
         BigDecimal factor = difficulty.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
         BigDecimal hoursPerUom = BigDecimal.ONE.divide(output, 6, RoundingMode.HALF_UP)
                 .multiply(factor);
+        String stdText = "std " + output.stripTrailingZeros().toPlainString() + "/hr x "
+                + difficulty.stripTrailingZeros().toPlainString() + "%";
+        String normRef = "ProductivityRate/" + str(norm.get("ID"));
 
-        Map<String, Object> row = base(itemId, str(norm.get("resource_ID")));
-        row.put("qtyPerUom", hoursPerUom.setScale(4, RoundingMode.HALF_UP));
-        row.put("totalQty", qty.multiply(hoursPerUom).setScale(3, RoundingMode.HALF_UP));
+        List<String[]> roles = parseCrew(str(norm.get("crewComposition")));
+
+        if (roles.isEmpty()) {
+            rows.add(demandRow(itemId, str(norm.get("resource_ID")),
+                    hoursPerUom, BigDecimal.ONE, qty, stdText, normRef, difficulty));
+            return rows;
+        }
+
+        for (String[] role : roles) {
+            BigDecimal count = new BigDecimal(role[0]);
+            String token = role[1];
+            String resourceId = resourceIdByCode(token);
+            boolean resolved = resourceId != null;
+            if (!resolved) {
+                resourceId = str(norm.get("resource_ID"));
+            }
+            rows.add(demandRow(itemId, resourceId, hoursPerUom, count, qty,
+                    stdText + " · role " + token + " x" + role[0]
+                            + (resolved ? "" : " (unmapped role - on norm resource)"),
+                    normRef, difficulty));
+        }
+        return rows;
+    }
+
+    private Map<String, Object> demandRow(String itemId, String resourceId,
+                                          BigDecimal hoursPerUom, BigDecimal count,
+                                          BigDecimal qty, String basis, String normRef,
+                                          BigDecimal difficulty) {
+        Map<String, Object> row = base(itemId, resourceId);
+        BigDecimal perUom = hoursPerUom.multiply(count);
+        row.put("qtyPerUom", perUom.setScale(4, RoundingMode.HALF_UP));
+        row.put("totalQty", qty.multiply(perUom).setScale(3, RoundingMode.HALF_UP));
         row.put("uom", "hr");
-        String crew = str(norm.get("crewComposition"));
-        row.put("basis", "std " + output.stripTrailingZeros().toPlainString() + "/hr x "
-                + difficulty.stripTrailingZeros().toPlainString() + "%"
-                + (crew == null ? "" : " · crew " + crew));
+        row.put("basis", basis);
+        row.put("sourceNorm", normRef);
+        row.put("difficultyPct", difficulty);
+        row.put("difficultySrc",
+                difficulty.compareTo(new BigDecimal("100")) == 0 ? "none" : "project");
         return row;
+    }
+
+    /** "1 SK + 1 HLP" becomes [[1,SK],[1,HLP]]. Tolerant of spacing. */
+    private static List<String[]> parseCrew(String crew) {
+        List<String[]> roles = new ArrayList<>();
+        if (crew == null || crew.isBlank()) {
+            return roles;
+        }
+        for (String part : crew.split("\\+")) {
+            String[] tokens = part.trim().split("\\s+");
+            if (tokens.length >= 2 && tokens[0].matches("\\d+")) {
+                roles.add(new String[] { tokens[0], tokens[1] });
+            }
+        }
+        return roles;
+    }
+
+    private String resourceIdByCode(String code) {
+        return db.run(Select.from(E_RESOURCE).where(r -> r.get("code").eq(code)))
+                .first().map(r -> str(r.get("ID"))).orElse(null);
+    }
+
+    private String resourceCode(String resourceId) {
+        if (resourceId == null) {
+            return "?";
+        }
+        return db.run(Select.from(E_RESOURCE).where(r -> r.get("ID").eq(resourceId)))
+                .first().map(r -> str(r.get("code"))).orElse(resourceId);
     }
 
     private Map<String, Object> base(String itemId, String resourceId) {
@@ -244,12 +338,41 @@ public class BuildUpHandler implements EventHandler {
                 .orElse(null);
     }
 
-    private boolean hasMoneyRate(String resourceId) {
+    /** Latest money rate in force today, company beating group - or null. */
+    private BigDecimal moneyRate(String resourceId, String companyId) {
         if (resourceId == null) {
-            return false;
+            return null;
         }
-        return db.run(Select.from(E_RATE).where(r -> r.get("resource_ID").eq(resourceId)))
-                .first().isPresent();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        Row best = null;
+        boolean bestIsCompany = false;
+        java.time.LocalDate bestFrom = null;
+        for (Row rate : db.run(Select.from(E_RATE).where(r -> r.get("resource_ID").eq(resourceId)))) {
+            java.time.LocalDate from = dateOf(rate.get("effectiveFrom"));
+            if (from == null || from.isAfter(today)) {
+                continue;
+            }
+            String owner = str(rate.get("owningCompany_ID"));
+            boolean isCompany = companyId != null && companyId.equalsIgnoreCase(owner);
+            boolean isGroup = owner == null;
+            if (!isCompany && !isGroup) {
+                continue;
+            }
+            if (best == null || (isCompany && !bestIsCompany)
+                    || (isCompany == bestIsCompany && from.isAfter(bestFrom))) {
+                best = rate;
+                bestIsCompany = isCompany;
+                bestFrom = from;
+            }
+        }
+        return best == null ? null : dec(best.get("rateValue"));
+    }
+
+    private static java.time.LocalDate dateOf(Object v) {
+        if (v == null) { return null; }
+        if (v instanceof java.time.LocalDate d) { return d; }
+        try { return java.time.LocalDate.parse(String.valueOf(v).substring(0, 10)); }
+        catch (RuntimeException e) { return null; }
     }
 
     private String verticalOf(String resourceId) {
@@ -276,6 +399,28 @@ public class BuildUpHandler implements EventHandler {
             count++;
         }
         return count;
+    }
+
+    @Autowired
+    private BudgetGateService gate;
+
+    @On(event = "validateForBudget", entity = "ProjectService.Projects")
+    public void onValidate(EventContext context) {
+        Row project = db.run((CqnSelect) context.get("cqn")).first()
+                .orElseThrow(() -> new ServiceException(ErrorStatuses.NOT_FOUND,
+                        "Project not found."));
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (BudgetGateService.RuleResult rule : gate.evaluate(str(project.get("ID")))) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("ruleId", rule.ruleId);
+            row.put("description", rule.description);
+            row.put("linesChecked", rule.linesChecked);
+            row.put("failing", rule.failing);
+            row.put("result", rule.result());
+            out.add(row);
+        }
+        context.put("result", out);
+        context.setCompleted();
     }
 
     private Row targetOf(EventContext context) {

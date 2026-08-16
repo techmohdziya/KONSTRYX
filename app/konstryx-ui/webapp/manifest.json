@@ -185,6 +185,16 @@
           "target": "launchpad"
         },
         {
+          "pattern": "projects",
+          "name": "projects",
+          "target": "projects"
+        },
+        {
+          "pattern": "projects/{projectId}",
+          "name": "projectBOQ",
+          "target": "projectBOQ"
+        },
+        {
           "pattern": "worklist/{docType}",
           "name": "worklist",
           "target": "worklist"
@@ -292,6 +302,20 @@
           "id": "notFound",
           "name": "NotFound",
           "transition": "show"
+        },
+        "projects": {
+          "id": "projects",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "Projects",
+          "viewName": "Projects"
+        },
+        "projectBOQ": {
+          "id": "projectBOQ",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "ProjectBOQ",
+          "viewName": "ProjectBOQ"
         }
       }
     }

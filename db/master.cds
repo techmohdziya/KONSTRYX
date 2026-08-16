@@ -36,7 +36,6 @@ entity CBSNode : cuid, managed, common.scoped {
   level            : String(2) enum { L1; L2; L3; };
   parent           : Association to CBSNode;
   constructionType : String(60);
-  resourceAffinity : String(60);
   phase            : String(60);     // L1 phase
   children         : Association to many CBSNode on children.parent = $self;
 }
@@ -81,6 +80,12 @@ entity ConsumptionRate : cuid, managed, common.scoped {
   consRate           : Decimal(15,4);
   consUoM            : String(10);
   wastageAllowancePct: Decimal(5,2);
+  /**
+   * DERIVED, never keyed (CALC-01): theoretical x (1 + wastage/100), 4 dp
+   * half-up. Stored for query performance; recomputed on every write; an
+   * inbound value is ignored, not trusted.
+   */
+  netRate            : Decimal(10,4);
   basis              : String(60);
   effectiveFrom      : Date;
 }

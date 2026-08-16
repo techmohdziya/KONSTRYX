@@ -1,0 +1,65 @@
+<mvc:View
+	controllerName="konstryx.controller.Projects"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="projectsPage" headerExpanded="true" fitContent="false">
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Projects" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Mastered in KONSTRYX. A project reads NOT_SENT until the S/4 connector confirms it — nothing downstream should post against one that has not arrived."/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:content>
+			<Table
+				id="projectTable"
+				items="{path: 'pj>/Projects', parameters: {$filter: 'IsActiveEntity eq true', $orderby: 'code'}, templateShareable: false}"
+				sticky="ColumnHeaders"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="projectCount" text="Projects" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="9rem"><Text text="Project"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Name"/></Column>
+					<Column width="8rem"><Text text="Stage"/></Column>
+					<Column width="12rem" hAlign="End"><Text text="Contract value"/></Column>
+					<Column width="10rem"><Text text="S/4 sync"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<!-- The object key is a hyperlink with one or more targets,
+							     configurable per user - the S/4 smart-link pattern. -->
+							<Link text="{pj>code}" emphasized="true" press=".onProjectLink"/>
+							<Text text="{pj>name}"/>
+							<Text text="{pj>stage}"/>
+							<ObjectNumber
+								number="{path: 'pj>contractValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, minFractionDigits: 0, maxFractionDigits: 0}}"
+								unit="{pj>ccy_code}"/>
+							<ObjectStatus
+								text="{pj>syncStatus}"
+								state="{= ${pj>syncStatus} === 'SENT' ? 'Success' : ${pj>syncStatus} === 'FAILED' ? 'Error' : 'Warning' }"
+								icon="{= ${pj>syncStatus} === 'SENT' ? 'sap-icon://connected' : 'sap-icon://disconnected' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>
