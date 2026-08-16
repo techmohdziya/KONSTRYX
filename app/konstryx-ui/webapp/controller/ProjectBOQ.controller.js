@@ -125,7 +125,8 @@ sap.ui.define([
 
 		onCbsLink: function (oEvent) {
 			var oRow = oEvent.getSource().getBindingContext("pj").getObject();
-			ObjectLinks.open(this, "cbs", oRow.cbs || {}, oEvent.getSource());
+			var oCbs = Object.assign({ projectId: this._sProjectId }, oRow.cbs || {});
+			ObjectLinks.open(this, "cbs", oCbs, oEvent.getSource());
 		},
 
 		onResourceLink: function (oEvent) {

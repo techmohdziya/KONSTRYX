@@ -32,7 +32,14 @@ sap.ui.define([
 			  route: "worklist", args: function () { return { docType: "RR" }; } }
 		],
 		cbs: [
-			{ key: "library", text: "CBS Library",         icon: "sap-icon://org-chart",
+			// The transaction leads: from a bill line the CBS code opens the
+			// ASSIGNED node of this project with its recipe resources. The
+			// library is a secondary target for whoever maintains it - a
+			// transaction must never dump a user into master maintenance.
+			{ key: "assigned", text: "Assigned CBS · this project", icon: "sap-icon://overview-chart",
+			  route: "projectCBS",
+			  args: function (o) { return { projectId: o.projectId, cbsId: o.ID }; } },
+			{ key: "library", text: "CBS Library (master)", icon: "sap-icon://org-chart",
 			  route: "masterCBS", args: function () { return undefined; } }
 		],
 		resource: [

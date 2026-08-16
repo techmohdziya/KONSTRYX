@@ -190,6 +190,11 @@
           "target": "projects"
         },
         {
+          "pattern": "projects/{projectId}/cbs/{cbsId}",
+          "name": "projectCBS",
+          "target": "projectCBS"
+        },
+        {
           "pattern": "projects/{projectId}",
           "name": "projectBOQ",
           "target": "projectBOQ"
@@ -316,6 +321,13 @@
           "path": "konstryx.view",
           "name": "ProjectBOQ",
           "viewName": "ProjectBOQ"
+        },
+        "projectCBS": {
+          "id": "projectCBS",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "ProjectCBS",
+          "viewName": "ProjectCBS"
         }
       }
     }

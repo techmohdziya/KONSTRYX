@@ -1,0 +1,117 @@
+<mvc:View
+	controllerName="konstryx.controller.ProjectCBS"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="projectCbsPage" headerExpanded="true" fitContent="false">
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title id="cbsNodeTitle" text="Assigned CBS" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text id="cbsNodeSubtitle" text=""/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:content>
+			<VBox>
+				<!-- The recipe: the norms keyed to this node's library leaf.
+				     These ARE the node's resources - what one unit of work on
+				     this leaf consumes and employs. -->
+				<Table id="recipeTable" sticky="ColumnHeaders"
+				       class="sapUiResponsiveMargin" width="auto"
+				       items="{path: 'md>/ConsumptionRates', suspended: true, parameters: {$select: 'ID,consRate,consUoM,wastageAllowancePct,netRate,basis,linkedCBS_ID', $expand: 'material($select=code,description)', $filter: 'IsActiveEntity eq true'}, templateShareable: false}"
+				       noDataText="No material norm is keyed to this leaf yet.">
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Material norms (recipe)" level="H4"/>
+						</OverflowToolbar>
+					</headerToolbar>
+					<columns>
+						<Column width="14rem"><Text text="Material"/></Column>
+						<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Theoretical"/></Column>
+						<Column width="7rem" hAlign="End"><Text text="Wastage %"/></Column>
+						<Column width="7rem" hAlign="End"><Text text="Net rate"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Link text="{md>material/code}" press=".onResourceLink"/>
+								<Text text="{md>material/description}"/>
+								<ObjectNumber number="{path: 'md>consRate', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 4}}"/>
+								<ObjectNumber number="{path: 'md>wastageAllowancePct', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 2}}"/>
+								<ObjectNumber number="{path: 'md>netRate', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 4}}" emphasized="true"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<Table id="prodTable" sticky="ColumnHeaders"
+				       class="sapUiResponsiveMargin" width="auto"
+				       items="{path: 'md>/ProductivityRates', suspended: true, parameters: {$select: 'ID,outputPerHr,outputUoM,crewComposition,basis,linkedCBS_ID', $expand: 'resource($select=code,description),owningCompany($select=code)', $filter: 'IsActiveEntity eq true'}, templateShareable: false}"
+				       noDataText="No productivity norm is keyed to this leaf yet.">
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Productivity norms (recipe)" level="H4"/>
+						</OverflowToolbar>
+					</headerToolbar>
+					<columns>
+						<Column width="14rem"><Text text="Resource"/></Column>
+						<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Activity"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Output/hr"/></Column>
+						<Column width="10rem"><Text text="Crew"/></Column>
+						<Column width="8rem"><Text text="Company"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Link text="{md>resource/code}" press=".onResourceLink"/>
+								<Text text="{md>basis}"/>
+								<ObjectNumber number="{path: 'md>outputPerHr', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 3}}"/>
+								<Text text="{md>crewComposition}"/>
+								<!-- The company variants side by side are the point:
+								     INFC site 1.25 vs PMI shop 0.95 on one leaf. -->
+								<ObjectStatus text="{= ${md>owningCompany/code} || 'ALL' }"
+									state="{= ${md>owningCompany/code} ? 'Warning' : 'Success' }"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<!-- What this node carries in this project: the bill lines
+				     mapped to it. -->
+				<Table id="mappedTable" sticky="ColumnHeaders"
+				       class="sapUiResponsiveMargin" width="auto"
+				       items="{path: 'pj>/BOQItems', suspended: true, parameters: {$select: 'ID,itemNo,description,qty,amount', $orderby: 'itemNo'}, templateShareable: false}"
+				       noDataText="No bill line is mapped to this node.">
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Bill lines on this node" level="H4"/>
+						</OverflowToolbar>
+					</headerToolbar>
+					<columns>
+						<Column width="9rem"><Text text="Item"/></Column>
+						<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+						<Column width="9rem" hAlign="End"><Text text="Qty"/></Column>
+						<Column width="11rem" hAlign="End"><Text text="Amount"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<ObjectIdentifier title="{pj>itemNo}"/>
+								<Text text="{pj>description}"/>
+								<ObjectNumber number="{path: 'pj>qty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"/>
+								<ObjectNumber number="{path: 'pj>amount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</VBox>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

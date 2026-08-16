@@ -233,11 +233,16 @@ public class BudgetGateService {
     private List<Row> resolvedNorms(String entity, String subjectField, String leafId,
                                     String companyId) {
         Map<String, Row> bySubject = new LinkedHashMap<>();
+        java.time.LocalDate today = java.time.LocalDate.now();
         for (Row norm : db.run(Select.from(entity)
                 .where(n -> n.get("linkedCBS_ID").eq(leafId)))) {
             String subject = str(norm.get(subjectField));
             if (subject == null) {
                 continue;
+            }
+            java.time.LocalDate from = normDate(norm.get("effectiveFrom"));
+            if (from == null || from.isAfter(today)) {
+                continue;   // a norm dated in the future is not yet in force
             }
             String owner = str(norm.get("owningCompany_ID"));
             boolean isCompany = companyId != null && companyId.equalsIgnoreCase(owner);
@@ -248,15 +253,28 @@ public class BudgetGateService {
             Row current = bySubject.get(subject);
             if (current == null) {
                 bySubject.put(subject, norm);
-            } else {
-                boolean currentIsCompany = companyId != null
-                        && companyId.equalsIgnoreCase(str(current.get("owningCompany_ID")));
-                if (isCompany && !currentIsCompany) {
-                    bySubject.put(subject, norm);
-                }
+                continue;
+            }
+            boolean currentIsCompany = companyId != null
+                    && companyId.equalsIgnoreCase(str(current.get("owningCompany_ID")));
+            java.time.LocalDate currentFrom = normDate(current.get("effectiveFrom"));
+            // Company beats group; within a scope the latest start in force
+            // wins - the same rule the money rates resolve by, so a rate
+            // revision and a norm revision behave identically.
+            if ((isCompany && !currentIsCompany)
+                    || (isCompany == currentIsCompany
+                        && currentFrom != null && from.isAfter(currentFrom))) {
+                bySubject.put(subject, norm);
             }
         }
         return new ArrayList<>(bySubject.values());
+    }
+
+    private static java.time.LocalDate normDate(Object v) {
+        if (v == null) { return null; }
+        if (v instanceof java.time.LocalDate d) { return d; }
+        try { return java.time.LocalDate.parse(String.valueOf(v).substring(0, 10)); }
+        catch (RuntimeException e) { return null; }
     }
 
     private String companyOf(String projectId) {

@@ -29,7 +29,7 @@
 			<VBox>
 				<Table
 					id="itemTable"
-					items="{path: 'pj>/BOQItems', suspended: true, parameters: {$select: 'ID,itemNo,code,description,qty,budgetQty,uom,rate,amount', $expand: 'cbs($select=code)', $orderby: 'itemNo'}, templateShareable: false}"
+					items="{path: 'pj>/BOQItems', suspended: true, parameters: {$select: 'ID,itemNo,code,description,qty,budgetQty,uom,rate,amount', $expand: 'cbs($select=ID,code)', $orderby: 'itemNo'}, templateShareable: false}"
 					sticky="ColumnHeaders"
 					mode="SingleSelectMaster"
 					selectionChange=".onItemSelect"

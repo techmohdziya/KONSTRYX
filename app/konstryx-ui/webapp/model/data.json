@@ -38,6 +38,15 @@
   ],
   "tiles": [
     {
+      "title": "Projects",
+      "subtitle": "Mastered here, pushed to S/4",
+      "icon": "sap-icon://building",
+      "value": "2",
+      "unit": "projects",
+      "state": "Good",
+      "route": "projects"
+    },
+    {
       "title": "Resource Requests",
       "subtitle": "Awaiting my advisory",
       "icon": "sap-icon://activity-items",
@@ -119,15 +128,6 @@
     }
   ],
   "masterTiles": [
-    {
-      "title": "Projects",
-      "subtitle": "Mastered here, pushed to S/4",
-      "icon": "sap-icon://building",
-      "value": "2",
-      "unit": "projects",
-      "state": "Good",
-      "route": "projects"
-    },
     {
       "title": "Resource Hierarchy",
       "subtitle": "L1-L5 resource master",
