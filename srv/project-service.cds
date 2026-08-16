@@ -6,6 +6,12 @@
 using { konstryx.prj } from '../db/prj';
 using { konstryx.master } from '../db/master';
 
+/** One target of a WBS distribution: the element and its weight share. */
+type WBSTarget {
+  wbsCode : String(24);
+  weight  : Decimal(9,4);
+}
+
 @requires: 'ProjectManager'
 service ProjectService @(path:'/project') {
   /**
@@ -136,6 +142,20 @@ service ProjectService @(path:'/project') {
 
       /** Recomputes the header value from the priced lines. */
       action recalculate() returns String;
+
+      /**
+       * Distributes bill quantities across WBS by template — the three
+       * decisions that cover 1,100 of the canonical 1,142 lines. TPL-SINGLE
+       * puts a line whole onto one element; TPL-FLOORS and TPL-ZONES split it
+       * across several by weight (GFA shares, zone shares). Re-running a
+       * distribution REPLACES the targeted lines' allocations: the last
+       * decision wins, visibly, rather than stacking into over-allocation.
+       */
+      action distributeToWBS(
+        template : String(20),
+        targets  : array of WBSTarget,
+        itemNos  : array of String(20)
+      ) returns String;
 
       /**
        * Resolves every mapped line's build-up from the CBS recipes: the norms

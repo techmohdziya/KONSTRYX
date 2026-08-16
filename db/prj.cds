@@ -140,6 +140,10 @@ entity Allocation : cuid, managed {
   allocPct     : Decimal(5,2);
   pctOfItem    : Decimal(5,2);
   pctOfCBSRate : Decimal(5,2);
+  /** Which template made this row: TPL-SINGLE / TPL-FLOORS / TPL-ZONES (B.1). */
+  template     : String(20);
+  /** The human words behind the split — "GFA-weighted per floor". */
+  splitBasis   : String(40);
 }
 
 entity ProjectResource : cuid, managed {

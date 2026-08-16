@@ -156,6 +156,151 @@ public class AllocationHandler implements EventHandler {
         return total;
     }
 
+    // ------------------------------------------------------------ distribution
+
+    private static final List<String> TEMPLATES =
+            List.of("TPL-SINGLE", "TPL-FLOORS", "TPL-ZONES");
+
+    /**
+     * The template distribution: one decision, many lines. TPL-SINGLE puts each
+     * line whole onto one WBS element; TPL-FLOORS and TPL-ZONES split by
+     * weight. The mechanism is identical - a weighted split - and the template
+     * name records WHY the weights are what they are (GFA shares, zone
+     * shares), which is what the QS reads back a year later.
+     *
+     * Re-running REPLACES the targeted lines' allocations. Stacking a second
+     * distribution on top of a first would over-allocate every line by
+     * construction; a replaced decision is visible in the template column.
+     * Rounding residue goes to the last target so the sum equals the contract
+     * quantity exactly - VAL-02 checks to the third decimal and "nearly" is a
+     * fail.
+     */
+    @On(event = "distributeToWBS", entity = "ProjectService.BOQs")
+    public void onDistribute(EventContext context) {
+        Row boq = targetOf(context, "Bill of quantities not found.");
+        String boqId = str(boq.get("ID"));
+        String projectId = str(boq.get("project_ID"));
+
+        String template = str(context.get("template"));
+        if (template == null || !TEMPLATES.contains(template)) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "The template must be one of " + String.join(", ", TEMPLATES) + ".");
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> targets =
+                (List<Map<String, Object>>) context.get("targets");
+        if (targets == null || targets.isEmpty()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "Name at least one WBS target.");
+        }
+        if ("TPL-SINGLE".equals(template) && targets.size() != 1) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "TPL-SINGLE means one element. For a split, use TPL-FLOORS or TPL-ZONES.");
+        }
+        if (!"TPL-SINGLE".equals(template) && targets.size() < 2) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    template + " splits across several elements - give at least two targets.");
+        }
+
+        // Resolve every target before touching anything.
+        List<Row> wbsRows = new ArrayList<>();
+        List<BigDecimal> weights = new ArrayList<>();
+        BigDecimal weightSum = BigDecimal.ZERO;
+        for (Map<String, Object> target : targets) {
+            Row wbs = findWbs(str(target.get("wbsCode")), projectId);
+            BigDecimal weight = dec(target.get("weight"));
+            if (weight == null) {
+                weight = BigDecimal.ONE;   // no weights given: an equal split
+            }
+            if (weight.signum() <= 0) {
+                throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                        "A weight of " + weight.toPlainString() + " on "
+                                + target.get("wbsCode") + " distributes nothing.");
+            }
+            wbsRows.add(wbs);
+            weights.add(weight);
+            weightSum = weightSum.add(weight);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<String> itemNos = (List<String>) context.get("itemNos");
+        boolean scoped = itemNos != null && !itemNos.isEmpty();
+
+        int distributed = 0, skipped = 0;
+        List<String> skippedNames = new ArrayList<>();
+        java.util.Set<String> touchedCbs = new java.util.HashSet<>();
+
+        for (Row item : db.run(Select.from(E_ITEM).where(i -> i.get("boq_ID").eq(boqId)))) {
+            String itemNo = str(item.get("itemNo"));
+            if (scoped && !itemNos.contains(itemNo)) {
+                continue;
+            }
+            Object cbsId = item.get("cbs_ID");
+            BigDecimal qty = dec(item.get("qty"));
+            if (cbsId == null || qty == null || qty.signum() <= 0) {
+                skipped++;
+                skippedNames.add(itemNo + (cbsId == null ? " (no CBS)" : " (no qty)"));
+                continue;
+            }
+            String itemId = str(item.get("ID"));
+
+            // The last decision wins - and is seen to win.
+            db.run(com.sap.cds.ql.Delete.from(E_ALLOC)
+                    .where(a -> a.get("boqItem_ID").eq(itemId)));
+
+            BigDecimal assigned = BigDecimal.ZERO;
+            BigDecimal cumulative = BigDecimal.ZERO;
+            for (int t = 0; t < wbsRows.size(); t++) {
+                BigDecimal share;
+                if (t == wbsRows.size() - 1) {
+                    share = qty.subtract(assigned);   // residue lands here
+                } else {
+                    share = qty.multiply(weights.get(t))
+                            .divide(weightSum, 3, RoundingMode.HALF_UP);
+                }
+                assigned = assigned.add(share);
+                cumulative = cumulative.add(share);
+
+                Map<String, Object> allocation = new LinkedHashMap<>();
+                allocation.put("ID", UUID.randomUUID().toString());
+                allocation.put("boqItem_ID", itemId);
+                allocation.put("wbs_ID", wbsRows.get(t).get("ID"));
+                allocation.put("cbs_ID", cbsId);
+                allocation.put("allocQty", share);
+                allocation.put("allocPct", share.multiply(new BigDecimal("100"))
+                        .divide(qty, 2, RoundingMode.HALF_UP));
+                allocation.put("pctOfItem", cumulative.multiply(new BigDecimal("100"))
+                        .divide(qty, 2, RoundingMode.HALF_UP));
+                allocation.put("template", template);
+                allocation.put("splitBasis", "TPL-SINGLE".equals(template)
+                        ? "whole line"
+                        : ("TPL-FLOORS".equals(template) ? "GFA-weighted per floor"
+                                : "zone-weighted") + " " + weights.get(t).stripTrailingZeros()
+                                .toPlainString() + "/" + weightSum.stripTrailingZeros()
+                                .toPlainString());
+                db.run(Insert.into(E_ALLOC).entry(allocation));
+            }
+            touchedCbs.add(cbsId.toString());
+            distributed++;
+        }
+
+        for (String cbs : touchedCbs) {
+            rollUpCbs(cbs);
+        }
+
+        StringBuilder message = new StringBuilder(template + ": " + distributed
+                + " line(s) distributed across " + wbsRows.size() + " WBS element(s)");
+        if (skipped > 0) {
+            message.append("; ").append(skipped).append(" skipped - ")
+                    .append(String.join(", ",
+                            skippedNames.subList(0, Math.min(3, skippedNames.size()))))
+                    .append(skippedNames.size() > 3 ? " ..." : "");
+        }
+        message.append(". Prior allocations of the distributed lines were replaced.");
+        return_(context, message.toString());
+    }
+
     // ------------------------------------------------------- CBS instantiation
 
     @On(event = "instantiateCBS")
