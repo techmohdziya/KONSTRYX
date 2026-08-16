@@ -1,0 +1,87 @@
+<mvc:View
+	controllerName="konstryx.controller.CostMapping"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="costMappingPage" headerExpanded="true" fitContent="false">
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title id="cmTitle" text="Cost Mapping Workbench" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="The user only resolves exceptions. Lines the system mapped are not shown here — they are done."/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Generate Build-up" icon="sap-icon://refresh" press=".onGenerateBuildUp"/>
+					<Button id="generateBudgetBtn" text="Generate Budget Lines" type="Emphasized"
+					        icon="sap-icon://money-bills" enabled="false"
+					        press=".onGenerateBudget"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="false">
+				<!-- The four steps of the workbench as tiles: what is done, what
+				     is open. The open counts are the work; the done counts are
+				     the reassurance. -->
+				<HBox wrap="Wrap" class="kxFilterBar">
+					<GenericTile id="tileCbs" header="1 · CBS Mapping" class="sapUiTinyMarginEnd" press=".onNoop">
+						<TileContent unit="open"><NumericContent id="numCbs" withMargin="false"/></TileContent>
+					</GenericTile>
+					<GenericTile id="tileWbs" header="2 · WBS Distribution" class="sapUiTinyMarginEnd" press=".onNoop">
+						<TileContent unit="open"><NumericContent id="numWbs" withMargin="false"/></TileContent>
+					</GenericTile>
+					<GenericTile id="tileRes" header="3 · Resources" class="sapUiTinyMarginEnd" press=".onNoop">
+						<TileContent unit="open"><NumericContent id="numRes" withMargin="false"/></TileContent>
+					</GenericTile>
+					<GenericTile id="tileGate" header="4 · Validation Gate" class="sapUiTinyMarginEnd" press=".onCheckGate">
+						<TileContent unit="failing"><NumericContent id="numGate" withMargin="false"/></TileContent>
+					</GenericTile>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table id="exceptionTable"
+			       items="{path: 'view>/exceptions', templateShareable: false}"
+			       sticky="ColumnHeaders"
+			       class="sapUiResponsiveMargin"
+			       width="auto"
+			       noDataText="No exceptions. Every line is mapped, distributed and resolved — the gate tile tells you if the budget can generate.">
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="exceptionCount" text="Exceptions" level="H4"/>
+						<ToolbarSpacer/>
+						<Text text="Only lines needing a decision are listed"/>
+					</OverflowToolbar>
+				</headerToolbar>
+				<columns>
+					<Column width="8rem"><Text text="Item"/></Column>
+					<Column width="12rem"><Text text="Reason"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Detail"/></Column>
+					<Column width="9rem"><Text text="Suggestion"/></Column>
+					<Column width="8rem"><Text text="Action"/></Column>
+				</columns>
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectIdentifier title="{view>itemNo}"/>
+							<ObjectStatus text="{view>reason}"
+								state="{= ${view>reason} === 'CBS_UNMAPPED' ? 'Error' : 'Warning' }"/>
+							<Text text="{view>detail}"/>
+							<Text text="{= ${view>suggestedCbs} ? 'CBS ' + ${view>suggestedCbs} : '—' }"/>
+							<Button text="Accept" type="Accept"
+							        visible="{= !!${view>suggestedCbsId} }"
+							        tooltip="Assign the suggested CBS to this line"
+							        press=".onAcceptSuggestion"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

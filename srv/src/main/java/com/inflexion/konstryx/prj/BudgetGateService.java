@@ -230,7 +230,7 @@ public class BudgetGateService {
      * a gate and the thing it gates invites exactly the drift it exists to
      * catch. Change both together.
      */
-    private List<Row> resolvedNorms(String entity, String subjectField, String leafId,
+    public List<Row> resolvedNorms(String entity, String subjectField, String leafId,
                                     String companyId) {
         Map<String, Row> bySubject = new LinkedHashMap<>();
         java.time.LocalDate today = java.time.LocalDate.now();
@@ -277,7 +277,7 @@ public class BudgetGateService {
         catch (RuntimeException e) { return null; }
     }
 
-    private String companyOf(String projectId) {
+    public String companyOf(String projectId) {
         return db.run(Select.from("konstryx.prj.Project")
                         .where(p -> p.get("ID").eq(projectId))).first()
                 .map(r -> str(r.get("company_ID"))).orElse(null);

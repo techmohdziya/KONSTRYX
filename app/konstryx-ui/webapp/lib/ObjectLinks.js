@@ -28,6 +28,8 @@ sap.ui.define([
 		project: [
 			{ key: "boq",     text: "Bill of Quantities",  icon: "sap-icon://list",
 			  route: "projectBOQ", args: function (o) { return { projectId: o.ID }; } },
+			{ key: "costMapping", text: "Cost Mapping",    icon: "sap-icon://combine",
+			  route: "costMapping", args: function (o) { return { projectId: o.ID }; } },
 			{ key: "requests", text: "Resource Requests",  icon: "sap-icon://cart",
 			  route: "worklist", args: function () { return { docType: "RR" }; } }
 		],

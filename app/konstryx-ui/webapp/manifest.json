@@ -190,6 +190,11 @@
           "target": "projects"
         },
         {
+          "pattern": "projects/{projectId}/cost-mapping",
+          "name": "costMapping",
+          "target": "costMapping"
+        },
+        {
           "pattern": "projects/{projectId}/cbs/{cbsId}",
           "name": "projectCBS",
           "target": "projectCBS"
@@ -328,6 +333,13 @@
           "path": "konstryx.view",
           "name": "ProjectCBS",
           "viewName": "ProjectCBS"
+        },
+        "costMapping": {
+          "id": "costMapping",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "CostMapping",
+          "viewName": "CostMapping"
         }
       }
     }

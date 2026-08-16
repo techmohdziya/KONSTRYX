@@ -44,6 +44,28 @@ service ProjectService @(path:'/project') {
         result       : String(4);
       };
 
+      /**
+       * The Cost Mapping workbench's data: step-tile counts and ONLY the rows
+       * that need a human. The canonical bill maps 1,127 of 1,142 lines
+       * automatically and those are never rendered (wireframe: "the user only
+       * resolves exceptions").
+       */
+      action costMappingSummary() returns {
+        totalLines  : Integer;
+        cbsMapped   : Integer;  cbsOpen  : Integer;
+        wbsDone     : Integer;  wbsOpen  : Integer;
+        resResolved : Integer;  resOpen  : Integer;
+        gatePassing : Integer;  gateFailing : Integer;
+        exceptions  : array of {
+          boqItemId      : UUID;
+          itemNo         : String(20);
+          reason         : String(30);
+          detail         : String(255);
+          suggestedCbs   : String(40);
+          suggestedCbsId : UUID;
+        };
+      };
+
       /** Records the outcome of a sync attempt. Called by the connector. */
       action recordSyncResult(success : Boolean, s4Key : String(60),
                               s4System : String(20), message : String(1000)) returns String;

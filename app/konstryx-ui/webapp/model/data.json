@@ -36,97 +36,6 @@
       "text": "Group Â· consolidated"
     }
   ],
-  "tiles": [
-    {
-      "title": "Projects",
-      "subtitle": "Mastered here, pushed to S/4",
-      "icon": "sap-icon://building",
-      "value": "2",
-      "unit": "projects",
-      "state": "Good",
-      "route": "projects"
-    },
-    {
-      "title": "Resource Requests",
-      "subtitle": "Awaiting my advisory",
-      "icon": "sap-icon://activity-items",
-      "value": "4",
-      "unit": "open",
-      "state": "Critical",
-      "route": "worklist",
-      "arg": "RR"
-    },
-    {
-      "title": "Availability Checks",
-      "subtitle": "Gate before reservation",
-      "icon": "sap-icon://check-availability",
-      "value": "2",
-      "unit": "due",
-      "state": "Neutral",
-      "route": "worklist",
-      "arg": "AVC"
-    },
-    {
-      "title": "Reservations",
-      "subtitle": "Active across 3 types",
-      "icon": "sap-icon://sales-order",
-      "value": "38",
-      "unit": "active",
-      "state": "Good",
-      "route": "worklist",
-      "arg": "RES"
-    },
-    {
-      "title": "Mobilizations",
-      "subtitle": "Next 7 days",
-      "icon": "sap-icon://shipping-status",
-      "value": "6",
-      "unit": "planned",
-      "state": "Neutral",
-      "route": "worklist",
-      "arg": "MOB"
-    },
-    {
-      "title": "Operation Logs",
-      "subtitle": "Yesterday Â· unsigned",
-      "icon": "sap-icon://time-entry-request",
-      "value": "3",
-      "unit": "to sign",
-      "state": "Critical",
-      "route": "worklist",
-      "arg": "OPL"
-    },
-    {
-      "title": "Variation Orders",
-      "subtitle": "Pending approval",
-      "icon": "sap-icon://request",
-      "value": "1",
-      "unit": "open",
-      "state": "Critical",
-      "route": "worklist",
-      "arg": "VAR"
-    },
-    {
-      "title": "Budget Encumbrance",
-      "subtitle": "S/4 PS commitment",
-      "icon": "sap-icon://money-bills",
-      "value": "4.8",
-      "unit": "AED M",
-      "state": "Good",
-      "route": "worklist",
-      "arg": "CMT"
-    },
-    {
-      "title": "Closures",
-      "subtitle": "Awaiting reconciliation",
-      "icon": "sap-icon://complete",
-      "value": "2",
-      "unit": "open",
-      "state": "Neutral",
-      "route": "worklist",
-      "arg": "CLS"
-    }
-  ],
   "masterTiles": [
     {
       "title": "Resource Hierarchy",
@@ -1131,5 +1040,120 @@
       "dmbText": "Off-hire ARM Power",
       "clsText": "Reconcile"
     }
-  }
+  },
+  "tileGroups": [
+    {
+      "title": "Setup & Budget",
+      "subtitle": "Project structure, bill of quantities, cost mapping, budget control",
+      "tiles": [
+        {
+          "title": "Projects",
+          "subtitle": "Mastered here, pushed to S/4",
+          "icon": "sap-icon://building",
+          "value": "2",
+          "unit": "projects",
+          "state": "Good",
+          "route": "projects"
+        },
+        {
+          "title": "Budget Encumbrance",
+          "subtitle": "S/4 PS commitment",
+          "icon": "sap-icon://money-bills",
+          "value": "4.8",
+          "unit": "AED M",
+          "state": "Good",
+          "route": "worklist",
+          "arg": "CMT"
+        }
+      ]
+    },
+    {
+      "title": "Resource Workflow — Request & Source",
+      "subtitle": "The site asks; advisory routes; availability answers",
+      "tiles": [
+        {
+          "title": "Resource Requests",
+          "subtitle": "Awaiting my advisory",
+          "icon": "sap-icon://activity-items",
+          "value": "4",
+          "unit": "open",
+          "state": "Critical",
+          "route": "worklist",
+          "arg": "RR"
+        },
+        {
+          "title": "Availability Checks",
+          "subtitle": "Gate before reservation",
+          "icon": "sap-icon://check-availability",
+          "value": "2",
+          "unit": "due",
+          "state": "Neutral",
+          "route": "worklist",
+          "arg": "AVC"
+        }
+      ]
+    },
+    {
+      "title": "Resource Workflow — Commit & Execute",
+      "subtitle": "Money locks, resources mobilize, work is logged",
+      "tiles": [
+        {
+          "title": "Reservations",
+          "subtitle": "Active across 3 types",
+          "icon": "sap-icon://sales-order",
+          "value": "38",
+          "unit": "active",
+          "state": "Good",
+          "route": "worklist",
+          "arg": "RES"
+        },
+        {
+          "title": "Mobilizations",
+          "subtitle": "Next 7 days",
+          "icon": "sap-icon://shipping-status",
+          "value": "6",
+          "unit": "planned",
+          "state": "Neutral",
+          "route": "worklist",
+          "arg": "MOB"
+        },
+        {
+          "title": "Operation Logs",
+          "subtitle": "Yesterday Â· unsigned",
+          "icon": "sap-icon://time-entry-request",
+          "value": "3",
+          "unit": "to sign",
+          "state": "Critical",
+          "route": "worklist",
+          "arg": "OPL"
+        }
+      ]
+    },
+    {
+      "title": "Resource Workflow — Change & Close",
+      "subtitle": "Variations and reconciliation",
+      "tiles": [
+        {
+          "title": "Variation Orders",
+          "subtitle": "Pending approval",
+          "icon": "sap-icon://request",
+          "value": "1",
+          "unit": "open",
+          "state": "Critical",
+          "route": "worklist",
+          "arg": "VAR"
+        },
+        {
+          "title": "Closures",
+          "subtitle": "Awaiting reconciliation",
+          "icon": "sap-icon://complete",
+          "value": "2",
+          "unit": "open",
+          "state": "Neutral",
+          "route": "worklist",
+          "arg": "CLS"
+        }
+      ]
+    }
+  ]
 }
