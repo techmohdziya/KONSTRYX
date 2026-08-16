@@ -64,6 +64,7 @@ service ProjectService @(path:'/project') {
         gatePassing : Integer;  gateFailing : Integer;
         exceptions  : array of {
           boqItemId      : UUID;
+          boqId          : UUID;
           itemNo         : String(20);
           reason         : String(30);
           detail         : String(255);

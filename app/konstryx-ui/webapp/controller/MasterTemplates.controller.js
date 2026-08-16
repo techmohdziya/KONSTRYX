@@ -149,16 +149,15 @@ sap.ui.define([
 				contentWidth: "26rem",
 				content: [
 					new VBox({
-						class: "sapUiSmallMargin",
 						items: [
 							new Text({
 								text: "The template's cost breakdown structure and default resources are"
 									+ " copied into the project. A project that already has a CBS is refused."
 							}),
-							new Label({ text: "Project", class: "sapUiSmallMarginTop" }),
+							new Label({ text: "Project" }).addStyleClass("sapUiSmallMarginTop"),
 							oSelect
 						]
-					})
+					}).addStyleClass("sapUiSmallMargin")
 				],
 				beginButton: new Button({
 					text: "Instantiate",

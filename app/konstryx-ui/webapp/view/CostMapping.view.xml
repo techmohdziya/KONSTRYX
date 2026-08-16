@@ -76,10 +76,16 @@
 								state="{= ${view>reason} === 'CBS_UNMAPPED' ? 'Error' : 'Warning' }"/>
 							<Text text="{view>detail}"/>
 							<Text text="{= ${view>suggestedCbs} ? 'CBS ' + ${view>suggestedCbs} : '—' }"/>
-							<Button text="Accept" type="Accept"
-							        visible="{= !!${view>suggestedCbsId} }"
-							        tooltip="Assign the suggested CBS to this line"
-							        press=".onAcceptSuggestion"/>
+							<HBox>
+								<Button text="Accept" type="Accept"
+								        visible="{= !!${view>suggestedCbsId} }"
+								        tooltip="Assign the suggested CBS to this line"
+								        press=".onAcceptSuggestion"/>
+								<Button text="Distribute" icon="sap-icon://split"
+								        visible="{= ${view>reason} === 'UNALLOCATED' }"
+								        tooltip="Split this line's quantity across WBS elements"
+								        press=".onDistribute"/>
+							</HBox>
 						</cells>
 					</ColumnListItem>
 				</items>

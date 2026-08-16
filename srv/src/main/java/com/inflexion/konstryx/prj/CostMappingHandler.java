@@ -88,13 +88,14 @@ public class CostMappingHandler implements EventHandler {
         for (Row item : items) {
             String itemId = str(item.get("ID"));
             String itemNo = str(item.get("itemNo"));
+            String boqId = str(item.get("boq_ID"));
 
             // ---- step 1 · CBS ------------------------------------------------
             Object cbsId = item.get("cbs_ID");
             if (cbsId == null) {
                 Map<String, Object> suggestion = suggestLeaf(
                         str(item.get("description")), instances);
-                exceptions.add(exception(itemId, itemNo, "CBS_UNMAPPED",
+                exceptions.add(exception(itemId, itemNo, boqId, "CBS_UNMAPPED",
                         "No CBS assigned",
                         suggestion == null ? null : str(suggestion.get("code")),
                         suggestion == null ? null : str(suggestion.get("ID"))));
@@ -112,7 +113,7 @@ public class CostMappingHandler implements EventHandler {
             if (allocated.compareTo(contractQty) == 0 && contractQty.signum() > 0) {
                 wbsDone++;
             } else {
-                exceptions.add(exception(itemId, itemNo, "UNALLOCATED",
+                exceptions.add(exception(itemId, itemNo, boqId, "UNALLOCATED",
                         allocated.stripTrailingZeros().toPlainString() + " of "
                                 + contractQty.stripTrailingZeros().toPlainString()
                                 + " distributed to WBS", null, null));
@@ -122,7 +123,7 @@ public class CostMappingHandler implements EventHandler {
             Row instance = instanceById.get(cbsId.toString());
             String leaf = instance == null ? null : str(instance.get("libraryNode_ID"));
             if (leaf == null) {
-                exceptions.add(exception(itemId, itemNo, "NO_LIBRARY_ORIGIN",
+                exceptions.add(exception(itemId, itemNo, boqId, "NO_LIBRARY_ORIGIN",
                         "The assigned CBS node has no library origin, so no recipe can attach",
                         null, null));
                 continue;
@@ -140,7 +141,7 @@ public class CostMappingHandler implements EventHandler {
                     // leaf still deserves one, but the line is workable.
                     resResolved++;
                 } else {
-                    exceptions.add(exception(itemId, itemNo, "NO_RECIPE_FOR_CBS",
+                    exceptions.add(exception(itemId, itemNo, boqId, "NO_RECIPE_FOR_CBS",
                             "No norm is keyed to leaf "
                                     + (instance == null ? "?" : str(instance.get("code"))),
                             null, null));
@@ -166,7 +167,7 @@ public class CostMappingHandler implements EventHandler {
                 }
             }
             if (!unrated.isEmpty()) {
-                exceptions.add(exception(itemId, itemNo, "RATE_MISSING",
+                exceptions.add(exception(itemId, itemNo, boqId, "RATE_MISSING",
                         "No money rate for " + String.join(", ",
                                 unrated.stream().distinct().toList()), null, null));
                 continue;
@@ -194,7 +195,7 @@ public class CostMappingHandler implements EventHandler {
             if (complete) {
                 resResolved++;
             } else {
-                exceptions.add(exception(itemId, itemNo, "BUILDUP_NOT_GENERATED",
+                exceptions.add(exception(itemId, itemNo, boqId, "BUILDUP_NOT_GENERATED",
                         "Recipe and rates exist; run Generate Build-up", null, null));
             }
         }
@@ -225,11 +226,12 @@ public class CostMappingHandler implements EventHandler {
 
     // ----------------------------------------------------------------- helpers
 
-    private Map<String, Object> exception(String itemId, String itemNo, String reason,
-                                          String detail, String suggestedCbs,
+    private Map<String, Object> exception(String itemId, String itemNo, String boqId,
+                                          String reason, String detail, String suggestedCbs,
                                           String suggestedCbsId) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("boqItemId", itemId);
+        row.put("boqId", boqId);
         row.put("itemNo", itemNo);
         row.put("reason", reason);
         row.put("detail", detail);

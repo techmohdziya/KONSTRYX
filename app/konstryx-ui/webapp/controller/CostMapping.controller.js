@@ -1,9 +1,19 @@
 sap.ui.define([
 	"konstryx/controller/BaseController",
 	"sap/ui/model/json/JSONModel",
+	"sap/m/Dialog",
+	"sap/m/Button",
+	"sap/m/Select",
+	"sap/m/Input",
+	"sap/m/Label",
+	"sap/m/VBox",
+	"sap/m/HBox",
+	"sap/m/Text",
+	"sap/ui/core/Item",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast"
-], function (BaseController, JSONModel, MessageBox, MessageToast) {
+], function (BaseController, JSONModel, Dialog, Button, Select, Input, Label, VBox, HBox, Text,
+             Item, MessageBox, MessageToast) {
 	"use strict";
 
 	/**
@@ -114,6 +124,165 @@ sap.ui.define([
 				that._refresh();
 			}).catch(function (oError) {
 				MessageBox.error(oError.message || "The mapping was refused.");
+			});
+		},
+
+		/**
+		 * TPL-SINGLE puts the line whole onto one element; TPL-FLOORS and
+		 * TPL-ZONES split it by weight across several — the same three
+		 * decisions distributeToWBS already covers for 1,100 of the canonical
+		 * 1,142 lines (KX-DIST). The dialog only decides which template and
+		 * which targets; the server owns the arithmetic, the replace-on-rerun
+		 * behaviour, and every validation.
+		 */
+		onDistribute: function (oEvent) {
+			var oRow = oEvent.getSource().getBindingContext("view").getObject(),
+				that = this;
+
+			this._loadWbsOptions().then(function (aWbs) {
+				if (!aWbs.length) {
+					MessageBox.warning("This project has no WBS elements yet.");
+					return;
+				}
+				that._openDistributeDialog(oRow, aWbs);
+			});
+		},
+
+		_loadWbsOptions: function () {
+			if (this._aWbsOptions) {
+				return Promise.resolve(this._aWbsOptions);
+			}
+			var that = this;
+			return this.getModel("pj").bindList("/WBS", null, null, null, {
+				$filter: "project_ID eq " + this._sProjectId,
+				$select: "ID,code,description",
+				$orderby: "code"
+			}).requestContexts(0, 200).then(function (aContexts) {
+				that._aWbsOptions = aContexts.map(function (c) { return c.getObject(); });
+				return that._aWbsOptions;
+			});
+		},
+
+		_openDistributeDialog: function (oRow, aWbs) {
+			var that = this,
+				oRowsBox = new VBox().addStyleClass("sapUiTinyMarginTop");
+
+			function wbsSelect(sKey) {
+				return new Select({
+					width: "100%",
+					selectedKey: sKey || aWbs[0].code,
+					items: aWbs.map(function (w) {
+						return new Item({ key: w.code, text: w.code + " · " + w.description });
+					})
+				});
+			}
+
+			function addRow(sWeight) {
+				var oWeight = new Input({
+					width: "6rem", type: "Number", value: sWeight || "1",
+					visible: oTemplate.getSelectedKey() !== "TPL-SINGLE"
+				});
+				var oRowBox = new HBox({
+					alignItems: "Center",
+					items: [wbsSelect(), oWeight]
+				}).addStyleClass("sapUiTinyMarginTop");
+				oRowBox.data("weightField", oWeight);
+				oRowsBox.addItem(oRowBox);
+			}
+
+			function resetRows(bMulti) {
+				oRowsBox.removeAllItems();
+				addRow();
+				if (bMulti) {
+					addRow();
+				}
+			}
+
+			var oTemplate = new Select({
+				width: "100%",
+				selectedKey: "TPL-SINGLE",
+				items: [
+					new Item({ key: "TPL-SINGLE", text: "Whole line onto one element" }),
+					new Item({ key: "TPL-FLOORS", text: "Split by floor — GFA-weighted" }),
+					new Item({ key: "TPL-ZONES", text: "Split by zone — weighted" })
+				],
+				change: function () {
+					var bMulti = oTemplate.getSelectedKey() !== "TPL-SINGLE";
+					oRowsBox.getItems().forEach(function (oRowBox) {
+						oRowBox.data("weightField").setVisible(bMulti);
+					});
+					if (bMulti && oRowsBox.getItems().length < 2) {
+						addRow();
+					}
+				}
+			});
+			resetRows(false);
+
+			var oAddButton = new Button({
+				text: "+ Add target", type: "Transparent",
+				visible: false,
+				press: function () { addRow(); }
+			});
+			oTemplate.attachChange(function () {
+				oAddButton.setVisible(oTemplate.getSelectedKey() !== "TPL-SINGLE");
+			});
+
+			var oDialog = new Dialog({
+				title: "Distribute " + oRow.itemNo,
+				contentWidth: "28rem",
+				content: [
+					new VBox({
+						items: [
+							new Text({ text: oRow.detail }),
+							new Label({ text: "How to split it" }).addStyleClass("sapUiSmallMarginTop"),
+							oTemplate,
+							new Label({ text: "Target WBS element(s)" }).addStyleClass("sapUiSmallMarginTop"),
+							oRowsBox,
+							oAddButton
+						]
+					}).addStyleClass("sapUiSmallMargin")
+				],
+				beginButton: new Button({
+					text: "Distribute", type: "Emphasized",
+					press: function () {
+						var sTemplate = oTemplate.getSelectedKey(),
+							aTargets = oRowsBox.getItems().map(function (oRowBox) {
+								var oSelect = oRowBox.getItems()[0],
+									oWeight = oRowBox.data("weightField");
+								var oTarget = { wbsCode: oSelect.getSelectedKey() };
+								if (sTemplate !== "TPL-SINGLE") {
+									oTarget.weight = parseFloat(oWeight.getValue()) || 0;
+								}
+								return oTarget;
+							});
+						oDialog.close();
+						that._runDistribute(oRow, sTemplate, aTargets);
+					}
+				}),
+				endButton: new Button({ text: "Cancel", press: function () { oDialog.close(); } }),
+				afterClose: function () { oDialog.destroy(); }
+			});
+
+			this.getView().addDependent(oDialog);
+			oDialog.open();
+		},
+
+		_runDistribute: function (oRow, sTemplate, aTargets) {
+			var oModel = this.getModel("pj"),
+				that = this;
+			var oOperation = oModel.bindContext("ProjectService.distributeToWBS(...)",
+				oModel.bindContext("/BOQs(ID=" + oRow.boqId + ",IsActiveEntity=true)").getBoundContext());
+			oOperation.setParameter("template", sTemplate);
+			oOperation.setParameter("targets", aTargets);
+			oOperation.setParameter("itemNos", [oRow.itemNo]);
+			oOperation.execute().then(function () {
+				MessageToast.show(String(oOperation.getBoundContext().getValue().value
+					|| oOperation.getBoundContext().getValue()));
+				that._refresh();
+			}).catch(function (oError) {
+				// A template/target mismatch or an unknown WBS code is refused
+				// here, with the service's own explanation.
+				MessageBox.error(oError.message || "The distribution was refused.");
 			});
 		},
 
