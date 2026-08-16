@@ -316,6 +316,111 @@ public class BudgetHandler implements EventHandler {
                 + pairKey.substring(0, 8) + "; the budget total is unchanged.");
     }
 
+    // ------------------------------------------------------------ risk transfer
+
+    @On(event = "riskTransfer", entity = "BudgetService.Budgets")
+    public void onRiskTransfer(EventContext context) {
+        Row budget = targetOf(context);
+        String budgetId = str(budget.get("ID"));
+        if (!"Baselined".equals(str(budget.get("status")))) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    "Risk transfers apply to a baselined budget; " + budget.get("docNo")
+                            + " is " + budget.get("status") + ".");
+        }
+
+        BigDecimal amount = dec(context.get("amount"));
+        if (amount == null || amount.signum() <= 0) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A risk transfer needs a positive amount.");
+        }
+        String riskReference = str(context.get("riskReference"));
+        if (riskReference == null || riskReference.isBlank()) {
+            // The whole point of this category over a plain shift is that a
+            // realized risk can be named — without a reference the ledger
+            // cannot tell a risk transfer from an ordinary reallocation.
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A risk transfer needs the risk it is covering, by reference.");
+        }
+        String reason = str(context.get("reason"));
+        if (reason == null || reason.isBlank()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A risk transfer without a reason defeats the ledger. Say why.");
+        }
+
+        Row from = lineOf(budgetId, str(context.get("fromCBS")), str(context.get("fromCategory")));
+        Row to = lineOf(budgetId, str(context.get("toCBS")), str(context.get("toCategory")));
+        if (str(from.get("ID")).equals(str(to.get("ID")))) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A risk transfer onto the same line moves nothing.");
+        }
+
+        BigDecimal fromAvailable = orZero(dec(from.get("available")));
+        if (amount.compareTo(fromAvailable) > 0) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    "Only " + fromAvailable.toPlainString() + " is available to transfer — "
+                            + "the rest is already encumbered or spent.");
+        }
+
+        String pairKey = UUID.randomUUID().toString();
+        ledger(budgetId, str(from.get("ID")), "RISK_TRANSFER", amount.negate(),
+                riskReference, reason, pairKey);
+        ledger(budgetId, str(to.get("ID")), "RISK_TRANSFER", amount,
+                riskReference, reason, pairKey);
+
+        adjust(from, amount.negate());
+        adjust(to, amount);
+
+        result(context, amount.toPlainString() + " transferred against risk " + riskReference
+                + ". Two RISK_TRANSFER entries share pair " + pairKey.substring(0, 8)
+                + "; the budget total is unchanged.");
+    }
+
+    // ------------------------------------------------------------------ variation
+
+    @On(event = "variation", entity = "BudgetService.Budgets")
+    public void onVariation(EventContext context) {
+        Row budget = targetOf(context);
+        String budgetId = str(budget.get("ID"));
+        if (!"Baselined".equals(str(budget.get("status")))) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    "Variations apply to a baselined budget; " + budget.get("docNo")
+                            + " is " + budget.get("status") + ".");
+        }
+
+        BigDecimal amount = dec(context.get("amount"));
+        if (amount == null || amount.signum() == 0) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A variation needs a non-zero amount — positive to add scope, "
+                            + "negative to omit it.");
+        }
+        String variationRef = str(context.get("variationRef"));
+        if (variationRef == null || variationRef.isBlank()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A variation needs the variation order it comes from, by reference.");
+        }
+        String reason = str(context.get("reason"));
+        if (reason == null || reason.isBlank()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A variation without a reason defeats the ledger. Say why.");
+        }
+
+        Row line = lineOf(budgetId, str(context.get("cbs")), str(context.get("category")));
+
+        // Unlike shift and risk transfer this is not zero-sum: a variation is
+        // client-approved scope moving in or out of the contract, so it is
+        // the one ledger category that changes the budget's own total.
+        ledger(budgetId, str(line.get("ID")), "VARIATION", amount, variationRef, reason, null);
+        adjust(line, amount);
+
+        BigDecimal newTotal = orZero(dec(budget.get("totalAmount"))).add(amount);
+        Map<String, Object> patch = new HashMap<>();
+        patch.put("totalAmount", newTotal);
+        db.run(Update.entity(E_BUDGET).data(patch).where(b -> b.get("ID").eq(budgetId)));
+
+        result(context, amount.toPlainString() + " added by variation " + variationRef
+                + ". Budget total is now " + newTotal.toPlainString() + ".");
+    }
+
     private void adjust(Row line, BigDecimal delta) {
         String lineId = str(line.get("ID"));
         BigDecimal amount = orZero(dec(line.get("amount"))).add(delta);

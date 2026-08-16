@@ -230,6 +230,52 @@ for l in lines["value"]:
             f"{l['category']} line amount equals the sum of its ledger entries",
             f"{entry_sum:,.2f}")
 
+head("3b. Risk Transfer and Variation feed their own ledger categories")
+check(400, "a risk transfer without a risk reference", *bud_action(bid, "riskTransfer", {
+    "fromCBS": "02.10", "fromCategory": "EQR", "toCBS": "02.10", "toCategory": "MR",
+    "amount": 5000, "reason": "Vibro downtime covered from contingency."}))
+check(200, "5,000 transferred EQR -> MR against a realized risk", *bud_action(bid, "riskTransfer", {
+    "fromCBS": "02.10", "fromCategory": "EQR", "toCBS": "02.10", "toCategory": "MR",
+    "amount": 5000, "riskReference": "RISK-2026-014",
+    "reason": "Vibro downtime covered from contingency."}))
+check(400, "a variation with a zero amount", *bud_action(bid, "variation", {
+    "cbs": "02.10", "category": "EQR", "amount": 0,
+    "variationRef": "VO-2026-003", "reason": "Client added a second pour bay."}))
+check(200, "25,000 added to EQR by a client variation", *bud_action(bid, "variation", {
+    "cbs": "02.10", "category": "EQR", "amount": 25000,
+    "variationRef": "VO-2026-003", "reason": "Client added a second pour bay."}))
+
+s, lines = call(f"/budget/BudgetLines?$filter=budget_ID eq {bid}"
+                "&$select=ID,category,amount&$orderby=category")
+by_cat = {l["category"]: l for l in lines["value"]}
+line_sum = sum(float(l["amount"]) for l in lines["value"])
+s, b = call(f"/budget/Budgets(ID={bid},IsActiveEntity=true)?$select=totalAmount")
+new_total = float(b["totalAmount"])
+assert_(abs(new_total - (total + 25000)) < 0.01,
+        "the variation moved the budget's own total by its amount, unlike shift/risk transfer",
+        f"{new_total:,.2f}")
+assert_(abs(line_sum - new_total) < 0.01,
+        "lines still sum to the (now larger) total", f"{line_sum:,.2f}")
+
+s, led = call(f"/budget/LedgerEntries?$filter=budget_ID eq {bid}"
+              "&$select=line_ID,category,amount,reference,pairKey&$orderby=category")
+risk_entries = [e for e in led["value"] if e["category"] == "RISK_TRANSFER"]
+assert_(len(risk_entries) == 2 and risk_entries[0]["pairKey"] == risk_entries[1]["pairKey"]
+        and abs(sum(float(e["amount"]) for e in risk_entries)) < 0.01
+        and all(e["reference"] == "RISK-2026-014" for e in risk_entries),
+        "the risk transfer is two paired entries summing to zero, keyed to the risk")
+var_entries = [e for e in led["value"] if e["category"] == "VARIATION"]
+assert_(len(var_entries) == 1 and var_entries[0]["pairKey"] is None
+        and abs(float(var_entries[0]["amount"]) - 25000) < 0.01
+        and var_entries[0]["reference"] == "VO-2026-003",
+        "the variation is one unpaired entry keyed to the variation order")
+
+for l in lines["value"]:
+    entry_sum = sum(float(e["amount"]) for e in led["value"] if e["line_ID"] == l["ID"])
+    assert_(abs(entry_sum - float(l["amount"])) < 0.01,
+            f"{l['category']} line amount still equals the sum of its ledger entries "
+            "after risk transfer and variation", f"{entry_sum:,.2f}")
+
 head("4. Live encumbrance lands in the control record")
 s, d = call("/workflow/ResourceRequests", method="POST", body={
     "verticalType": "EQR", "project_ID": pid, "company_ID": company_id,

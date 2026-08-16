@@ -39,6 +39,28 @@ service BudgetService @(path:'/budget') {
                    amount : Decimal(15,2), reason : String(500)) returns String;
 
       /**
+       * Moves budget from a risk/contingency line to the line absorbing a
+       * realized risk. Zero-sum like a shift — the budget total is unchanged
+       * — but tagged RISK_TRANSFER and keyed to the risk reference rather
+       * than the budget document, so a year from now "why did this line
+       * move" names the risk, not just "a shift happened".
+       */
+      action riskTransfer(fromCBS : String(40), toCBS : String(40),
+                           fromCategory : String(10), toCategory : String(10),
+                           amount : Decimal(15,2), riskReference : String(40),
+                           reason : String(500)) returns String;
+
+      /**
+       * A client-approved scope change — the one ledger category that is not
+       * zero-sum, because it genuinely adds (or omits) budget from outside
+       * the original envelope. Keyed to the variation order reference; moves
+       * both the line and the budget's own total.
+       */
+      action variation(cbs : String(40), category : String(10),
+                        amount : Decimal(15,2), variationRef : String(40),
+                        reason : String(500)) returns String;
+
+      /**
        * Pulls live encumbrance into the control record: each line's encumbered
        * figure becomes the sum of open reservations whose request lines charge
        * its CBS, and available is recomputed. Committed and actual stay S/4's
