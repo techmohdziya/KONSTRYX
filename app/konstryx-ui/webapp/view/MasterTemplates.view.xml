@@ -11,8 +11,16 @@
 		<f:title>
 			<f:DynamicPageTitle>
 				<f:heading>
-					<Title text="Project Templates" level="H2"/>
+					<VariantManagement id="templatesVariant"
+					                   supportDefault="true"
+					                   supportFavorites="false"
+					                   supportPublic="true"
+					                   select=".onVariantSelect"
+					                   save=".onVariantSave"/>
 				</f:heading>
+				<f:snappedHeading>
+					<Title text="Project Templates" level="H2"/>
+				</f:snappedHeading>
 				<f:expandedContent>
 					<Text text="A construction type with its cost breakdown structure and default resources. Instantiating copies them into a project — later edits to the library never reshape a project already being costed."/>
 				</f:expandedContent>
@@ -37,17 +45,27 @@
 					<OverflowToolbar>
 						<Title id="tableTitle" text="Templates" level="H4"/>
 						<ToolbarSpacer/>
+						<Button text="Adapt Filters" icon="sap-icon://filter"
+						        tooltip="Filter this list" press=".onAdaptFilters"/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here"
+						        press=".onExportExcel"/>
+						<Button icon="sap-icon://print" text="Print"
+						        tooltip="Print, or save as PDF from the print dialog"
+						        press=".onPrint"/>
+						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter"
+						        press=".onTableSettings"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 
 				<columns>
-					<Column width="14rem"><Text text="Template"/></Column>
-					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Name"/></Column>
-					<Column width="12rem"><Text text="Construction type"/></Column>
-					<Column width="7rem"><Text text="Version"/></Column>
-					<Column width="9rem"><Text text="Scope"/></Column>
-					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+					<Column id="code" width="14rem"><Text text="Template"/></Column>
+					<Column id="name" minScreenWidth="Tablet" demandPopin="true"><Text text="Name"/></Column>
+					<Column id="constructionType" width="12rem"><Text text="Construction type"/></Column>
+					<Column id="version" width="7rem"><Text text="Version"/></Column>
+					<Column id="scope" width="9rem"><Text text="Scope"/></Column>
+					<Column id="owningCompany" width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
 				</columns>
 
 				<items>

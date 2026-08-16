@@ -56,7 +56,9 @@
 					<OverflowToolbar>
 						<Title id="exceptionCount" text="Exceptions" level="H4"/>
 						<ToolbarSpacer/>
-						<Text text="Only lines needing a decision are listed"/>
+						<Text text="Only lines needing a decision are listed" class="sapUiTinyMarginEnd"/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the exception list" press=".onExportExcel"/>
 					</OverflowToolbar>
 				</headerToolbar>
 				<columns>

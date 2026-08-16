@@ -1,10 +1,13 @@
 sap.ui.define([
 	"konstryx/controller/BaseController",
+	"konstryx/lib/ListPersonalization",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
+	"sap/ui/export/library",
 	"sap/m/MessageBox",
 	"sap/m/MessageToast"
-], function (BaseController, Filter, FilterOperator, MessageBox, MessageToast) {
+], function (BaseController, ListPersonalization, Filter, FilterOperator, exportLibrary,
+             MessageBox, MessageToast) {
 	"use strict";
 
 	/**
@@ -19,10 +22,57 @@ sap.ui.define([
 
 		onInit: function () {
 			this.getRouter().getRoute("promotionQueue").attachPatternMatched(this._onMatched, this);
+			this._setUpPersonalization();
 		},
 
 		_onMatched: function () {
 			this.setNavKey("masters");
+			this._applyFilters();
+		},
+
+		/** Columns, sort, group, filter, saved views and download — one declaration. */
+		_setUpPersonalization: function () {
+			var EdmType = exportLibrary.EdmType;
+
+			this._aFields = [
+				{ key: "objectKey",    label: "Master",        path: "objectKey",    edm: EdmType.String, width: 12 },
+				{ key: "objectType",   label: "Object type",   path: "objectType",   edm: EdmType.String, width: 14 },
+				{ key: "currentScope", label: "Current scope", path: "currentScope", edm: EdmType.String, width: 10 },
+				{ key: "requester",    label: "Requested by",  path: "requester",    edm: EdmType.String, width: 20 },
+				{ key: "comment",      label: "Reason",        path: "comment",      edm: EdmType.String, width: 30 },
+				{ key: "status",       label: "Status",        path: "status",       edm: EdmType.String, width: 10 },
+				{ key: "decidedBy",    label: "Decided by",    path: "decidedBy",    edm: EdmType.String, width: 20 }
+			];
+
+			ListPersonalization.attach({
+				target: "masters.promotionQueue",
+				table: this.byId("queueTable"),
+				variant: this.byId("queueVariant"),
+				fields: this._aFields,
+				controller: this,
+				onApply: this._onStateApplied.bind(this)
+			});
+		},
+
+		_onStateApplied: function (oState) {
+			this._aP13nFilters = [];
+			Object.keys(oState.Filter || {}).forEach(function (sKey) {
+				(oState.Filter[sKey] || []).forEach(function (oCond) {
+					var v = (oCond.values || [])[0];
+					if (v !== undefined && v !== null && v !== "") {
+						this._aP13nFilters.push(new Filter(sKey, FilterOperator.Contains, String(v)));
+					}
+				}, this);
+			}, this);
+
+			this._aP13nSorters = [];
+			(oState.Groups || []).forEach(function (g) {
+				this._aP13nSorters.push(new sap.ui.model.Sorter(g.key, false, true));
+			}, this);
+			(oState.Sorter || []).forEach(function (srt) {
+				this._aP13nSorters.push(new sap.ui.model.Sorter(srt.key, !!srt.descending));
+			}, this);
+
 			this._applyFilters();
 		},
 
@@ -37,7 +87,12 @@ sap.ui.define([
 			if (sStatus && sStatus !== "ALL") {
 				aFilters.push(new Filter("status", FilterOperator.EQ, sStatus));
 			}
+			aFilters = aFilters.concat(this._aP13nFilters || []);
+
 			oBinding.filter(aFilters);
+			if (this._aP13nSorters && this._aP13nSorters.length) {
+				oBinding.sort(this._aP13nSorters);
+			}
 			oBinding.attachEventOnce("dataReceived", function () {
 				this.byId("tableTitle").setText("Requests (" + oBinding.getLength() + ")");
 				this._clearSelection();
@@ -45,6 +100,38 @@ sap.ui.define([
 		},
 
 		onFilterChange: function () { this._applyFilters(); },
+
+		onTableSettings: function () {
+			ListPersonalization.openSettings(this.byId("queueTable"),
+				["Columns", "Sorter", "Groups", "Filter"]);
+		},
+
+		onAdaptFilters: function () {
+			ListPersonalization.openSettings(this.byId("queueTable"), ["Filter"]);
+		},
+
+		onVariantSelect: function (oEvent) {
+			ListPersonalization.selectVariant("masters.promotionQueue", oEvent.getParameter("key"));
+		},
+
+		onVariantSave: function (oEvent) {
+			ListPersonalization.saveVariant("masters.promotionQueue", oEvent);
+		},
+
+		onExportExcel: function () {
+			var oBinding = this.byId("queueTable").getBinding("items");
+			if (!oBinding) {
+				return;
+			}
+			var aRows = oBinding.getAllCurrentContexts().map(function (c) {
+				return c.getObject();
+			});
+			ListPersonalization.exportToExcel("masters.promotionQueue", aRows, "promotion-queue");
+		},
+
+		onPrint: function () {
+			ListPersonalization.printView();
+		},
 
 		_clearSelection: function () {
 			this._oSelected = null;

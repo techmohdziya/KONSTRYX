@@ -16,7 +16,7 @@
 					     than in the Flexibility service, so they back up and
 					     restore with the rest of the tenant's data. -->
 					<VariantManagement id="worklistVariant"
-					                   showSetAsDefault="true"
+					                   supportDefault="true"
 					                   supportFavorites="false"
 					                   supportPublic="true"
 					                   select=".onVariantSelect"

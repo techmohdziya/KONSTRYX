@@ -1,5 +1,6 @@
 sap.ui.define([
 	"konstryx/controller/BaseController",
+	"konstryx/lib/ListPersonalization",
 	"sap/m/Dialog",
 	"sap/m/Button",
 	"sap/m/Select",
@@ -8,8 +9,10 @@ sap.ui.define([
 	"sap/m/Text",
 	"sap/ui/core/ListItem",
 	"sap/m/MessageBox",
-	"sap/m/MessageToast"
-], function (BaseController, Dialog, Button, Select, Label, VBox, Text, ListItem, MessageBox, MessageToast) {
+	"sap/m/MessageToast",
+	"sap/ui/export/library"
+], function (BaseController, ListPersonalization, Dialog, Button, Select, Label, VBox, Text, ListItem,
+             MessageBox, MessageToast, exportLibrary) {
 	"use strict";
 
 	/**
@@ -24,6 +27,7 @@ sap.ui.define([
 
 		onInit: function () {
 			this.getRouter().getRoute("masterTemplates").attachPatternMatched(this._onMatched, this);
+			this._setUpPersonalization();
 		},
 
 		_onMatched: function () {
@@ -34,6 +38,87 @@ sap.ui.define([
 					this.byId("tableTitle").setText("Templates (" + oBinding.getLength() + ")");
 				}, this);
 			}
+		},
+
+		/** Columns, sort, group, filter, saved views and download — one declaration. */
+		_setUpPersonalization: function () {
+			var EdmType = exportLibrary.EdmType;
+
+			this._aFields = [
+				{ key: "code",             label: "Template",          path: "code",             edm: EdmType.String, width: 14 },
+				{ key: "name",             label: "Name",               path: "name",             edm: EdmType.String, width: 28 },
+				{ key: "constructionType", label: "Construction type", path: "constructionType", edm: EdmType.String, width: 14 },
+				{ key: "version",          label: "Version",            path: "version",          edm: EdmType.String, width: 8 },
+				{ key: "scope",            label: "Scope",              path: "scope",            edm: EdmType.String, width: 10 },
+				{ key: "owningCompany",    label: "Owned by",           path: "owningCompany/code", edm: EdmType.String, width: 16 }
+			];
+
+			ListPersonalization.attach({
+				target: "masters.templates",
+				table: this.byId("templateTable"),
+				variant: this.byId("templatesVariant"),
+				fields: this._aFields,
+				controller: this,
+				onApply: this._onStateApplied.bind(this)
+			});
+		},
+
+		_onStateApplied: function (oState) {
+			var oBinding = this.byId("templateTable").getBinding("items");
+			if (!oBinding) {
+				return;
+			}
+			var aSorters = [];
+			(oState.Groups || []).forEach(function (g) {
+				aSorters.push(new sap.ui.model.Sorter(g.key, false, true));
+			});
+			(oState.Sorter || []).forEach(function (srt) {
+				aSorters.push(new sap.ui.model.Sorter(srt.key, !!srt.descending));
+			});
+			oBinding.sort(aSorters);
+
+			var aFilters = [];
+			Object.keys(oState.Filter || {}).forEach(function (sKey) {
+				(oState.Filter[sKey] || []).forEach(function (oCond) {
+					var v = (oCond.values || [])[0];
+					if (v !== undefined && v !== null && v !== "") {
+						aFilters.push(new sap.ui.model.Filter(sKey, sap.ui.model.FilterOperator.Contains, String(v)));
+					}
+				});
+			});
+			oBinding.filter(aFilters);
+		},
+
+		onTableSettings: function () {
+			ListPersonalization.openSettings(this.byId("templateTable"),
+				["Columns", "Sorter", "Groups", "Filter"]);
+		},
+
+		onAdaptFilters: function () {
+			ListPersonalization.openSettings(this.byId("templateTable"), ["Filter"]);
+		},
+
+		onVariantSelect: function (oEvent) {
+			ListPersonalization.selectVariant("masters.templates", oEvent.getParameter("key"));
+		},
+
+		onVariantSave: function (oEvent) {
+			ListPersonalization.saveVariant("masters.templates", oEvent);
+		},
+
+		onExportExcel: function () {
+			var oBinding = this.byId("templateTable").getBinding("items");
+			if (!oBinding) {
+				return;
+			}
+			var aRows = oBinding.getAllCurrentContexts().map(function (c) {
+				return c.getObject();
+			});
+			ListPersonalization.exportToExcel("masters.templates", aRows, "project-templates");
+		},
+
+		onPrint: function () {
+			ListPersonalization.printView();
 		},
 
 		onSelect: function (oEvent) {

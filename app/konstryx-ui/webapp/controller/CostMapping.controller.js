@@ -17,6 +17,31 @@ sap.ui.define([
 	 */
 	return BaseController.extend("konstryx.controller.CostMapping", {
 
+		/**
+		 * A queue this short and already filtered doesn't need the full
+		 * variant-management/adapt-filters apparatus the general list screens
+		 * carry — there is nothing left to filter once "only exceptions" has
+		 * already been applied. Export is still useful: a coordinator hands
+		 * the list to whoever owns the resolution.
+		 */
+		onExportExcel: function () {
+			var aRows = (this.getView().getModel("view").getData() || {}).exceptions || [];
+			sap.ui.require(["sap/ui/export/Spreadsheet"], function (Spreadsheet) {
+				new Spreadsheet({
+					workbook: {
+						columns: [
+							{ label: "Item", property: "itemNo" },
+							{ label: "Reason", property: "reason" },
+							{ label: "Detail", property: "detail" },
+							{ label: "Suggestion", property: "suggestedCbs" }
+						]
+					},
+					dataSource: aRows,
+					fileName: "cost-mapping-exceptions.xlsx"
+				}).build();
+			});
+		},
+
 		onInit: function () {
 			this.getView().setModel(new JSONModel({ exceptions: [] }), "view");
 			this.getRouter().getRoute("costMapping").attachPatternMatched(this._onMatched, this);

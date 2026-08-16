@@ -11,8 +11,16 @@
 		<f:title>
 			<f:DynamicPageTitle>
 				<f:heading>
-					<Title text="Rate Master" level="H2"/>
+					<VariantManagement id="ratesVariant"
+					                   supportDefault="true"
+					                   supportFavorites="false"
+					                   supportPublic="true"
+					                   select=".onVariantSelect"
+					                   save=".onVariantSave"/>
 				</f:heading>
+				<f:snappedHeading>
+					<Title text="Rate Master" level="H2"/>
+				</f:snappedHeading>
 				<f:expandedContent>
 					<Text text="Cost rates per resource. A rate is never edited in place — a revision is a new rate with a later effective date, so past postings keep the rate they were costed at."/>
 				</f:expandedContent>
@@ -45,6 +53,12 @@
 						<Label text="Search"/>
 						<SearchField id="rateSearch" width="16rem" liveChange=".onSearch" placeholder="Resource code"/>
 					</VBox>
+					<VBox class="kxFilterField">
+						<Label text=" "/>
+						<Button text="Adapt Filters" icon="sap-icon://filter"
+						        tooltip="Choose which filters appear here"
+						        press=".onAdaptFilters"/>
+					</VBox>
 				</HBox>
 			</f:DynamicPageHeader>
 		</f:header>
@@ -63,18 +77,26 @@
 					<OverflowToolbar>
 						<Title id="tableTitle" text="Rates" level="H4"/>
 						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here"
+						        press=".onExportExcel"/>
+						<Button icon="sap-icon://print" text="Print"
+						        tooltip="Print, or save as PDF from the print dialog"
+						        press=".onPrint"/>
+						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter"
+						        press=".onTableSettings"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 
 				<columns>
-					<Column width="14rem"><Text text="Resource"/></Column>
-					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
-					<Column width="10rem" hAlign="End"><Text text="Rate"/></Column>
-					<Column width="6rem"><Text text="Basis"/></Column>
-					<Column width="11rem"><Text text="Effective from"/></Column>
-					<Column width="9rem"><Text text="Scope"/></Column>
-					<Column width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+					<Column id="resource" width="14rem"><Text text="Resource"/></Column>
+					<Column id="description" minScreenWidth="Tablet" demandPopin="true"><Text text="Description"/></Column>
+					<Column id="rateValue" width="10rem" hAlign="End"><Text text="Rate"/></Column>
+					<Column id="basis" width="6rem"><Text text="Basis"/></Column>
+					<Column id="effectiveFrom" width="11rem"><Text text="Effective from"/></Column>
+					<Column id="scope" width="9rem"><Text text="Scope"/></Column>
+					<Column id="owningCompany" width="16rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
 				</columns>
 
 				<items>

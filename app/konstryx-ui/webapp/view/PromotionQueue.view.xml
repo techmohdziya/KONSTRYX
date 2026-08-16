@@ -11,8 +11,16 @@
 		<f:title>
 			<f:DynamicPageTitle>
 				<f:heading>
-					<Title text="Promotion Queue" level="H2"/>
+					<VariantManagement id="queueVariant"
+					                   supportDefault="true"
+					                   supportFavorites="false"
+					                   supportPublic="true"
+					                   select=".onVariantSelect"
+					                   save=".onVariantSave"/>
 				</f:heading>
+				<f:snappedHeading>
+					<Title text="Promotion Queue" level="H2"/>
+				</f:snappedHeading>
 				<f:expandedContent>
 					<Text text="Requests to share a company-local master across the whole group. Approving changes every company's costing, so it is a decision with an owner and a record."/>
 				</f:expandedContent>
@@ -30,6 +38,12 @@
 							<core:Item key="REJECTED" text="Rejected"/>
 							<core:Item key="ALL" text="All"/>
 						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text=" "/>
+						<Button text="Adapt Filters" icon="sap-icon://filter"
+						        tooltip="Choose which filters appear here"
+						        press=".onAdaptFilters"/>
 					</VBox>
 				</HBox>
 			</f:DynamicPageHeader>
@@ -51,18 +65,26 @@
 					<OverflowToolbar>
 						<Title id="tableTitle" text="Requests" level="H4"/>
 						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here"
+						        press=".onExportExcel"/>
+						<Button icon="sap-icon://print" text="Print"
+						        tooltip="Print, or save as PDF from the print dialog"
+						        press=".onPrint"/>
+						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter"
+						        press=".onTableSettings"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 
 				<columns>
-					<Column width="12rem"><Text text="Master"/></Column>
-					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Object type"/></Column>
-					<Column width="12rem"><Text text="Scope change"/></Column>
-					<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Requested by"/></Column>
-					<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Reason"/></Column>
-					<Column width="10rem"><Text text="Status"/></Column>
-					<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Decided by"/></Column>
+					<Column id="objectKey" width="12rem"><Text text="Master"/></Column>
+					<Column id="objectType" minScreenWidth="Tablet" demandPopin="true"><Text text="Object type"/></Column>
+					<Column id="currentScope" width="12rem"><Text text="Scope change"/></Column>
+					<Column id="requester" width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Requested by"/></Column>
+					<Column id="comment" minScreenWidth="Desktop" demandPopin="true"><Text text="Reason"/></Column>
+					<Column id="status" width="10rem"><Text text="Status"/></Column>
+					<Column id="decidedBy" width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Decided by"/></Column>
 				</columns>
 
 				<items>

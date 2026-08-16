@@ -27,17 +27,24 @@
 							<headerToolbar>
 								<OverflowToolbar>
 									<Title id="prodTitle" text="Productivity norms" level="H4"/>
+									<VariantManagement id="prodVariant" class="sapUiTinyMarginBegin"
+									                   supportDefault="true" supportFavorites="false" supportPublic="true"
+									                   select=".onProdVariantSelect" save=".onProdVariantSave"/>
 									<ToolbarSpacer/>
+									<Button text="Adapt Filters" icon="sap-icon://filter" tooltip="Filter this list" press=".onProdAdaptFilters"/>
+									<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+									        tooltip="Download the list as it is arranged here" press=".onProdExportExcel"/>
+									<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onProdTableSettings"/>
 									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 								</OverflowToolbar>
 							</headerToolbar>
 							<columns>
-								<Column width="14rem"><Text text="Resource"/></Column>
-								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Crew composition"/></Column>
-								<Column width="10rem" hAlign="End"><Text text="Per hour"/></Column>
-								<Column width="12rem" hAlign="End"><Text text="Per 8h man-day"/></Column>
-								<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Basis"/></Column>
-								<Column width="9rem"><Text text="Scope"/></Column>
+								<Column id="resource" width="14rem"><Text text="Resource"/></Column>
+								<Column id="crewComposition" minScreenWidth="Tablet" demandPopin="true"><Text text="Crew composition"/></Column>
+								<Column id="outputPerHr" width="10rem" hAlign="End"><Text text="Per hour"/></Column>
+								<Column id="outputPerManday8h" width="12rem" hAlign="End"><Text text="Per 8h man-day"/></Column>
+								<Column id="prodBasis" minScreenWidth="Desktop" demandPopin="true"><Text text="Basis"/></Column>
+								<Column id="prodScope" width="9rem"><Text text="Scope"/></Column>
 							</columns>
 							<items>
 								<ColumnListItem>
@@ -65,17 +72,24 @@
 							<headerToolbar>
 								<OverflowToolbar>
 									<Title id="consTitle" text="Consumption norms" level="H4"/>
+									<VariantManagement id="consVariant" class="sapUiTinyMarginBegin"
+									                   supportDefault="true" supportFavorites="false" supportPublic="true"
+									                   select=".onConsVariantSelect" save=".onConsVariantSave"/>
 									<ToolbarSpacer/>
+									<Button text="Adapt Filters" icon="sap-icon://filter" tooltip="Filter this list" press=".onConsAdaptFilters"/>
+									<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+									        tooltip="Download the list as it is arranged here" press=".onConsExportExcel"/>
+									<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onConsTableSettings"/>
 									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 								</OverflowToolbar>
 							</headerToolbar>
 							<columns>
-								<Column width="14rem"><Text text="Material"/></Column>
-								<Column width="12rem" hAlign="End"><Text text="Rate"/></Column>
-								<Column width="10rem" hAlign="End"><Text text="Wastage"/></Column>
-								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Basis"/></Column>
-								<Column width="9rem"><Text text="Scope"/></Column>
-								<Column width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
+								<Column id="material" width="14rem"><Text text="Material"/></Column>
+								<Column id="consRate" width="12rem" hAlign="End"><Text text="Rate"/></Column>
+								<Column id="wastageAllowancePct" width="10rem" hAlign="End"><Text text="Wastage"/></Column>
+								<Column id="consBasis" minScreenWidth="Tablet" demandPopin="true"><Text text="Basis"/></Column>
+								<Column id="consScope" width="9rem"><Text text="Scope"/></Column>
+								<Column id="owningCompany" width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Owned by"/></Column>
 							</columns>
 							<items>
 								<ColumnListItem>
