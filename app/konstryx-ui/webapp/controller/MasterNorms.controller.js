@@ -1,10 +1,11 @@
 sap.ui.define([
 	"konstryx/controller/BaseController",
 	"konstryx/lib/ListPersonalization",
+	"konstryx/lib/ObjectLinks",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
 	"sap/ui/export/library"
-], function (BaseController, ListPersonalization, Filter, FilterOperator, exportLibrary) {
+], function (BaseController, ListPersonalization, ObjectLinks, Filter, FilterOperator, exportLibrary) {
 	"use strict";
 
 	/**
@@ -107,6 +108,11 @@ sap.ui.define([
 			oBinding.filter(aFilters);
 		},
 
+		onProdResourceLink: function (oEvent) {
+			var oRow = oEvent.getSource().getBindingContext("md").getObject();
+			ObjectLinks.open(this, "resource", oRow.resource || {}, oEvent.getSource());
+		},
+
 		onProdTableSettings: function () {
 			ListPersonalization.openSettings(this.byId("prodTable"), ["Columns", "Sorter", "Groups", "Filter"]);
 		},
@@ -124,6 +130,11 @@ sap.ui.define([
 			if (!oBinding) { return; }
 			var aRows = oBinding.getAllCurrentContexts().map(function (c) { return c.getObject(); });
 			ListPersonalization.exportToExcel("masters.norms.productivity", aRows, "productivity-norms");
+		},
+
+		onConsResourceLink: function (oEvent) {
+			var oRow = oEvent.getSource().getBindingContext("md").getObject();
+			ObjectLinks.open(this, "resource", oRow.material || {}, oEvent.getSource());
 		},
 
 		onConsTableSettings: function () {

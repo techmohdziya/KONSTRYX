@@ -102,7 +102,7 @@
 				<items>
 					<ColumnListItem>
 						<cells>
-							<ObjectIdentifier title="{md>resource/code}"/>
+							<Link text="{md>resource/code}" press=".onResourceLink"/>
 							<Text text="{md>resource/description}"/>
 							<ObjectNumber
 								number="{path: 'md>rateValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, minFractionDigits: 2, maxFractionDigits: 2}}"

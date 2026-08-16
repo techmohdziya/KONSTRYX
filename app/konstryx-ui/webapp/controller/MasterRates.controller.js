@@ -1,10 +1,11 @@
 sap.ui.define([
 	"konstryx/controller/BaseController",
 	"konstryx/lib/ListPersonalization",
+	"konstryx/lib/ObjectLinks",
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
 	"sap/ui/export/library"
-], function (BaseController, ListPersonalization, Filter, FilterOperator, exportLibrary) {
+], function (BaseController, ListPersonalization, ObjectLinks, Filter, FilterOperator, exportLibrary) {
 	"use strict";
 
 	/**
@@ -110,6 +111,11 @@ sap.ui.define([
 
 		onFilterChange: function () { this._applyFilters(); },
 		onSearch:       function () { this._applyFilters(); },
+
+		onResourceLink: function (oEvent) {
+			var oRow = oEvent.getSource().getBindingContext("md").getObject();
+			ObjectLinks.open(this, "resource", oRow.resource || {}, oEvent.getSource());
+		},
 
 		onTableSettings: function () {
 			ListPersonalization.openSettings(this.byId("rateTable"),

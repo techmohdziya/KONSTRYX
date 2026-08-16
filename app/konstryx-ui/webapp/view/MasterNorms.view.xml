@@ -49,7 +49,10 @@
 							<items>
 								<ColumnListItem>
 									<cells>
-										<ObjectIdentifier title="{md>resource/code}" text="{md>resource/description}"/>
+										<VBox>
+											<Link text="{md>resource/code}" press=".onProdResourceLink"/>
+											<Text text="{md>resource/description}" class="kxSubText"/>
+										</VBox>
 										<Text text="{md>crewComposition}"/>
 										<ObjectNumber
 											number="{path: 'md>outputPerHr', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"
@@ -94,7 +97,10 @@
 							<items>
 								<ColumnListItem>
 									<cells>
-										<ObjectIdentifier title="{md>material/code}" text="{md>material/description}"/>
+										<VBox>
+											<Link text="{md>material/code}" press=".onConsResourceLink"/>
+											<Text text="{md>material/description}" class="kxSubText"/>
+										</VBox>
 										<ObjectNumber
 											number="{path: 'md>consRate', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 3}}"
 											unit="{md>consUoM}"/>
