@@ -72,6 +72,13 @@ service ProjectService @(path:'/project') {
         };
       };
 
+      /**
+       * Pushes a queued (PENDING) project to S/4 through SAP_COM_0308 and
+       * records the outcome — the live counterpart of recordSyncResult. On an
+       * unconfigured system it refuses rather than pretending.
+       */
+      action syncToS4() returns String;
+
       /** Records the outcome of a sync attempt. Called by the connector. */
       action recordSyncResult(success : Boolean, s4Key : String(60),
                               s4System : String(20), message : String(1000)) returns String;

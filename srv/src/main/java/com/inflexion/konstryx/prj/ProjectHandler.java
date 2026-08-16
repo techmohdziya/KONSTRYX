@@ -59,6 +59,9 @@ public class ProjectHandler implements EventHandler {
     @Autowired
     private P6ImportService p6;
 
+    @Autowired
+    private com.inflexion.konstryx.s4.S4ProjectConnector s4Connector;
+
     // ------------------------------------------------------------- validation
 
     @Before(event = { CqnService.EVENT_CREATE, CqnService.EVENT_UPDATE }, entity = ENTITY)
@@ -277,25 +280,59 @@ public class ProjectHandler implements EventHandler {
     public void onSyncResult(EventContext context) {
         Row project = targetOf(context);
         boolean success = Boolean.TRUE.equals(context.get("success"));
-        String id = str(project.get("ID"));
+        applySyncOutcome(project, success, str(context.get("s4Key")),
+                str(context.get("s4System")), str(context.get("message")));
+        return_(context, success
+                ? project.get("code") + " is now in S/4 as " + context.get("s4Key") + "."
+                : project.get("code") + " was refused by S/4: " + context.get("message"));
+    }
 
+    /**
+     * The live push. Only a queued project syncs — release is the gate that
+     * validated it, and skipping the queue would skip the gate. The connector
+     * returns the outcome; recording it goes through the same method the
+     * manual recordSyncResult uses, so both paths write identical state.
+     */
+    @On(event = "syncToS4")
+    public void onSyncToS4(EventContext context) {
+        Row project = targetOf(context);
+        if (!"PENDING".equals(str(project.get("syncStatus")))) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    project.get("code") + " is " + project.get("syncStatus")
+                            + " — release it first; only a queued project syncs.");
+        }
+        if (!s4Connector.isConfigured()) {
+            throw new ServiceException(ErrorStatuses.SERVER_ERROR,
+                    "No S/4 connection is configured. The project stays queued.");
+        }
+
+        com.inflexion.konstryx.s4.S4ProjectConnector.SyncOutcome outcome =
+                s4Connector.push(project);
+        applySyncOutcome(project, outcome.success, outcome.s4Key,
+                outcome.s4System, outcome.message);
+
+        return_(context, outcome.success
+                ? project.get("code") + " is now in S/4 as " + outcome.s4Key
+                        + ". " + outcome.message
+                : project.get("code") + " was refused by S/4: " + outcome.message);
+    }
+
+    /** One writer for sync state, whichever path produced the outcome. */
+    private void applySyncOutcome(Row project, boolean success, String s4Key,
+                                  String s4System, String message) {
+        String id = str(project.get("ID"));
         Map<String, Object> update = new HashMap<>();
         update.put("syncAttempts", intOf(project.get("syncAttempts")) + 1);
-        update.put("syncMessage", context.get("message"));
-
+        update.put("syncMessage", message);
         if (success) {
             update.put("syncStatus", "SENT");
-            update.put("s4Key", context.get("s4Key"));
-            update.put("s4System", context.get("s4System"));
+            update.put("s4Key", s4Key);
+            update.put("s4System", s4System);
             update.put("lastSyncedAt", Instant.now());
         } else {
             update.put("syncStatus", "FAILED");
         }
         db.run(Update.entity(E_PROJECT).data(update).where(p -> p.get("ID").eq(id)));
-
-        return_(context, success
-                ? project.get("code") + " is now in S/4 as " + context.get("s4Key") + "."
-                : project.get("code") + " was refused by S/4: " + context.get("message"));
     }
 
     // ----------------------------------------------------------------- helpers
