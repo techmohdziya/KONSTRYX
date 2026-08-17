@@ -110,17 +110,40 @@ entity PurchaseRequisitionLine : cuid {
   approverRole : String(60);
 }
 
+/**
+ * Genuinely S/4-mastered, unlike the requisition: KONSTRYX never creates a
+ * purchase order (INTEGRATION.md — "Purchase Order, Goods Receipt, Invoice:
+ * S/4 -> KONSTRYX"). It is mirrored back so the project can see what was
+ * ordered against its requisition, and so the order's value can commit
+ * against the budget line it charges. s4mirror is therefore correct here.
+ */
 entity PurchaseOrder : cuid, managed, common.s4mirror {
-  poNo         : String(10);
-  vendor       : Association to master.Vendor;
-  status       : String(20);
-  lines        : Composition of many PurchaseOrderLine on lines.parent = $self;
+  poNo              : String(10);
+  vendor            : Association to master.Vendor;
+  status            : String(20);
+  /** The requisition S/4 created it against, so the chain reads back. */
+  sourceRequisition : Association to PurchaseRequisition;
+  /** Carried for scoping and worklists, as on the requisition. */
+  project           : Association to prj.Project;
+  company           : Association to admin.Company;
+  orderedOn         : Date;
+  lines             : Composition of many PurchaseOrderLine on lines.parent = $self;
 }
 
 entity PurchaseOrderLine : cuid {
   parent       : Association to PurchaseOrder;
   lineNo       : Integer;
   material     : Association to master.Material;
+  resource     : Association to master.ResourceNode;
+  description  : String(255);
+  /**
+   * Account assignment, carried from the requisition line. This is what lets
+   * netValue commit against the right budget line — without it an order is
+   * money spent against nothing in particular.
+   */
+  wbs          : Association to prj.WBSElement;
+  cbs          : Association to prj.CBSInstance;
+  sourcePRLine : Association to PurchaseRequisitionLine;
   qty          : Decimal(15,3);
   openQty      : Decimal(15,3);
   netValue     : Decimal(15,2);

@@ -60,6 +60,8 @@ public class BudgetHandler implements EventHandler {
     private static final String E_RESOURCE = "konstryx.master.ResourceNode";
     private static final String E_RES_LINE = "konstryx.wf.ReservationLine";
     private static final String E_RR_LINE = "konstryx.wf.ResourceRequestLine";
+    private static final String E_PO_LINE = "konstryx.mat.PurchaseOrderLine";
+    private static final String E_PR_LINE = "konstryx.mat.PurchaseRequisitionLine";
 
     @Autowired
     private PersistenceService db;
@@ -443,14 +445,19 @@ public class BudgetHandler implements EventHandler {
             String cbsId = str(line.get("cbs_ID"));
             String category = str(line.get("category"));
             BigDecimal encumbered = encumbranceFor(cbsId, category);
+            // Committed is derived the same way encumbrance is, rather than
+            // accumulated as orders arrive. A counter drifts the moment an
+            // order is cancelled or re-mirrored; a sum over the orders that
+            // actually exist cannot.
+            BigDecimal committed = commitmentFor(cbsId, category);
 
             BigDecimal amount = orZero(dec(line.get("amount")));
-            BigDecimal committed = orZero(dec(line.get("committed")));
             BigDecimal actual = orZero(dec(line.get("actual")));
             BigDecimal available = amount.subtract(committed).subtract(encumbered).subtract(actual);
 
             Map<String, Object> patch = new HashMap<>();
             patch.put("encumbered", encumbered);
+            patch.put("committed", committed);
             patch.put("available", available);
             if (amount.signum() > 0) {
                 patch.put("availPct", available.multiply(new BigDecimal("100"))
@@ -464,9 +471,60 @@ public class BudgetHandler implements EventHandler {
             touched++;
         }
 
-        result(context, budget.get("docNo") + ": encumbrance refreshed on " + touched
-                + " line(s) from open reservations. Committed and actual are S/4's to "
-                + "fill and were not touched.");
+        result(context, budget.get("docNo") + ": refreshed " + touched
+                + " line(s) — encumbrance from open reservations, commitment from the "
+                + "purchase orders S/4 raised against our requisitions. Actual is still "
+                + "S/4 FI's to fill and was not touched.");
+    }
+
+    /**
+     * Ordered value charged to this CBS in this cost nature — what BudgetLine
+     * .committed has always been documented as ("S/4 PO/SO") and never carried
+     * until now.
+     *
+     * This is the procurement branch's commitment: a purchase order S/4 raised
+     * against one of our requisitions. It is NOT the reservation chain's step 5
+     * (CMT), which is an S/4 PS commitment against the reservation itself and
+     * is still unwired — ReservationOverviewHandler continues to report that
+     * one as pending, correctly.
+     *
+     * The match runs order line -> requisition line -> CBS, because the order
+     * inherits its account assignment from the requisition it was raised
+     * against. The cost nature comes from the requisitioned resource's own
+     * vertical, exactly as encumbrance derives it from the reserved resource.
+     */
+    private BigDecimal commitmentFor(String cbsId, String category) {
+        BigDecimal total = BigDecimal.ZERO;
+        if (cbsId == null) {
+            return total;
+        }
+        for (Row poLine : db.run(Select.from(E_PO_LINE))) {
+            if ("Cancelled".equals(str(poLine.get("status")))) {
+                continue;
+            }
+            // The order line carries its own copy of the assignment, but the
+            // requisition line is the authority — a mirrored line that somehow
+            // disagrees should not quietly commit somewhere else.
+            Object prLineId = poLine.get("sourcePRLine_ID");
+            String lineCbs = str(poLine.get("cbs_ID"));
+            String resourceId = str(poLine.get("resource_ID"));
+            if (prLineId != null) {
+                Optional<Row> prLine = db.run(Select.from(E_PR_LINE)
+                        .where(l -> l.get("ID").eq(prLineId.toString()))).first();
+                if (prLine.isPresent()) {
+                    lineCbs = str(prLine.get().get("cbs_ID"));
+                    resourceId = str(prLine.get().get("resource_ID"));
+                }
+            }
+            if (!cbsId.equals(lineCbs)) {
+                continue;
+            }
+            if (category != null && !category.equals(verticalOf(resourceId))) {
+                continue;
+            }
+            total = total.add(orZero(dec(poLine.get("netValue"))));
+        }
+        return total;
     }
 
     /**

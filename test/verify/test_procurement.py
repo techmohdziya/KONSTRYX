@@ -64,19 +64,86 @@ def head(t):
 
 
 # ------------------------------------------------------------------- fixtures
-s, ps = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'PRJ-001'"
+# PRJ-002 with a real budget, because the point of this suite's last section is
+# that an order commits against a budget line. Charging a CBS that no budget
+# line covers would let the commitment checks pass by never running.
+BILL = """itemNo;code;description;qty;uom;rate
+2.01;CONC-C40;Ready-mix C40 to raft;1200;m3;385.00
+"""
+
+s, ps = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'PRJ-002'"
              "&$select=ID,company_ID")
 project = ps["value"][0]
-s, wbs = call(f"/project/WBS?$filter=project_ID eq {project['ID']}&$select=ID,code&$top=1")
+pid = project["ID"]
+
+call(f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.instantiateCBS",
+     method="POST", body={})
+s, cbs = call(f"/project/CBS?$filter=project_ID eq {pid}&$select=ID,code,libraryNode_ID")
+slab = [c for c in cbs["value"] if c["code"] == "02.10"][0]
+
+call(f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.draftEdit",
+     method="POST", body={"PreserveChanges": True})
+call(f"/project/Projects(ID={pid},IsActiveEntity=false)/wbsElements",
+     method="POST", body={"code": "PRJ-002.1", "description": "Substructure"})
+call(f"/project/Projects(ID={pid},IsActiveEntity=false)/ProjectService.draftActivate",
+     method="POST", body={})
+s, wbs = call(f"/project/WBS?$filter=project_ID eq {pid}&$select=ID&$top=1")
 wbs_id = wbs["value"][0]["ID"]
 
-s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and code eq 'EQ-TWC-12T'"
+s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and code eq 'MT-RMC-C40-20'"
               "&$select=ID")
-crane = res["value"][0]["ID"]
+concrete = res["value"][0]["ID"]
 s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and code eq 'EQ-VIB-KIT'"
               "&$select=ID")
 vibro = res["value"][0]["ID"]
-print(f"  fixtures ready on PRJ-001")
+s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and code eq 'EQ-TWC-12T'"
+              "&$select=ID")
+crane = res["value"][0]["ID"]
+
+
+def make_master(entity, body, user="steward_infc"):
+    s, d = call(f"/masterdata/{entity}", method="POST", body=body, user=user)
+    if s != 201:
+        return s, d
+    return call(f"/masterdata/{entity}(ID={d['ID']},IsActiveEntity=false)"
+                "/MasterDataService.draftActivate", method="POST", body={}, user=user)
+
+
+# A priced build-up on the slab CBS, so a budget can generate lines for it.
+s, d = call("/project/BOQs", method="POST", body={
+    "boqId": "BOQ-PROC", "project_ID": pid, "version": "A", "status": "Draft"})
+boq_id = d["ID"]
+call(f"/project/BOQs(ID={boq_id},IsActiveEntity=false)/ProjectService.draftActivate",
+     method="POST", body={})
+call(f"/project/BOQs(ID={boq_id},IsActiveEntity=true)/ProjectService.importItems",
+     method="POST", body={"fileName": "bill.csv", "content": BILL})
+s, items = call(f"/project/BOQItems?$filter=boq_ID eq {boq_id}&$select=ID,itemNo")
+call(f"/project/BOQItems(ID={items['value'][0]['ID']},IsActiveEntity=true)",
+     method="PATCH", body={"cbs_ID": slab["ID"]})
+make_master("ConsumptionRates", {
+    "material_ID": concrete, "linkedCBS_ID": slab["libraryNode_ID"],
+    "consRate": 1.0, "consUoM": "m3", "wastageAllowancePct": 2.5,
+    "effectiveFrom": "2026-01-01", "scope": "GROUP"})
+make_master("ProductivityRates", {
+    "resource_ID": vibro, "linkedCBS_ID": slab["libraryNode_ID"],
+    "outputPerHr": 12, "outputUoM": "m3", "effectiveFrom": "2026-01-01", "scope": "GROUP"})
+make_master("Rates", {"resource_ID": concrete, "rateValue": 285.00, "basis": "m3",
+                      "ccy_code": "AED", "effectiveFrom": "2026-01-01", "scope": "GROUP"})
+call(f"/project/BOQs(ID={boq_id},IsActiveEntity=true)/ProjectService.generateBuildUp",
+     method="POST", body={"difficultyPct": 110})
+call(f"/project/BOQItems(ID={items['value'][0]['ID']},IsActiveEntity=true)"
+     "/ProjectService.allocate", method="POST",
+     body={"wbsCode": "PRJ-002.1", "cbsCode": "02.10", "qty": 1200})
+
+s, d = call("/budget/Budgets", method="POST", body={
+    "project_ID": pid, "company_ID": project["company_ID"], "version": "V1",
+    "raisedBy": "demo", "raisedOn": "2026-08-17"})
+budget_id = d["ID"]
+call(f"/budget/Budgets(ID={budget_id},IsActiveEntity=false)/BudgetService.draftActivate",
+     method="POST", body={})
+s, gen = call(f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)"
+              "/BudgetService.generateLines", method="POST", body={})
+print(f"  fixtures ready on PRJ-002 with a budget: {str(gen)[:80]}")
 
 
 def new_request(lines):
@@ -112,9 +179,9 @@ def approve(docno):
 head("1. A requisition cannot be raised before the lines are decided")
 rid, docno = new_request([
     {"resource_ID": crane, "description": "Tower crane", "qty": 1, "uom": "inst",
-     "wbs_ID": wbs_id, "needBy": "2026-10-01"},
+     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-10-01"},
     {"resource_ID": vibro, "description": "Vibrator kits", "qty": 4, "uom": "kit",
-     "wbs_ID": wbs_id, "needBy": "2026-09-15"},
+     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
 ])
 print(f"      created {docno}")
 check(409, "requisition on a Draft request", *rr_action(rid, "raisePurchaseRequisition"))
@@ -134,9 +201,9 @@ check(400, "requisition with no PROCURE line",
 head("3. The PROCURE lines raise a requisition — and only those lines")
 rid2, docno2 = new_request([
     {"resource_ID": crane, "description": "Tower crane", "qty": 1, "uom": "inst",
-     "wbs_ID": wbs_id, "needBy": "2026-10-01"},
+     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-10-01"},
     {"resource_ID": vibro, "description": "Vibrator kits", "qty": 4, "uom": "kit",
-     "wbs_ID": wbs_id, "needBy": "2026-09-15"},
+     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
 ])
 print(f"      created {docno2}")
 rr_action(rid2, "submit")
@@ -181,7 +248,7 @@ assert_(codes is not None and "PR" not in codes,
 
 head("5. Only the procured line travels, with its account assignment")
 s, prLines = call(f"/material/PurchaseRequisitionLines?$filter=parent_ID eq {pr['ID']}"
-                  "&$select=lineNo,qtyProcure,uom,estUnitPrice,estTotal,description,"
+                  "&$select=ID,lineNo,qtyProcure,uom,estUnitPrice,estTotal,description,"
                   "wbs_ID,cbs_ID,sourceLine_ID,resource_ID,status&$orderby=lineNo")
 lines = prLines["value"]
 assert_(len(lines) == 1, "one line requisitioned, not both", len(lines))
@@ -218,6 +285,106 @@ check(200, "availability still runs for the in-house line",
       *rr_action(rid2, "runAvailabilityCheck"))
 check(200, "and the in-house line still reserves",
       *rr_action(rid2, "createReservation"))
+
+head("7. S/4 returns the requisition number — it never came from us")
+pr_path = f"/material/PurchaseRequisitions({pr['ID']})/MaterialService.recordRequisitionResult"
+check(400, "accepted but with no number", *call(pr_path, method="POST",
+      body={"success": True, "prNo": "", "s4System": "S4H", "message": "ok"}))
+check(200, "S/4 issued 1000004711", *call(pr_path, method="POST", body={
+      "success": True, "prNo": "1000004711", "s4System": "S4H",
+      "message": "Created with reference to the request."}))
+s, pr2 = call(f"/material/PurchaseRequisitions({pr['ID']})"
+              "?$select=prNo,s4Key,syncStatus,status,syncAttempts")
+assert_(pr2.get("prNo") == "1000004711" and pr2.get("s4Key") == "1000004711",
+        "the number S/4 issued is the requisition's identity", pr2.get("prNo"))
+assert_(pr2.get("syncStatus") == "SENT", "it reads SENT once accepted", pr2.get("syncStatus"))
+
+head("8. A purchase order is mirrored, never created here")
+s, prLines2 = call(f"/material/PurchaseRequisitionLines?$filter=parent_ID eq {pr['ID']}"
+                   "&$select=lineNo,estTotal&$orderby=lineNo")
+pr_line_no = prLines2["value"][0]["lineNo"]
+
+po_body = {"requisitionId": pr["ID"], "poNo": "4500001234", "vendorBP": "0001000211",
+           "s4System": "S4H", "orderedOn": "2026-08-18",
+           "lines": [{"prLineNo": pr_line_no, "qty": 4, "netValue": 231.00,
+                      "eta": "2026-09-20"}]}
+check(400, "an order with no S/4 number", *call("/material/recordPurchaseOrder",
+      method="POST", body=dict(po_body, poNo="")))
+check(400, "an order referencing a requisition line that does not exist",
+      *call("/material/recordPurchaseOrder", method="POST",
+            body=dict(po_body, lines=[{"prLineNo": 99, "qty": 1, "netValue": 10}])))
+check(200, "4500001234 mirrored", *call("/material/recordPurchaseOrder",
+      method="POST", body=po_body))
+check(409, "mirroring the same order twice", *call("/material/recordPurchaseOrder",
+      method="POST", body=po_body))
+
+s, pos = call(f"/material/PurchaseOrders?$filter=poNo eq '4500001234'"
+              "&$select=ID,poNo,status,sourceRequisition_ID,project_ID,vendor_ID")
+po = pos["value"][0]
+assert_(po.get("sourceRequisition_ID") == pr["ID"],
+        "the order points back at the requisition it was raised against")
+assert_(po.get("vendor_ID"), "the S/4 business partner resolved to our vendor mirror")
+
+s, poLines = call(f"/material/PurchaseOrderLines?$filter=parent_ID eq {po['ID']}"
+                  "&$select=lineNo,netValue,cbs_ID,wbs_ID,sourcePRLine_ID,resource_ID")
+poLine = poLines["value"][0]
+assert_(poLine.get("cbs_ID") and poLine.get("cbs_ID") == line.get("cbs_ID"),
+        "account assignment was inherited from the requisition, not restated")
+assert_(poLine.get("sourcePRLine_ID") == line.get("ID"),
+        "the order line points back at the requisition line")
+
+s, prAfter = call(f"/material/PurchaseRequisitions({pr['ID']})?$select=status")
+assert_(prAfter.get("status") == "Ordered",
+        "the requisition reads Ordered once every line is on an order",
+        prAfter.get("status"))
+
+head("9. The order commits against the budget line it charges")
+# No conditional here on purpose. This is what the whole increment is for, and
+# a skipped check reads as a passing one.
+check(200, "control refreshed", *call(
+    f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)/BudgetService.refreshControl",
+    method="POST", body={}))
+s, blines = call(f"/budget/BudgetLines?$filter=budget_ID eq {budget_id}"
+                 "&$select=category,cbs_ID,amount,committed,encumbered,actual,available")
+for l in blines["value"]:
+    print(f"        {l['category']:4} amount {str(l['amount']):>12}"
+          f"  committed {str(l['committed']):>10}"
+          f"  encumbered {str(l['encumbered']):>10}  available {str(l['available']):>12}")
+
+assert_(len(blines["value"]) > 0, "the budget has lines to commit against",
+        len(blines["value"]))
+
+# The order was for the vibrator kits — an EQR resource on the slab CBS — so
+# the EQR line for that CBS is the one that must carry the commitment.
+eqr = [l for l in blines["value"]
+       if l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"]]
+assert_(len(eqr) == 1, "there is an EQR line on the charged CBS", len(eqr))
+if eqr:
+    l = eqr[0]
+    assert_(abs(float(l.get("committed") or 0) - 231.0) < 0.01,
+            "the ordered 231.00 lands as committed on that line", l.get("committed"))
+    expected = (float(l["amount"]) - float(l["committed"])
+                - float(l["encumbered"]) - float(l.get("actual") or 0))
+    assert_(abs(float(l["available"]) - expected) < 0.01,
+            "available = amount - committed - encumbered - actual",
+            f"{l['available']} vs {expected:.2f}")
+
+others = [l for l in blines["value"] if not (
+    l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"])]
+assert_(all(float(l.get("committed") or 0) == 0 for l in others),
+        "no other budget line was committed against",
+        [(l["category"], l["committed"]) for l in others])
+
+# Derived, not accumulated: refreshing twice must not double the commitment.
+call(f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)/BudgetService.refreshControl",
+     method="POST", body={})
+s, again = call(f"/budget/BudgetLines?$filter=budget_ID eq {budget_id}"
+                "&$select=category,cbs_ID,committed")
+eqr2 = [l for l in again["value"]
+        if l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"]]
+assert_(eqr2 and abs(float(eqr2[0].get("committed") or 0) - 231.0) < 0.01,
+        "refreshing again leaves it at 231.00 — commitment is derived, not accumulated",
+        eqr2[0].get("committed") if eqr2 else "no line")
 
 print()
 print("=" * 78)
