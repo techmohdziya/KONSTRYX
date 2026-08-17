@@ -4,7 +4,8 @@
   "description": "Deploys the KONSTRYX HDI content into the bound hdi-shared container. The Java service owns the model; this module only ships db/src/gen to HANA.",
   "private": true,
   "dependencies": {
-    "@sap/hdi-deploy": "^5.7.0"
+    "@sap/hdi-deploy": "^5.7.0",
+    "@sap/hana-client": "^2.24.24"
   },
   "engines": {
     "node": "^20 || ^22"
