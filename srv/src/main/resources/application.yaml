@@ -59,7 +59,7 @@ cds:
           roles: [ MasterDataSteward, ProjectManager, BudgetController,
                    ResourceCoordinator, SiteEngineer ]
 ---
-# Cloud profile — XSUAA security + HANA Cloud + remote S/4 destinations
+# Cloud profile — XSUAA security + HANA Cloud
 spring:
   config:
     activate:
@@ -73,13 +73,18 @@ cds:
   security:
     authentication:
       mode: model-relaxed
-  remote.services:
-    - name: "S4"
-      destination:
-        name: "S4HANA_CLOUD"
-    - name: "ARIBA"
-      destination:
-        name: "ARIBA"
-    - name: "SF"
-      destination:
-        name: "SUCCESSFACTORS"
+
+# No cds.remote.services here. This profile used to declare S4, ARIBA and SF
+# against destinations, and it stopped the service booting in Cloud Foundry:
+# CAP resolves a remote service against a CDS definition imported from the
+# API's EDMX, nothing is imported (srv/external/ does not exist — see
+# INTEGRATION.md), so startup died with "Cannot find service 'S4'".
+#
+# Nothing consumed them either. The live S/4 integration is S4Connection,
+# which talks to the API over java.net.http and takes its host and
+# credentials from the environment; it never goes through CAP's remote
+# service layer. The block only existed under `cloud`, so it could not fail
+# locally and had never run anywhere until the first real deployment.
+#
+# Re-add a service here at the point its EDMX is actually imported and a
+# handler actually calls it — not before.
