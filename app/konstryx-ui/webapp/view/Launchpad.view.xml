@@ -8,7 +8,7 @@
 	<Page id="launchpadPage" showHeader="false" class="kxLaunchpad">
 		<content>
 			<VBox class="kxLaunchpadHeader">
-				<Title text="Plant Operations" level="H2"/>
+				<Title text="Engineering Construction &amp; Operations" level="H2"/>
 				<Text text="{/user/name} · {/user/role} · {/project/id} {/project/name} · data date {/project/dataDate}"/>
 			</VBox>
 

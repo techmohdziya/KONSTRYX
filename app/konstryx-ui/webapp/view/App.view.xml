@@ -2,6 +2,7 @@
 	controllerName="konstryx.controller.App"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
 	displayBlock="true"
 	height="100%">
 
@@ -20,6 +21,36 @@
 		becomes tiles on a launchpad page, one intent per document type, which is
 		how S/4 surfaces task-focused apps.
 	-->
-	<NavContainer id="appContent" autoFocus="false" height="100%"/>
+	<VBox height="100%" fitContainer="true">
+		<!--
+			TEMPORARY dev-only chrome (Ziya, 2026-08-17) — not a reversal of D-16.
+			Standing this app up standalone for review has no shell to go "home"
+			with, so this reproduces the one affordance that matters (logo ->
+			home, a user-profile corner) using the exact control S/4's own
+			launchpad uses for it (sap.f.ShellBar), rather than inventing a look.
+			Self-disabling: hidden whenever the app is actually embedded (an
+			iframe, as real launchpad hosting works), so nothing needs to be
+			remembered or removed once D-16's real shell is in place — just
+			delete this VBox wrapper and unindent the NavContainer when ready.
+		-->
+		<f:ShellBar
+			id="devShellBar"
+			visible="{view>/showDevShell}"
+			homeIcon="img/logo.png"
+			homeIconTooltip="KONSTRYX — back to the launchpad"
+			homeIconPressed=".onGoHome"
+			title="KONSTRYX"
+			secondTitle="Engineering Construction &amp; Operations"
+			avatarPressed=".onProfilePress">
+			<f:profile>
+				<Avatar initials="{/user/initials}" displaySize="XS"/>
+			</f:profile>
+		</f:ShellBar>
+		<NavContainer id="appContent" autoFocus="false" height="100%">
+			<layoutData>
+				<FlexItemData growFactor="1" shrinkFactor="1" baseSize="0%"/>
+			</layoutData>
+		</NavContainer>
+	</VBox>
 
 </mvc:View>
