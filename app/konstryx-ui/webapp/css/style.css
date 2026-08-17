@@ -93,3 +93,23 @@ html, body { height: 100%; margin: 0; }
 
 /* KPI tiles on overview headers */
 .kxKpiTile { min-width: 10rem; padding: 0.25rem 0; }
+
+/* ---------- label/value field grid ----------
+   Used where a document's fields are data-driven. A bound SimpleForm cannot
+   carry a Label+Text template (one template per aggregation), so the pairs are
+   laid out here instead: each cell is a fixed minimum width and the row wraps,
+   which gives real columns at any width instead of one column per field. */
+.kxFieldGrid { width: 100%; }
+.kxField {
+	min-width: 15rem;
+	max-width: 22rem;
+	flex: 1 1 15rem;
+	padding: 0 2rem .875rem 0;
+}
+.kxField > .sapMLabel {
+	font-size: var(--sapFontSmallSize);
+	color: var(--sapContent_LabelColor);
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	padding-bottom: .125rem;
+}

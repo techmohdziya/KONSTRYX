@@ -94,17 +94,20 @@
 								visible="{= ${view>/doc/readOnly} &amp;&amp; ${/ui/showGuidanceText} }"
 								class="sapUiSmallMarginBottom"/>
 							<Text text="{view>/doc/intro}" class="kxIntro" visible="{/ui/showGuidanceText}"/>
-							<form:SimpleForm
-								editable="false"
-								layout="ColumnLayout"
-								columnsM="2"
-								columnsL="2"
-								columnsXL="3"
-								class="sapUiSmallMarginTop"
-								content="{path: 'view>/doc/fields', templateShareable: false}">
-								<Label text="{view>label}"/>
-								<Text text="{view>value}"/>
-							</form:SimpleForm>
+							<!-- Label/value pairs in a wrapping grid rather than a
+							     SimpleForm. SimpleForm's content aggregation takes a single
+							     template when bound, so a Label + Text pair silently lost the
+							     Label: the form rendered eight values, no labels, each
+							     squeezed into its own ColumnLayout column and wrapping a
+							     character at a time. One VBox template keeps the pair
+							     together, and the cells wrap into as many columns as fit. -->
+							<HBox wrap="Wrap" class="kxFieldGrid sapUiSmallMarginTop"
+							      items="{path: 'view>/doc/fields', templateShareable: false}">
+								<VBox class="kxField">
+									<Label text="{view>label}"/>
+									<Text text="{view>value}"/>
+								</VBox>
+							</HBox>
 						</uxap:blocks>
 					</uxap:ObjectPageSubSection>
 				</uxap:subSections>
