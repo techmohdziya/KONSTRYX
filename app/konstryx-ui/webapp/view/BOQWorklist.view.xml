@@ -1,0 +1,95 @@
+<mvc:View
+	controllerName="konstryx.controller.BOQWorklist"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="boqWorklistPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<HBox alignItems="Center">
+						<Title text="Bills of Quantities" level="H2"/>
+						<VariantManagement id="boqVariant" class="sapUiTinyMarginBegin"
+						                   supportDefault="true" supportFavorites="false" supportPublic="true"
+						                   select=".onVariantSelect" save=".onVariantSave"/>
+					</HBox>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Every project's bill in one place. Open one to build up resources, check the budget gate, or generate the budget."/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Status"/>
+						<Select id="statusFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All"/>
+							<core:Item key="Draft" text="Draft"/>
+							<core:Item key="Active" text="Active"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text=" "/>
+						<Button text="Adapt Filters" icon="sap-icon://filter" press=".onAdaptFilters"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="boqTable"
+				items="{path: 'pj>/BOQs', templateShareable: false}"
+				growing="true"
+				growingThreshold="50"
+				sticky="ColumnHeaders"
+				noDataText="No bills of quantities have been imported yet."
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="Bills of Quantities" level="H4"/>
+						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here" press=".onExportExcel"/>
+						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onTableSettings"/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column id="project" width="16rem"><Text text="Project"/></Column>
+					<Column id="boqId" width="10rem"><Text text="BOQ"/></Column>
+					<Column id="version" width="7rem"><Text text="Version"/></Column>
+					<Column id="status" width="10rem"><Text text="Status"/></Column>
+					<Column id="source" width="8rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Source"/></Column>
+					<Column id="contractValue" hAlign="End"><Text text="Contract Value"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Active" press=".onOpenBOQ">
+						<cells>
+							<ObjectIdentifier title="{pj>project/name}" text="{pj>project/code}"/>
+							<ObjectIdentifier title="{pj>boqId}"/>
+							<Text text="{pj>version}"/>
+							<ObjectStatus text="{= ${pj>status} || 'Draft' }"
+								state="{= ${pj>status} === 'Active' ? 'Success' : !${pj>status} || ${pj>status} === 'Draft' ? 'None' : 'Warning' }"/>
+							<Text text="{pj>source}"/>
+							<ObjectNumber
+								number="{path: 'pj>contractValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"
+								unit="AED"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

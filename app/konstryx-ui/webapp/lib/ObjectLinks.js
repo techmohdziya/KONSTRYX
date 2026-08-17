@@ -30,6 +30,8 @@ sap.ui.define([
 			  route: "projectBOQ", args: function (o) { return { projectId: o.ID }; } },
 			{ key: "costMapping", text: "Cost Mapping",    icon: "sap-icon://combine",
 			  route: "costMapping", args: function (o) { return { projectId: o.ID }; } },
+			{ key: "budget", text: "Budget",               icon: "sap-icon://money-bills",
+			  route: "budget", args: function (o) { return { projectId: o.ID }; } },
 			{ key: "requests", text: "Resource Requests",  icon: "sap-icon://cart",
 			  route: "worklist", args: function () { return { docType: "RR" }; } }
 		],

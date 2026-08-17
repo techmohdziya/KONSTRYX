@@ -66,6 +66,13 @@
         "settings": {
           "odataVersion": "4.0"
         }
+      },
+      "budgetService": {
+        "uri": "/odata/v4/budget/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
       }
     }
   },
@@ -154,6 +161,15 @@
           "autoExpandSelect": true,
           "groupId": "$auto"
         }
+      },
+      "bud": {
+        "dataSource": "budgetService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto"
+        }
       }
     },
     "resources": {
@@ -193,6 +209,26 @@
           "pattern": "projects/{projectId}/cost-mapping",
           "name": "costMapping",
           "target": "costMapping"
+        },
+        {
+          "pattern": "budgets",
+          "name": "budgets",
+          "target": "budgets"
+        },
+        {
+          "pattern": "boqs",
+          "name": "boqWorklist",
+          "target": "boqWorklist"
+        },
+        {
+          "pattern": "projects/{projectId}/budget",
+          "name": "budget",
+          "target": "budget"
+        },
+        {
+          "pattern": "projects/{projectId}/budget/{budgetId}",
+          "name": "budgetDetail",
+          "target": "budgetDetail"
         },
         {
           "pattern": "projects/{projectId}/cbs/{cbsId}",
@@ -349,6 +385,34 @@
           "path": "konstryx.view",
           "name": "CostMapping",
           "viewName": "CostMapping"
+        },
+        "budget": {
+          "id": "budget",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "Budget",
+          "viewName": "Budget"
+        },
+        "budgetDetail": {
+          "id": "budgetDetail",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "BudgetDetail",
+          "viewName": "BudgetDetail"
+        },
+        "budgets": {
+          "id": "budgets",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "BudgetWorklist",
+          "viewName": "BudgetWorklist"
+        },
+        "boqWorklist": {
+          "id": "boqWorklist",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "BOQWorklist",
+          "viewName": "BOQWorklist"
         }
       }
     }

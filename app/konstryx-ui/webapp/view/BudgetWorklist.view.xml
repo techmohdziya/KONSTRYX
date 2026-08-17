@@ -1,0 +1,104 @@
+<mvc:View
+	controllerName="konstryx.controller.BudgetWorklist"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="budgetWorklistPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<HBox alignItems="Center">
+						<Title text="Budgets" level="H2"/>
+						<VariantManagement id="budgetsVariant" class="sapUiTinyMarginBegin"
+						                   supportDefault="true" supportFavorites="false" supportPublic="true"
+						                   select=".onVariantSelect" save=".onVariantSave"/>
+					</HBox>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Every project's budget in one place. Open one to generate lines, submit, baseline, or adjust it through the ledger."/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Status"/>
+						<Select id="statusFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All"/>
+							<core:Item key="Draft" text="Draft"/>
+							<core:Item key="Submitted" text="Submitted"/>
+							<core:Item key="Approved" text="Approved"/>
+							<core:Item key="Baselined" text="Baselined"/>
+							<core:Item key="Locked" text="Locked"/>
+						</Select>
+					</VBox>
+					<VBox class="kxFilterField">
+						<Label text=" "/>
+						<Button text="Adapt Filters" icon="sap-icon://filter" press=".onAdaptFilters"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="budgetsTable"
+				items="{path: 'bud>/Budgets', templateShareable: false}"
+				growing="true"
+				growingThreshold="50"
+				sticky="ColumnHeaders"
+				noDataText="No budgets have been created yet."
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="tableTitle" text="Budgets" level="H4"/>
+						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here" press=".onExportExcel"/>
+						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onTableSettings"/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column id="project" width="16rem"><Text text="Project"/></Column>
+					<Column id="docNo" width="12rem"><Text text="Document"/></Column>
+					<Column id="version" width="7rem"><Text text="Version"/></Column>
+					<Column id="status" width="10rem"><Text text="Status"/></Column>
+					<Column id="totalAmount" hAlign="End"><Text text="Total Amount"/></Column>
+					<Column id="daysToLock" width="9rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="Days→Lock"/></Column>
+					<Column id="raisedBy" width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Raised by"/></Column>
+					<Column id="raisedOn" width="9rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Raised on"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Active" press=".onOpenBudget">
+						<cells>
+							<ObjectIdentifier
+								title="{parts: [{path: 'bud>project_ID'}, {path: 'view>/projectById'}], formatter: '.formatProjectTitle'}"
+								text="{parts: [{path: 'bud>project_ID'}, {path: 'view>/projectById'}], formatter: '.formatProjectCode'}"/>
+							<ObjectIdentifier title="{bud>docNo}"/>
+							<Text text="{bud>version}"/>
+							<ObjectStatus text="{= ${bud>status} || 'Draft' }"
+								state="{= ${bud>status} === 'Approved' || ${bud>status} === 'Baselined' || ${bud>status} === 'Locked' ? 'Success' : !${bud>status} || ${bud>status} === 'Draft' ? 'None' : 'Warning' }"/>
+							<ObjectNumber
+								number="{path: 'bud>totalAmount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"
+								unit="AED"/>
+							<Text text="{= ${bud>daysToLock} !== null &amp;&amp; ${bud>daysToLock} !== undefined ? ${bud>daysToLock} : '—' }"/>
+							<Text text="{bud>raisedBy}"/>
+							<Text text="{bud>raisedOn}"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

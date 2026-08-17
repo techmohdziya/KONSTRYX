@@ -1056,6 +1056,24 @@
           "route": "projects"
         },
         {
+          "title": "Bills of Quantities",
+          "subtitle": "Every project's BOQ",
+          "icon": "sap-icon://list",
+          "value": "1",
+          "unit": "active",
+          "state": "Good",
+          "route": "boqWorklist"
+        },
+        {
+          "title": "Budget",
+          "subtitle": "Generate, submit, baseline, adjust",
+          "icon": "sap-icon://money-bills",
+          "value": "1",
+          "unit": "budgets",
+          "state": "Good",
+          "route": "budgets"
+        },
+        {
           "title": "Budget Encumbrance",
           "subtitle": "S/4 PS commitment",
           "icon": "sap-icon://money-bills",
