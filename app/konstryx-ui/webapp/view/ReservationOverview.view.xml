@@ -53,7 +53,7 @@
 						<HBox wrap="Wrap" class="sapUiSmallMargin">
 							<ObjectStatus class="sapUiMediumMarginEnd"
 								title="Enterprise Project (SAP_COM_0308)"
-								text="LIVE · S4-SANDBOX"
+								text="LIVE · S/4 sandbox"
 								state="Success" icon="sap-icon://connected"/>
 							<ObjectStatus class="sapUiMediumMarginEnd"
 								title="Budget Commitment · CMT"

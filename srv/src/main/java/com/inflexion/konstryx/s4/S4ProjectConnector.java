@@ -131,7 +131,7 @@ public class S4ProjectConnector {
                     + " with " + wbsSent + " WBS element(s)"
                     + (wbsFailed == 0 ? "" : "; " + wbsFailed + " element(s) failed:"
                             + wbsErrors);
-            return new SyncOutcome(true, s4Key, "S4-SANDBOX", message);
+            return new SyncOutcome(true, s4Key, systemId(), message);
 
         } catch (Exception e) {
             log.warn("S/4 push failed for {}: {}", code, e.toString());
@@ -141,6 +141,21 @@ public class S4ProjectConnector {
     }
 
     // ----------------------------------------------------------------- helpers
+
+    /**
+     * The logical system recorded against a synced project, derived from the
+     * configured host rather than named in source — which tenant this build
+     * points at is deployment configuration, not a fact about the product.
+     */
+    private String systemId() {
+        String host = connection.host();
+        if (host == null || host.isBlank()) {
+            return "S4";
+        }
+        String h = host.replaceFirst("^https?://", "");
+        int dot = h.indexOf('.');
+        return dot > 0 ? h.substring(0, dot) : h;
+    }
 
     /** V2 JSON dates ride as /Date(epoch-millis)/. */
     private static void putDate(ObjectNode node, String field, Object value) {
