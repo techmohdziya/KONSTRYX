@@ -5,6 +5,7 @@
  */
 using { konstryx.wf } from '../db/wf';
 using { konstryx.eq } from '../db/eq';
+using { konstryx.mpr } from '../db/mpr';
 
 @requires: 'ResourceCoordinator'
 service WorkflowService @(path:'/workflow') {
@@ -63,6 +64,13 @@ service WorkflowService @(path:'/workflow') {
 
   // EQR vertical extension — reached from a line via $expand=equipment
   entity EquipmentRequestLines as projection on eq.EquipmentRequestLine;
+
+  // MPR vertical extension — reached from a line via $expand=manpower.
+  // Timesheets are exposed in their own right as well as under the line: the
+  // daily log is queried by date across a project far more often than it is
+  // read one line at a time.
+  entity ManpowerRequestLines as projection on mpr.ManpowerRequestLine;
+  entity Timesheets           as projection on mpr.TimesheetEntry;
   entity AdvisoryDecisions    as projection on wf.AdvisoryDecision;
   entity AvailabilityChecks   as projection on wf.AvailabilityCheck;
 

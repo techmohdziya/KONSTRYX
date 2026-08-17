@@ -8,7 +8,7 @@ RESULTS="$SP/results.txt"
 : "${JAVA_HOME:=/c/Program Files/SapMachine/JDK/17}"
 export JAVA_HOME
 
-SUITES="test_foundations test_approval test_persona_approver test_attachments test_variants test_project test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement"
+SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement"
 
 : > "$RESULTS"
 

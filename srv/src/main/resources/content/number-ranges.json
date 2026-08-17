@@ -1,6 +1,7 @@
 {
   "packId": "NUMBER_RANGES",
   "version": "1.0.0",
+  "sequence": 10,
   "description": "Default document number ranges. Clients may change scope and pattern; an upgrade must never revert their choice.",
   "items": [
     {

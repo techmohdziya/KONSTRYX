@@ -1,6 +1,7 @@
 {
   "packId": "APPROVAL_SCHEMES",
   "version": "1.0.0",
+  "sequence": 35,
   "description": "Starting approval schemes for Budget and Resource Request. Value bands are a starting point, not a rule. Approver personas are left unset on purpose: personas are client configuration.",
   "items": [
     {

@@ -37,6 +37,11 @@ import java.util.UUID;
  * An upgrade that adds rows ships a new pack version. Rows the client has since
  * edited keep their edits; only genuinely new rows arrive.
  *
+ * A pack is {@code packId}, {@code version}, an optional {@code sequence} fixing
+ * its order against other packs, and {@code items[]} of
+ * {@code {entity, naturalKey(s), rows[]}}. Rows are inserted in the order they
+ * appear, so within one pack a parent may simply precede its children.
+ *
  * Runs at startup, which is correct for the current one-deployment-per-client
  * model. Under shared multitenancy this would move to the tenant subscription
  * callback so each new tenant gets the packs on provisioning.
@@ -57,6 +62,13 @@ public class ContentDeploymentService {
             "file:./content/*.json"
     };
 
+    /**
+     * Where a pack that declares no sequence sorts. High rather than zero, so an
+     * operator's corrective pack dropped into ./content applies after the
+     * delivered ones without having to know their numbering.
+     */
+    private static final int DEFAULT_SEQUENCE = 1000;
+
     @Autowired
     private PersistenceService db;
 
@@ -69,6 +81,9 @@ public class ContentDeploymentService {
     public void applyDeliveredContent() {
         applyAll();
     }
+
+    /** A pack read from disk, parsed once so sorting does not re-read it per comparison. */
+    private record LoadedPack(String filename, JsonNode json) {}
 
     /** Returns a human-readable summary; also invoked by the admin action. */
     public String applyAll() {
@@ -83,22 +98,41 @@ public class ContentDeploymentService {
                     // a location that does not exist is normal, not an error
                 }
             }
-            // Apply in version order, not filename order. Sorting by filename
-            // put number-ranges-v2.json ('-' sorts before '.') ahead of
-            // number-ranges.json, so 1.0.1 applied before 1.0.0 and the base
-            // pack then reported rows as pre-existing. Upgrades must replay in
-            // the order they were released.
-            found.sort(java.util.Comparator
-                    .comparing((Resource r) -> packIdOf(r))
-                    .thenComparing(r -> versionKeyOf(r)));
-            Resource[] packs = found.toArray(new Resource[0]);
-            if (packs.length == 0) {
+            java.util.List<LoadedPack> packs = new java.util.ArrayList<>();
+            for (Resource resource : found) {
+                try (InputStream in = resource.getInputStream()) {
+                    packs.add(new LoadedPack(resource.getFilename(), mapper.readTree(in)));
+                } catch (Exception e) {
+                    log.error("Content pack {} could not be parsed — skipped",
+                            resource.getFilename(), e);
+                    summary.append(resource.getFilename()).append(": FAILED — unreadable: ")
+                           .append(e.getMessage()).append('\n');
+                }
+            }
+            // Three sort keys, in this order:
+            //
+            //   sequence — declared dependency order between packs. A pack whose
+            //     rows point at another pack's rows must be applied after it, and
+            //     nothing in a packId or a version says so. Demo content is the
+            //     case that forced this: user assignments name a company and a
+            //     project delivered by two earlier packs, and 'DEMO' sorts before
+            //     both alphabetically.
+            //   packId — stable grouping for packs at the same sequence.
+            //   version — an upgrade replays in release order, not filename order.
+            //     Sorting by filename put number-ranges-v2.json ('-' sorts before
+            //     '.') ahead of number-ranges.json, so 1.0.1 applied before 1.0.0
+            //     and the base pack then reported its rows as pre-existing.
+            packs.sort(java.util.Comparator
+                    .comparingInt((LoadedPack p) -> p.json().path("sequence").asInt(DEFAULT_SEQUENCE))
+                    .thenComparing(p -> p.json().path("packId").asText(""))
+                    .thenComparing(p -> versionKeyOf(p.json())));
+            if (packs.isEmpty()) {
                 return "No content packs found.";
             }
             // Privileged: content deployment is a platform action and must not
             // depend on whichever user happens to trigger it.
             runtime.requestContext().privilegedUser().run(ctx -> {
-                for (Resource pack : packs) {
+                for (LoadedPack pack : packs) {
                     try {
                         // Each pack in its own change set: a pack that inserts
                         // half its rows and then fails would otherwise leave the
@@ -106,7 +140,7 @@ public class ContentDeploymentService {
                         // and no way to tell how far it got.
                         runtime.changeSetContext().run(changeSet -> {
                             try {
-                                summary.append(applyPack(pack)).append('\n');
+                                summary.append(applyPack(pack.json())).append('\n');
                             } catch (Exception e) {
                                 changeSet.markForCancel();
                                 throw new IllegalStateException(e.getMessage(), e);
@@ -114,8 +148,8 @@ public class ContentDeploymentService {
                         });
                     } catch (Exception e) {
                         log.error("Content pack {} failed to apply — nothing from it was kept",
-                                pack.getFilename(), e);
-                        summary.append(pack.getFilename()).append(": FAILED — ")
+                                pack.filename(), e);
+                        summary.append(pack.filename()).append(": FAILED — ")
                                .append(e.getMessage()).append('\n');
                     }
                 }
@@ -127,12 +161,7 @@ public class ContentDeploymentService {
         return summary.toString().trim();
     }
 
-    private String applyPack(Resource resource) throws Exception {
-        JsonNode pack;
-        try (InputStream in = resource.getInputStream()) {
-            pack = mapper.readTree(in);
-        }
-
+    private String applyPack(JsonNode pack) throws Exception {
         String packId = pack.path("packId").asText();
         String version = pack.path("version").asText();
 
@@ -165,7 +194,15 @@ public class ContentDeploymentService {
                     continue;
                 }
 
-                data.put("ID", UUID.randomUUID().toString());
+                // A pack may carry its own ID, and the demo content does. Two
+                // reasons it has to be allowed rather than always generated:
+                // the canonical demo set has stable UUIDs, so a seeded tenant
+                // ends up identical to the development database instead of
+                // merely equivalent; and it is the only way to express a cycle,
+                // which that set contains — a request line points at its
+                // advisory decision while the decision points back at the line,
+                // so neither can be inserted second and resolved by reference.
+                data.putIfAbsent("ID", UUID.randomUUID().toString());
                 db.run(Insert.into(entity).entry(data));
                 inserted++;
             }
@@ -243,22 +280,9 @@ public class ContentDeploymentService {
                                 + "points at must be delivered first."));
     }
 
-    private String packIdOf(Resource resource) {
-        try (InputStream in = resource.getInputStream()) {
-            return mapper.readTree(in).path("packId").asText("");
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
     /** Zero-pads each numeric segment so 1.0.10 sorts after 1.0.9, not before it. */
-    private String versionKeyOf(Resource resource) {
-        String version;
-        try (InputStream in = resource.getInputStream()) {
-            version = mapper.readTree(in).path("version").asText("0");
-        } catch (Exception e) {
-            return "0";
-        }
+    private String versionKeyOf(JsonNode pack) {
+        String version = pack.path("version").asText("0");
         StringBuilder key = new StringBuilder();
         for (String part : version.split("\\.")) {
             try {

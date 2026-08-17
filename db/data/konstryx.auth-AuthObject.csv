@@ -26,3 +26,5 @@ ID;code;name;module_ID;entityName;projectScoped;projectPath;companyPath
 71000000-0000-0000-0000-000000000060;KX_AUTH_ADMIN;Authorization Administration;70000000-0000-0000-0000-000000000007;konstryx.auth.Persona;false;;
 71000000-0000-0000-0000-000000000061;KX_APPROVAL_CONFIG;Approval Configuration;70000000-0000-0000-0000-000000000007;konstryx.apr.ApprovalScheme;false;;company.code
 71000000-0000-0000-0000-000000000062;KX_COMPANY;Company & Group Setup;70000000-0000-0000-0000-000000000007;konstryx.admin.Company;false;;code
+71000000-0000-0000-0000-000000000041;KX_MANPOWER_LINE;Manpower Request Line;70000000-0000-0000-0000-000000000008;konstryx.mpr.ManpowerRequestLine;true;line.parent.project.code;line.parent.company.code
+71000000-0000-0000-0000-000000000042;KX_TIMESHEET;Timesheet;70000000-0000-0000-0000-000000000008;konstryx.mpr.TimesheetEntry;true;manpowerLine.line.parent.project.code;manpowerLine.line.parent.company.code
