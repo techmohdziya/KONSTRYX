@@ -9,8 +9,10 @@ import com.sap.cds.services.ServiceException;
 import com.sap.cds.services.handler.EventHandler;
 import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
+import com.sap.cds.services.cds.CqnService;
 import com.sap.cds.services.persistence.PersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -56,13 +58,74 @@ public class CostMappingHandler implements EventHandler {
     @Autowired
     private BudgetGateService gate;
 
+    /**
+     * The application service, not the persistence service — reads through it
+     * pass the authorization layer's instance filter (see onPortfolio).
+     */
+    @Autowired
+    @Qualifier("ProjectService")
+    private CqnService projects;
+
     @On(event = "costMappingSummary", entity = "ProjectService.Projects")
     public void onSummary(EventContext context) {
         CqnSelect select = context.get("cqn") instanceof CqnSelect s ? s : null;
         Row project = (select == null ? Optional.<Row>empty() : db.run(select).first())
                 .orElseThrow(() -> new ServiceException(ErrorStatuses.NOT_FOUND,
                         "Project not found."));
-        String projectId = str(project.get("ID"));
+        context.put("result", summaryOf(str(project.get("ID"))));
+        context.setCompleted();
+    }
+
+    /**
+     * The same workbench read, once per project, for whoever runs a portfolio
+     * rather than a single job. Deliberately returns counts only and not each
+     * project's exception rows: the point of this list is to say which projects
+     * need a human at all, and the per-project workbench is one click away for
+     * the one that does.
+     *
+     * Projects are read through the application service, not the persistence
+     * service, so the authorization layer's instance filter narrows them to the
+     * companies the user may see. Reading them straight from the database here
+     * would quietly hand every user the whole portfolio.
+     */
+    @On(event = "costMappingPortfolio")
+    public void onPortfolio(EventContext context) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        for (Row project : projects.run(Select.from("ProjectService.Projects")
+                .columns("ID", "code", "name", "stage")
+                .where(p -> p.get("IsActiveEntity").eq(true)))) {
+            String projectId = str(project.get("ID"));
+            Map<String, Object> summary = summaryOf(projectId);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> exceptions =
+                    (List<Map<String, Object>>) summary.get("exceptions");
+            int gateFailing = (Integer) summary.get("gateFailing");
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("projectId", projectId);
+            row.put("projectCode", str(project.get("code")));
+            row.put("projectName", str(project.get("name")));
+            row.put("stage", str(project.get("stage")));
+            row.put("totalLines", summary.get("totalLines"));
+            row.put("cbsOpen", summary.get("cbsOpen"));
+            row.put("wbsOpen", summary.get("wbsOpen"));
+            row.put("resOpen", summary.get("resOpen"));
+            row.put("gatePassing", summary.get("gatePassing"));
+            row.put("gateFailing", gateFailing);
+            row.put("exceptionCount", exceptions.size());
+            // The one thing a portfolio reader actually wants to know.
+            row.put("budgetReady", gateFailing == 0 && (Integer) summary.get("totalLines") > 0);
+            rows.add(row);
+        }
+
+        context.put("result", rows);
+        context.setCompleted();
+    }
+
+    /** The workbench read for one project: tile counts plus the exception rows. */
+    private Map<String, Object> summaryOf(String projectId) {
         String companyId = gate.companyOf(projectId);
 
         List<Row> items = new ArrayList<>();
@@ -220,8 +283,7 @@ public class CostMappingHandler implements EventHandler {
         result.put("gatePassing", gatePassing);
         result.put("gateFailing", gateFailing);
         result.put("exceptions", exceptions);
-        context.put("result", result);
-        context.setCompleted();
+        return result;
     }
 
     // ----------------------------------------------------------------- helpers

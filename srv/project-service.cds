@@ -191,4 +191,25 @@ service ProjectService @(path:'/project') {
   entity CBS              as projection on prj.CBSInstance;
   entity Allocations      as projection on prj.Allocation;
   entity ProjectResources as projection on prj.ProjectResource;
+
+  /**
+   * The same workbench read across every project the user may see — the
+   * portfolio counterpart of costMappingSummary, which answers for one project.
+   * Counts only, no exception rows: this list says which projects need a human,
+   * and the per-project workbench handles the one that does.
+   */
+  action costMappingPortfolio() returns array of {
+    projectId      : UUID;
+    projectCode    : String(40);
+    projectName    : String(150);
+    stage          : String(40);
+    totalLines     : Integer;
+    cbsOpen        : Integer;
+    wbsOpen        : Integer;
+    resOpen        : Integer;
+    gatePassing    : Integer;
+    gateFailing    : Integer;
+    exceptionCount : Integer;
+    budgetReady    : Boolean;
+  };
 }

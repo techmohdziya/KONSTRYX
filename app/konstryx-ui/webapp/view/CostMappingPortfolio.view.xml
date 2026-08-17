@@ -1,0 +1,92 @@
+<mvc:View
+	controllerName="konstryx.controller.CostMappingPortfolio"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="cmPortfolioPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Cost Mapping" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Which projects still need a human. Open one to resolve its exceptions — the per-project workbench is where the work is done."/>
+				</f:expandedContent>
+				<f:actions>
+					<Button text="Refresh" icon="sap-icon://refresh" press=".onRefresh"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar" alignItems="End">
+					<VBox class="kxFilterField">
+						<Label text="Show"/>
+						<Select id="readyFilter" selectedKey="ALL" change=".onFilterChange">
+							<core:Item key="ALL" text="All projects"/>
+							<core:Item key="ATTENTION" text="Needs attention"/>
+							<core:Item key="READY" text="Ready to generate budget"/>
+						</Select>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<Table
+				id="portfolioTable"
+				items="{path: 'view>/rows', templateShareable: false}"
+				sticky="ColumnHeaders"
+				class="sapUiResponsiveMargin"
+				width="auto"
+				noDataText="No projects to show.">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="portfolioTitle" text="Projects" level="H4"/>
+						<ToolbarSpacer/>
+						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+						        tooltip="Download the list as it is arranged here" press=".onExportExcel"/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="16rem"><Text text="Project"/></Column>
+					<Column width="9rem" hAlign="End"><Text text="Bill lines"/></Column>
+					<Column width="8rem" hAlign="End"><Text text="CBS open"/></Column>
+					<Column width="8rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="WBS open"/></Column>
+					<Column width="9rem" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="Resources open"/></Column>
+					<Column width="10rem" hAlign="End"><Text text="Exceptions"/></Column>
+					<Column width="13rem"><Text text="Budget gate"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Active" press=".onOpenProject">
+						<cells>
+							<ObjectIdentifier title="{view>projectName}" text="{view>projectCode}"/>
+							<Text text="{view>totalLines}"/>
+							<ObjectNumber number="{view>cbsOpen}"
+								state="{= ${view>cbsOpen} > 0 ? 'Error' : 'Success' }"/>
+							<ObjectNumber number="{view>wbsOpen}"
+								state="{= ${view>wbsOpen} > 0 ? 'Warning' : 'Success' }"/>
+							<ObjectNumber number="{view>resOpen}"
+								state="{= ${view>resOpen} > 0 ? 'Warning' : 'Success' }"/>
+							<ObjectNumber number="{view>exceptionCount}"
+								state="{= ${view>exceptionCount} > 0 ? 'Warning' : 'Success' }"/>
+							<ObjectStatus
+								text="{= ${view>budgetReady} ? 'Ready' : ${view>totalLines} === 0 ? 'No bill yet' : ${view>gateFailing} + ' rule(s) failing' }"
+								state="{= ${view>budgetReady} ? 'Success' : ${view>totalLines} === 0 ? 'None' : 'Error' }"
+								icon="{= ${view>budgetReady} ? 'sap-icon://accept' : '' }"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

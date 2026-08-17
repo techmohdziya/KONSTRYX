@@ -1065,6 +1065,15 @@
           "route": "boqWorklist"
         },
         {
+          "title": "Cost Mapping",
+          "subtitle": "Projects needing a decision",
+          "icon": "sap-icon://combine",
+          "value": "1",
+          "unit": "to resolve",
+          "state": "Critical",
+          "route": "costMappingPortfolio"
+        },
+        {
           "title": "Budget",
           "subtitle": "Generate, submit, baseline, adjust",
           "icon": "sap-icon://money-bills",

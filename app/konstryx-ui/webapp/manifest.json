@@ -221,6 +221,11 @@
           "target": "boqWorklist"
         },
         {
+          "pattern": "cost-mapping",
+          "name": "costMappingPortfolio",
+          "target": "costMappingPortfolio"
+        },
+        {
           "pattern": "projects/{projectId}/budget",
           "name": "budget",
           "target": "budget"
@@ -413,6 +418,13 @@
           "path": "konstryx.view",
           "name": "BOQWorklist",
           "viewName": "BOQWorklist"
+        },
+        "costMappingPortfolio": {
+          "id": "costMappingPortfolio",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "CostMappingPortfolio",
+          "viewName": "CostMappingPortfolio"
         }
       }
     }
