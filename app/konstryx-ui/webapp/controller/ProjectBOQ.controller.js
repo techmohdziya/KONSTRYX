@@ -82,19 +82,37 @@ sap.ui.define([
 			}, this);
 		},
 
+		/**
+		 * Raw fetch, not the typed action-parameter path: difficultyPct is a
+		 * Decimal, and SAPUI5's v4 model negotiates IEEE754Compatible=true
+		 * while CAP Java's action-parameter deserialiser only accepts a
+		 * Decimal as a *quoted* string when that flag is set — the model
+		 * sends a bare number, so the typed path 400s ("Invalid value for
+		 * property 'difficultyPct'"), confirmed live. Same root cause as
+		 * CostMapping's distributeToWBS workaround; not specific to
+		 * array-of-complex-type parameters.
+		 */
 		onGenerateBuildUp: function () {
 			if (!this._sBoqId) {
 				return;
 			}
-			var oModel = this.getModel("pj");
-			var oOperation = oModel.bindContext("ProjectService.generateBuildUp(...)",
-				oModel.bindContext("/BOQs(ID=" + this._sBoqId + ",IsActiveEntity=true)")
-					.getBoundContext());
-			oOperation.setParameter("difficultyPct", 110);
-			oOperation.execute().then(function () {
-				MessageBox.information(oOperation.getBoundContext().getValue().value
-					|| oOperation.getBoundContext().getValue(),
-					{ title: "Build-up coverage" });
+			var oModel = this.getModel("pj"),
+				sUrl = oModel.getServiceUrl() + "BOQs(ID=" + this._sBoqId
+					+ ",IsActiveEntity=true)/ProjectService.generateBuildUp";
+			fetch(sUrl, {
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "Content-Type": "application/json", "Accept": "application/json" },
+				body: JSON.stringify({ difficultyPct: 110 })
+			}).then(function (oResponse) {
+				return oResponse.json().then(function (oBody) {
+					if (!oResponse.ok) {
+						throw new Error((oBody.error && oBody.error.message) || "Generation failed.");
+					}
+					return oBody;
+				});
+			}).then(function (oBody) {
+				MessageBox.information(String(oBody.value || ""), { title: "Build-up coverage" });
 			}).catch(function (oError) {
 				MessageBox.error(oError.message || "Generation failed.");
 			});
