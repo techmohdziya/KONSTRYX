@@ -31,6 +31,17 @@
             "parameters": {},
             "additionalParameters": "allowed"
           }
+        },
+        "konstryx-manpower": {
+          "semanticObject": "KonstryxManpower",
+          "action": "display",
+          "title": "Manpower",
+          "subTitle": "Engineering & Construction",
+          "icon": "sap-icon://employee",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
         }
       }
     },
@@ -260,6 +271,11 @@
           "target": "reservations"
         },
         {
+          "pattern": "manpower",
+          "name": "manpower",
+          "target": "manpower"
+        },
+        {
           "pattern": "request/{requestId}",
           "name": "request",
           "target": "request"
@@ -429,6 +445,10 @@
           "path": "konstryx.view",
           "name": "CostMappingPortfolio",
           "viewName": "CostMappingPortfolio"
+        },
+        "manpower": {
+          "id": "manpower",
+          "name": "ManpowerOverview"
         }
       }
     }

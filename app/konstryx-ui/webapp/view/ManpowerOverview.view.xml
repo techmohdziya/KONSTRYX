@@ -1,0 +1,184 @@
+<mvc:View
+	controllerName="konstryx.controller.ManpowerOverview"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="manpowerPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Manpower" level="H2"/>
+				</f:heading>
+				<f:actions>
+					<Button icon="sap-icon://refresh" tooltip="Reload from the live documents" press=".onRefresh"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<!-- What a manpower coordinator reads first: how many heads are on
+				     site, how they split between own payroll and subcontract, what
+				     that costs, and how much of it has actually been logged. -->
+				<HBox wrap="Wrap" class="sapUiSmallMarginBottom">
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Heads reserved"/>
+						<ObjectNumber number="{view>/kpi/heads}" emphasized="true"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Own vs subcontract"/>
+						<ObjectNumber number="{view>/kpi/ownHeads}" unit="own · {view>/kpi/lscHeads} LSC" emphasized="true"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Committed"/>
+						<ObjectNumber number="{view>/kpi/committed}" unit="AED" emphasized="true"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Hours logged"/>
+						<ObjectNumber number="{view>/kpi/hours}" unit="hr incl. {view>/kpi/otHours} OT"/>
+					</VBox>
+					<VBox class="kxKpiTile">
+						<Label text="Logged cost"/>
+						<ObjectNumber number="{view>/kpi/loggedCost}" unit="AED"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<VBox>
+
+				<!-- ===================== CREW LINES ===================== -->
+				<Table
+					id="manpowerTable"
+					items="{path: 'view>/lines', templateShareable: false}"
+					mode="None"
+					sticky="ColumnHeaders"
+					busy="{view>/busy}"
+					class="sapUiResponsiveMargin"
+					width="auto">
+
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Crews ({view>/lineCount})" level="H4"/>
+							<ToolbarSpacer/>
+							<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+							        tooltip="Download the list as it is arranged here"
+							        press=".onExportCrews"/>
+						</OverflowToolbar>
+					</headerToolbar>
+
+					<columns>
+						<Column width="3.5rem"><Text text="#"/></Column>
+						<Column><Text text="Trade"/></Column>
+						<Column width="11rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Crew"/></Column>
+						<Column width="12rem"><Text text="Source"/></Column>
+						<Column width="5.5rem" hAlign="End"><Text text="Heads"/></Column>
+						<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Window"/></Column>
+						<Column width="9rem" hAlign="End"><Text text="Rate/head-day"/></Column>
+						<Column width="11rem" hAlign="End"><Text text="Committed"/></Column>
+						<Column width="10rem" minScreenWidth="Tablet" demandPopin="true"><Text text="WBS / CBS"/></Column>
+						<Column width="10rem"><Text text="Status"/></Column>
+					</columns>
+
+					<items>
+						<ColumnListItem type="Navigation" press=".onLinePress">
+							<cells>
+								<Text text="{view>lineNo}"/>
+								<VBox>
+									<Text text="{view>trade}"/>
+									<Text text="{view>inductionState}" class="kxSubText"/>
+								</VBox>
+								<VBox>
+									<Text text="{view>crewId}"/>
+									<Text text="{view>crewLead}" class="kxSubText"/>
+								</VBox>
+								<!-- Own payroll or a labour subcontractor. The vendor matters
+								     commercially, so it is shown rather than implied. -->
+								<ObjectStatus
+									text="{view>sourceLabel}"
+									state="{= ${view>sourceType} === 'OWN' ? 'Success' : 'Information' }"/>
+								<ObjectNumber number="{view>heads}"/>
+								<VBox>
+									<Text text="{view>window}"/>
+									<Text text="{view>durationDays} days" class="kxSubText"/>
+								</VBox>
+								<ObjectNumber number="{view>rateText}" unit="AED"/>
+								<ObjectNumber number="{view>committedText}" unit="AED" emphasized="true"/>
+								<VBox>
+									<Text text="{view>wbsCode}"/>
+									<Text text="CBS {view>cbsCode}" class="kxSubText"/>
+								</VBox>
+								<ObjectStatus text="{view>lineStatus}"
+									state="{= ${view>lineStatus} === 'Closed' ? 'None' : 'Success' }"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+				<!-- ===================== DAILY LOG ===================== -->
+				<!-- The daily log is what turns a reservation into actual cost, so it
+				     belongs on the same screen as the crews rather than a tab away:
+				     heads present against heads reserved is the absence signal. -->
+				<Table
+					id="timesheetTable"
+					items="{path: 'view>/timesheets', templateShareable: false}"
+					mode="None"
+					sticky="ColumnHeaders"
+					busy="{view>/busy}"
+					class="sapUiResponsiveMargin"
+					width="auto">
+
+					<headerToolbar>
+						<OverflowToolbar>
+							<Title text="Daily log ({view>/timesheetCount})" level="H4"/>
+							<ToolbarSpacer/>
+							<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+							        tooltip="Download the log as it is arranged here"
+							        press=".onExportLog"/>
+						</OverflowToolbar>
+					</headerToolbar>
+
+					<columns>
+						<Column width="7rem"><Text text="Date"/></Column>
+						<Column><Text text="Crew / trade"/></Column>
+						<Column width="8rem" hAlign="End"><Text text="Present"/></Column>
+						<Column width="7rem" hAlign="End"><Text text="Regular"/></Column>
+						<Column width="6rem" hAlign="End"><Text text="OT"/></Column>
+						<Column width="14rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Activity"/></Column>
+						<Column width="10rem" hAlign="End"><Text text="Cost"/></Column>
+						<Column width="9rem"><Text text="Log"/></Column>
+					</columns>
+
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{view>workDate}"/>
+								<VBox>
+									<Text text="{view>crewId}"/>
+									<Text text="{view>trade}" class="kxSubText"/>
+								</VBox>
+								<!-- Short of the reserved head count is the thing a foreman
+								     is asked about, so it is stated as a comparison. -->
+								<ObjectStatus
+									text="{view>presentText}"
+									state="{= ${view>headsPresent} &lt; ${view>headsReserved} ? 'Warning' : 'Success' }"/>
+								<Text text="{view>regularHrs}"/>
+								<Text text="{view>otHrs}"/>
+								<Text text="{view>activity}" class="kxMono"/>
+								<ObjectNumber number="{view>costText}" unit="AED"/>
+								<ObjectStatus text="{view>logStatus}"
+									state="{= ${view>logStatus} === 'Signed' ? 'Success' : 'Warning' }"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+
+			</VBox>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

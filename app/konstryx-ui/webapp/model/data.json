@@ -1135,6 +1135,15 @@
           "route": "reservations"
         },
         {
+          "title": "Manpower",
+          "subtitle": "Crews on site & daily log",
+          "icon": "sap-icon://employee",
+          "value": "24",
+          "unit": "heads",
+          "state": "Good",
+          "route": "manpower"
+        },
+        {
           "title": "Mobilizations",
           "subtitle": "Next 7 days",
           "icon": "sap-icon://shipping-status",
