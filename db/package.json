@@ -1,0 +1,15 @@
+{
+  "name": "konstryx-db-deployer",
+  "version": "0.1.0",
+  "description": "Deploys the KONSTRYX HDI content into the bound hdi-shared container. The Java service owns the model; this module only ships db/src/gen to HANA.",
+  "private": true,
+  "dependencies": {
+    "@sap/hdi-deploy": "^5.7.0"
+  },
+  "engines": {
+    "node": "^20 || ^22"
+  },
+  "scripts": {
+    "start": "node node_modules/@sap/hdi-deploy/deploy.js --use-hdb-container-key"
+  }
+}
