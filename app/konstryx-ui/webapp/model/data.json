@@ -217,7 +217,8 @@
           "value": 276480,
           "dominant": true,
           "status": "Mobilized",
-          "statusState": "Success"
+          "statusState": "Success",
+          "qtyText": "2 × 180 d"
         },
         {
           "no": "L2",
@@ -236,7 +237,8 @@
           "value": 130500,
           "dominant": false,
           "status": "Mobilized",
-          "statusState": "Success"
+          "statusState": "Success",
+          "qtyText": "1 × 90 d"
         },
         {
           "no": "L3",
@@ -255,7 +257,8 @@
           "value": 19800,
           "dominant": false,
           "status": "Mobilized",
-          "statusState": "Success"
+          "statusState": "Success",
+          "qtyText": "8 × 45 d"
         },
         {
           "no": "L4",
@@ -274,7 +277,8 @@
           "value": 104400,
           "dominant": false,
           "status": "Mobilized",
-          "statusState": "Success"
+          "statusState": "Success",
+          "qtyText": "4 × 180 d"
         },
         {
           "no": "L5",
@@ -293,7 +297,8 @@
           "value": 153900,
           "dominant": false,
           "status": "Partially mobilized",
-          "statusState": "Warning"
+          "statusState": "Warning",
+          "qtyText": "3 × 180 d"
         }
       ]
     },
@@ -311,12 +316,98 @@
       "state": "Approved",
       "stateType": "Success",
       "lineCount": 5,
-      "instances": 0,
-      "wbsCount": 2,
-      "value": 404931,
+      "instances": 5,
+      "wbsCount": 1,
+      "value": 378404,
       "window": "18 – 22 May 2026",
       "dominantLine": "L1 · Rebar 16 mm BS4449 · 73% of value",
-      "lines": []
+      "lines": [
+        {
+          "no": "L1",
+          "resource": "Rebar 16 mm dom — stock + GR",
+          "code": "MT-REB-16",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "03.10",
+          "qtyText": "82.000 t",
+          "source": "Stock",
+          "sourceDetail": "SLoc 1010 · 11.4 t issued",
+          "sourceState": "Warning",
+          "rate": 3422,
+          "value": 280604,
+          "status": "Awaiting balance GR",
+          "statusState": "Warning",
+          "dominant": true
+        },
+        {
+          "no": "L2",
+          "resource": "Rebar 12 mm BS4449",
+          "code": "MT-REB-12",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "03.10",
+          "qtyText": "24.000 t",
+          "source": "Procure",
+          "sourceDetail": "PO in transit",
+          "sourceState": "Information",
+          "rate": 3400,
+          "value": 81600,
+          "status": "PO in transit",
+          "statusState": "Information",
+          "dominant": false
+        },
+        {
+          "no": "L3",
+          "resource": "Cement OPC 53 grade 50 kg",
+          "code": "MAT-CEM-OPC53-50",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "03.20",
+          "qtyText": "400 bag",
+          "source": "Procure",
+          "sourceDetail": "200 of 400 received",
+          "sourceState": "Warning",
+          "rate": 18,
+          "value": 7200,
+          "status": "Awaiting balance GR",
+          "statusState": "Warning",
+          "dominant": false
+        },
+        {
+          "no": "L4",
+          "resource": "Binding wire 18 SWG",
+          "code": "MAT-BWR-18SWG",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "03.10",
+          "qtyText": "800 kg",
+          "source": "Stock",
+          "sourceDetail": "SLoc 1020",
+          "sourceState": "Success",
+          "rate": 9,
+          "value": 7200,
+          "status": "Closed",
+          "statusState": "None",
+          "dominant": false
+        },
+        {
+          "no": "L5",
+          "resource": "Rebar chairs 50 mm",
+          "code": "MAT-RBC-50",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "03.10",
+          "qtyText": "1,200 pc",
+          "source": "Stock",
+          "sourceDetail": "SLoc 1010",
+          "sourceState": "Success",
+          "rate": 1.5,
+          "value": 1800,
+          "status": "Closed",
+          "statusState": "None",
+          "dominant": false
+        }
+      ]
     },
     {
       "id": "RR-2026-0162",
@@ -332,12 +423,98 @@
       "state": "Approved",
       "stateType": "Success",
       "lineCount": 5,
-      "instances": 24,
+      "instances": 5,
       "wbsCount": 2,
-      "value": 814484,
+      "value": 837380,
       "window": "14 May 2026 → 14 Aug 2026",
       "dominantLine": "L1 · Steel Fixer G1 (own) · 49% of value",
-      "lines": []
+      "lines": [
+        {
+          "no": "L1",
+          "resource": "Steel Fixer G1 — own crews GNG-A/B",
+          "code": "MP-CIV-STF-SK-G1",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "02.30",
+          "qtyText": "8 heads × 100 d",
+          "source": "Own",
+          "sourceDetail": "GNG-2026-A · Mahmoud Khan",
+          "sourceState": "Success",
+          "rate": 520,
+          "value": 416000,
+          "status": "Mobilized",
+          "statusState": "Success",
+          "dominant": true
+        },
+        {
+          "no": "L2",
+          "resource": "Steel Fixer G1 — LSC Alpha Civil",
+          "code": "MP-CIV-STF-SK-G1",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "02.35",
+          "qtyText": "4 heads × 100 d",
+          "source": "LSC",
+          "sourceDetail": "Alpha Civil LLC",
+          "sourceState": "Information",
+          "rate": 654.45,
+          "value": 261780,
+          "status": "Mobilized",
+          "statusState": "Success",
+          "dominant": false
+        },
+        {
+          "no": "L3",
+          "resource": "Carpenter Formwork — own GNG-D",
+          "code": "MP-CIV-CAR-SK-G1",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "02.40",
+          "qtyText": "6 heads × 65 d",
+          "source": "Own",
+          "sourceDetail": "GNG-2026-D · F. Sanjay",
+          "sourceState": "Success",
+          "rate": 280,
+          "value": 109200,
+          "status": "Closed",
+          "statusState": "None",
+          "dominant": false
+        },
+        {
+          "no": "L4",
+          "resource": "Electrician site-level — floating",
+          "code": "MP-MEP-ELE-SK-G1",
+          "wbs": "WBS-1.03",
+          "wbsName": "MEP First Fix",
+          "cbs": "02.50",
+          "qtyText": "2 heads × 45 d",
+          "source": "Own",
+          "sourceDetail": "Floating assignment",
+          "sourceState": "Success",
+          "rate": 320,
+          "value": 28800,
+          "status": "Closed",
+          "statusState": "None",
+          "dominant": false
+        },
+        {
+          "no": "L5",
+          "resource": "Mason/Helper — LSC Delta Manpower",
+          "code": "MP-GEN-HLP-G1",
+          "wbs": "WBS-1.02",
+          "wbsName": "Sub-structure",
+          "cbs": "02.60",
+          "qtyText": "4 heads × 30 d",
+          "source": "LSC",
+          "sourceDetail": "Delta Manpower Co.",
+          "sourceState": "Information",
+          "rate": 180,
+          "value": 21600,
+          "status": "Closed",
+          "statusState": "None",
+          "dominant": false
+        }
+      ]
     },
     {
       "id": "RR-2026-0205",

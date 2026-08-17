@@ -25,11 +25,59 @@ sap.ui.define([
 
 			var oCopy = JSON.parse(JSON.stringify(oReq));
 			oCopy.valueText = Number(oCopy.value).toLocaleString("en-US");
+			oCopy.labels = this._labelsFor(oCopy.type);
+			oCopy.routing = this._routingOf(oCopy);
+			oCopy.countText = this._countTextOf(oCopy);
 
 			this._oViewModel.setData({ req: oCopy, wbs: this._rollUpWbs(oCopy) });
 
 			var oPage = this.byId("requestObjectPage");
 			if (oPage) { oPage.setSelectedSection(this.createId("secFlow")); }
+		},
+
+		/**
+		 * Column wording per vertical.
+		 *
+		 * The request spine is deliberately vertical-agnostic, but this screen was
+		 * written against the equipment thread and said so: "Equipment",
+		 * "Inst × days", "Rate/day". Opening a manpower request showed a crew of
+		 * eight heads under a column headed Equipment. The words come from the
+		 * request's own type now; the six verticals differ genuinely and a shared
+		 * screen has to say what each one is actually looking at.
+		 */
+		_labelsFor: function (sType) {
+			var mLabels = {
+				EQR: { resource: "Equipment",  qty: "Inst × days",   rate: "Rate/day",      unit: "instances" },
+				MPR: { resource: "Trade",      qty: "Heads × days",  rate: "Rate/head-day", unit: "crews" },
+				MR:  { resource: "Material",   qty: "Quantity",      rate: "Unit rate",     unit: "materials" },
+				VR:  { resource: "Vehicle",    qty: "Units × days",  rate: "Rate/day",      unit: "vehicles" },
+				SCR: { resource: "Scope",      qty: "Quantity",      rate: "Rate",          unit: "packages" }
+			};
+			return mLabels[sType] || { resource: "Resource", qty: "Quantity",
+				rate: "Rate", unit: "lines" };
+		},
+
+		/**
+		 * "3 own · 2 subcontracted", counted from the lines rather than stated.
+		 * The header used to carry the equipment thread's split as a literal.
+		 */
+		_routingOf: function (oReq) {
+			var mCount = {};
+			(oReq.lines || []).forEach(function (l) {
+				var sKey = (l.source || "—");
+				mCount[sKey] = (mCount[sKey] || 0) + 1;
+			});
+			// The source label is used as authored — lower-casing it turned the
+			// labour-subcontract acronym into "lsc".
+			var aParts = Object.keys(mCount).map(function (k) {
+				return mCount[k] + " " + k;
+			});
+			return aParts.length ? aParts.join(" · ") : "—";
+		},
+
+		_countTextOf: function (oReq) {
+			var n = (oReq.lines || []).length;
+			return n + " " + oReq.labels.unit + " · " + (oReq.wbsCount || 0) + " WBS";
 		},
 
 		/** Aggregate the line values per WBS — the allocation card is derived, never keyed. */

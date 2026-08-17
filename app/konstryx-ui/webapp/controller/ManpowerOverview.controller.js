@@ -167,6 +167,10 @@ sap.ui.define([
 
 		// ------------------------------------------------------------- events
 
+		onBreadcrumbHome: function () {
+			this.navTo("launchpad");
+		},
+
 		/** A crew row opens the request it was raised on. */
 		onLinePress: function (oEvent) {
 			var oRow = oEvent.getSource().getBindingContext("view").getObject();

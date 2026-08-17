@@ -53,12 +53,12 @@
 				<VBox class="kxKpi">
 					<Label text="Aggregate commitment"/>
 					<ObjectNumber number="{view>/req/valueText}" unit="AED" emphasized="true"/>
-					<Text text="incl. 7% burden" class="kxSubText"/>
+					<Text text="{view>/req/lineCount} lines" class="kxSubText"/>
 				</VBox>
 				<VBox class="kxKpi">
 					<Label text="Lines"/>
 					<Title text="{view>/req/lineCount}" level="H3"/>
-					<Text text="{view>/req/instances} instances · {view>/req/wbsCount} WBS" class="kxSubText"/>
+					<Text text="{view>/req/countText}" class="kxSubText"/>
 				</VBox>
 				<VBox class="kxKpi">
 					<Label text="Mobilization window"/>
@@ -67,7 +67,7 @@
 				</VBox>
 				<VBox class="kxKpi">
 					<Label text="Routing"/>
-					<Title text="2 own · 3 rental" level="H5"/>
+					<Title text="{view>/req/routing}" level="H5"/>
 					<Text text="decided at advisory" class="kxSubText"/>
 				</VBox>
 				<VBox class="kxKpi">
@@ -134,19 +134,19 @@
 								<headerToolbar>
 									<OverflowToolbar>
 										<Title text="Line items ({view>/req/lineCount})" level="H4"/>
-										<Text text="Each line = one equipment class × one WBS × one instance count × one mobilization window. Routing is decided per line at advisory." class="kxSubText sapUiTinyMarginBegin"/>
+										<Text text="Routing is decided per line at advisory." class="kxSubText sapUiTinyMarginBegin" visible="{/ui/showGuidanceText}"/>
 										<ToolbarSpacer/>
 										<Button icon="sap-icon://add" text="Add line" type="Transparent" press=".onNotImplemented"/>
 									</OverflowToolbar>
 								</headerToolbar>
 								<columns>
 									<Column width="3.5rem"><Text text="#"/></Column>
-									<Column><Text text="Equipment"/></Column>
+									<Column><Text text="{view>/req/labels/resource}"/></Column>
 									<Column width="8rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Code"/></Column>
 									<Column width="11rem" minScreenWidth="Tablet" demandPopin="true"><Text text="WBS / CBS"/></Column>
-									<Column width="7rem" hAlign="End"><Text text="Inst × days"/></Column>
+									<Column width="9rem" hAlign="End"><Text text="{view>/req/labels/qty}"/></Column>
 									<Column width="11rem"><Text text="Source"/></Column>
-									<Column width="8rem" hAlign="End"><Text text="Rate/day"/></Column>
+									<Column width="9rem" hAlign="End"><Text text="{view>/req/labels/rate}"/></Column>
 									<Column width="9rem" hAlign="End"><Text text="Line value"/></Column>
 									<Column width="10rem"><Text text="Status"/></Column>
 								</columns>
@@ -163,7 +163,7 @@
 												<Text text="{view>wbs}"/>
 												<Text text="{view>wbsName} · CBS {view>cbs}" class="kxSubText"/>
 											</VBox>
-											<Text text="{view>qty} × {view>days} d"/>
+											<Text text="{view>qtyText}"/>
 											<ObjectStatus text="{view>source} · {view>sourceDetail}" state="{view>sourceState}"/>
 											<ObjectNumber number="{view>rate}" unit="AED"/>
 											<ObjectNumber number="{path: 'view>value', formatter: '.formatNumber'}" unit="AED" emphasized="{view>dominant}"/>
