@@ -267,17 +267,36 @@ sap.ui.define([
 			oDialog.open();
 		},
 
+		/**
+		 * A raw POST rather than the typed action-parameter path: the SAPUI5 v4
+		 * model serialises a Decimal inside an array-of-complex-type parameter
+		 * as a JSON string, and CAP's OData V4 deserialiser refuses a quoted
+		 * decimal on this property ("Invalid value for property 'weight'") —
+		 * confirmed against the live service, which accepts the identical
+		 * payload the moment weight is a bare JSON number. targets/template/
+		 * itemNos are simple enough here that hand-building the body is safer
+		 * than fighting the model's serialisation for one field.
+		 */
 		_runDistribute: function (oRow, sTemplate, aTargets) {
 			var oModel = this.getModel("pj"),
-				that = this;
-			var oOperation = oModel.bindContext("ProjectService.distributeToWBS(...)",
-				oModel.bindContext("/BOQs(ID=" + oRow.boqId + ",IsActiveEntity=true)").getBoundContext());
-			oOperation.setParameter("template", sTemplate);
-			oOperation.setParameter("targets", aTargets);
-			oOperation.setParameter("itemNos", [oRow.itemNo]);
-			oOperation.execute().then(function () {
-				MessageToast.show(String(oOperation.getBoundContext().getValue().value
-					|| oOperation.getBoundContext().getValue()));
+				that = this,
+				sUrl = oModel.getServiceUrl() + "BOQs(ID=" + oRow.boqId
+					+ ",IsActiveEntity=true)/ProjectService.distributeToWBS";
+
+			fetch(sUrl, {
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "Content-Type": "application/json", "Accept": "application/json" },
+				body: JSON.stringify({ template: sTemplate, targets: aTargets, itemNos: [oRow.itemNo] })
+			}).then(function (oResponse) {
+				return oResponse.json().then(function (oBody) {
+					if (!oResponse.ok) {
+						throw new Error((oBody.error && oBody.error.message) || "The distribution was refused.");
+					}
+					return oBody;
+				});
+			}).then(function (oBody) {
+				MessageToast.show(String(oBody.value || ""));
 				that._refresh();
 			}).catch(function (oError) {
 				// A template/target mismatch or an unknown WBS code is refused
