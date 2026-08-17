@@ -7,5 +7,8 @@
     "start": "python serve.py 8080",
     "start:ui5": "ui5 serve --port 8080"
   },
-  "devDependencies": { "@ui5/cli": "^4" }
+  "devDependencies": {
+    "@ui5/cli": "^4",
+    "ui5-task-zipper": "^3.6.1"
+  }
 }
