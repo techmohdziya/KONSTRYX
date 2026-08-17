@@ -84,6 +84,13 @@
         "settings": {
           "odataVersion": "4.0"
         }
+      },
+      "subcontractService": {
+        "uri": "/odata/v4/subcontract/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0"
+        }
       }
     }
   },
@@ -185,6 +192,15 @@
           "autoExpandSelect": true,
           "groupId": "$auto"
         }
+      },
+      "scr": {
+        "dataSource": "subcontractService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "groupId": "$auto"
+        }
       }
     },
     "resources": {
@@ -234,6 +250,16 @@
           "pattern": "boqs",
           "name": "boqWorklist",
           "target": "boqWorklist"
+        },
+        {
+          "pattern": "payment-certificates",
+          "name": "paymentCertificates",
+          "target": "paymentCertificates"
+        },
+        {
+          "pattern": "payment-certificates/{certId}",
+          "name": "paymentCertificate",
+          "target": "paymentCertificate"
         },
         {
           "pattern": "cost-mapping",
@@ -438,6 +464,20 @@
           "path": "konstryx.view",
           "name": "BOQWorklist",
           "viewName": "BOQWorklist"
+        },
+        "paymentCertificates": {
+          "id": "paymentCertificates",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "PaymentCertificates",
+          "viewName": "PaymentCertificates"
+        },
+        "paymentCertificate": {
+          "id": "paymentCertificate",
+          "type": "View",
+          "path": "konstryx.view",
+          "name": "PaymentCertificate",
+          "viewName": "PaymentCertificate"
         },
         "costMappingPortfolio": {
           "id": "costMappingPortfolio",

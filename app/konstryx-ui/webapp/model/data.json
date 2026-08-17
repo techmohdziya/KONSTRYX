@@ -1269,6 +1269,15 @@
           "state": "Good",
           "route": "worklist",
           "arg": "CMT"
+        },
+        {
+          "title": "Payment Certificates",
+          "subtitle": "Commercial — subcontractor certification",
+          "icon": "sap-icon://receipt",
+          "value": "1",
+          "unit": "certified",
+          "state": "Good",
+          "route": "paymentCertificates"
         }
       ]
     },

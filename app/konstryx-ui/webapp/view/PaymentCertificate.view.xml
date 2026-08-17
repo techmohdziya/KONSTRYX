@@ -1,0 +1,189 @@
+<mvc:View
+	controllerName="konstryx.controller.PaymentCertificate"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="paymentCertificatePage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="{view>/pc/docNo} — Engineer's Payment Certificate" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="{view>/pc/subtitle}"/>
+				</f:expandedContent>
+				<f:actions>
+					<ObjectStatus text="{view>/pc/status}" state="Success" icon="sap-icon://accept" class="sapUiTinyMarginEnd"/>
+				</f:actions>
+				<f:snappedContent>
+					<Text text="{view>/pc/docNo}"/>
+				</f:snappedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap">
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Cert No"/>
+						<ObjectNumber number="{view>/pc/certLabel}" emphasized="true"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Claimed"/>
+						<ObjectNumber number="{view>/pc/claimedGrossText}" unit="AED" emphasized="true"/>
+						<Text text="vendor submission" class="kxSubText"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Adjustment"/>
+						<ObjectNumber number="{view>/pc/adjustmentText}" unit="AED" state="Warning" emphasized="true"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Certified Gross"/>
+						<ObjectNumber number="{view>/pc/certifiedGrossText}" unit="AED" emphasized="true"/>
+						<Text text="after adjustment" class="kxSubText"/>
+					</VBox>
+					<VBox class="kxKpiTile">
+						<Label text="Net Certified"/>
+						<ObjectNumber number="{view>/pc/netCertifiedText}" unit="AED" state="Success" emphasized="true"/>
+						<Text text="after retention" class="kxSubText"/>
+					</VBox>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+		  <VBox>
+
+			<Panel headerText="Cert Summary — claimed vs certified" class="sapUiResponsiveMargin">
+				<Table id="summaryTable" items="{view>/summaryRows}" mode="None">
+					<columns>
+						<Column><Text text="Line"/></Column>
+						<Column hAlign="End"><Text text="Claimed AED"/></Column>
+						<Column hAlign="End"><Text text="Certified AED"/></Column>
+						<Column hAlign="End"><Text text="Delta AED"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{view>label}" wrapping="false"/>
+								<ObjectNumber number="{view>claimed}" emphasized="{view>emphasis}"/>
+								<ObjectNumber number="{view>certified}" state="{= ${view>emphasis} ? 'Success' : 'None' }" emphasized="{view>emphasis}"/>
+								<ObjectNumber number="{view>delta}" emphasized="{view>emphasis}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</Panel>
+
+			<Panel headerText="Liquidated Damages — delay calculation" class="sapUiResponsiveMargin">
+				<Table id="ldTable" items="{view>/pc/ldSteps}" mode="None">
+					<columns>
+						<Column><Text text="Step"/></Column>
+						<Column><Text text="Basis"/></Column>
+						<Column hAlign="End"><Text text="Value"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{view>step}"/>
+								<Text text="{view>basis}"/>
+								<ObjectNumber number="{view>value}" emphasized="{view>emphasis}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</Panel>
+
+			<Panel headerText="Back-charge to subcontractor" class="sapUiResponsiveMargin">
+				<Table id="backChargeTable" items="{view>/pc/backCharges}" mode="None">
+					<columns>
+						<Column><Text text="Back-charge line"/></Column>
+						<Column><Text text="Cause"/></Column>
+						<Column><Text text="Recharge type"/></Column>
+						<Column hAlign="End"><Text text="Qty / basis"/></Column>
+						<Column hAlign="End"><Text text="Rate (AED)"/></Column>
+						<Column hAlign="End"><Text text="Amount (AED)"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{view>description}"/>
+								<Text text="{view>cause}"/>
+								<Text text="{view>rechargeType}"/>
+								<Text text="{view>qtyBasis}"/>
+								<Text text="{view>rate}"/>
+								<ObjectNumber number="{path: 'view>amount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+				<Text text="{view>/pc/backChargeFooter}" class="kxSubText sapUiSmallMargin"/>
+			</Panel>
+
+			<Panel headerText="Adjustment Log" class="sapUiResponsiveMargin">
+				<Table id="adjustmentTable" items="{view>/pc/adjustments}" mode="None">
+					<columns>
+						<Column><Text text="Sub-BOQ Line"/></Column>
+						<Column><Text text="Description"/></Column>
+						<Column hAlign="End"><Text text="Claimed Qty"/></Column>
+						<Column hAlign="End"><Text text="Certified Qty"/></Column>
+						<Column hAlign="End"><Text text="Delta Qty"/></Column>
+						<Column><Text text="Reason"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{view>subBoqLine}"/>
+								<Text text="{view>description}"/>
+								<Text text="{path: 'view>claimedQty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 0}} {view>uom}"/>
+								<Text text="{path: 'view>certifiedQty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 0}} {view>uom}"/>
+								<ObjectNumber number="{path: 'view>deltaQty', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 0}}"/>
+								<Text text="{view>reason}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</Panel>
+
+			<Panel headerText="Sign-offs and Triggers" class="sapUiResponsiveMargin">
+				<Table id="signOffTable" items="{view>/pc/signOffs}" mode="None">
+					<columns>
+						<Column><Text text="Role"/></Column>
+						<Column><Text text="Name"/></Column>
+						<Column><Text text="Decision"/></Column>
+						<Column><Text text="On"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem>
+							<cells>
+								<Text text="{view>role}"/>
+								<Text text="{view>name}"/>
+								<ObjectStatus text="{view>decision}" state="Success"/>
+								<Text text="{view>decidedOnText}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+				<HBox wrap="Wrap" class="sapUiSmallMargin">
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="Triggers · S/4 Supplier Invoice"/>
+						<Text text="{view>/pc/s4InvoiceRef}" class="kxMono"/>
+					</VBox>
+					<VBox class="kxKpiTile sapUiMediumMarginEnd">
+						<Label text="S/4 API"/>
+						<Text text="{view>/pc/s4Api}" class="kxMono"/>
+					</VBox>
+					<VBox class="kxKpiTile">
+						<Label text="Payment Term"/>
+						<Text text="{view>/pc/paymentTerm}"/>
+					</VBox>
+				</HBox>
+			</Panel>
+
+		  </VBox>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>

@@ -1,0 +1,63 @@
+<mvc:View
+	controllerName="konstryx.controller.PaymentCertificates"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	height="100%">
+
+	<f:DynamicPage id="paymentCertificatesPage" headerExpanded="true" fitContent="false">
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<Title text="Payment Certificates" level="H2"/>
+				</f:heading>
+				<f:expandedContent>
+					<Text text="Commercial — the Engineer's certification of a subcontractor's payment application. Certifying triggers the S/4 supplier invoice; the certificate is never edited after issue."/>
+				</f:expandedContent>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:content>
+			<Table
+				id="certTable"
+				items="{path: 'scr>/PaymentCertificates', parameters: {'$orderby': 'docNo desc'}, templateShareable: false}"
+				sticky="ColumnHeaders"
+				class="sapUiResponsiveMargin"
+				width="auto">
+
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title id="certCount" text="Certificates" level="H4"/>
+						<ToolbarSpacer/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+					</OverflowToolbar>
+				</headerToolbar>
+
+				<columns>
+					<Column width="12rem"><Text text="Certificate"/></Column>
+					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Status"/></Column>
+					<Column width="10rem" hAlign="End"><Text text="Claimed"/></Column>
+					<Column width="10rem" hAlign="End"><Text text="Net Certified"/></Column>
+					<Column width="10rem"><Text text="Certified on"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem type="Navigation" press=".onOpen">
+						<cells>
+							<Link text="{scr>docNo}" emphasized="true"/>
+							<ObjectStatus text="{scr>status}"
+								state="{= ${scr>status} === 'Certified' ? 'Success' : 'Warning' }"/>
+							<ObjectNumber
+								number="{path: 'scr>claimedGross', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"
+								unit="AED"/>
+							<ObjectNumber
+								number="{path: 'scr>netCertified', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 0}}"
+								unit="AED" emphasized="true"/>
+							<Text text="{path: 'scr>raisedOn', type: 'sap.ui.model.odata.type.Date', formatOptions: {style: 'medium'}}"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>
