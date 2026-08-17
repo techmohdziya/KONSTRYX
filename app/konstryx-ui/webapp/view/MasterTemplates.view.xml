@@ -55,7 +55,6 @@
 						        press=".onPrint"/>
 						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter"
 						        press=".onTableSettings"/>
-						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 

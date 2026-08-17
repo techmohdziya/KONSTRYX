@@ -35,7 +35,6 @@
 									<Button icon="sap-icon://excel-attachment" text="Export to Excel"
 									        tooltip="Download the list as it is arranged here" press=".onProdExportExcel"/>
 									<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onProdTableSettings"/>
-									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 								</OverflowToolbar>
 							</headerToolbar>
 							<columns>
@@ -83,7 +82,6 @@
 									<Button icon="sap-icon://excel-attachment" text="Export to Excel"
 									        tooltip="Download the list as it is arranged here" press=".onConsExportExcel"/>
 									<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onConsTableSettings"/>
-									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 								</OverflowToolbar>
 							</headerToolbar>
 							<columns>

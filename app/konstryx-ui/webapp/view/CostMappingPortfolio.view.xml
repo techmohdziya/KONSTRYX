@@ -52,7 +52,6 @@
 						<ToolbarSpacer/>
 						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
 						        tooltip="Download the list as it is arranged here" press=".onExportExcel"/>
-						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 

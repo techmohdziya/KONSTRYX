@@ -182,11 +182,6 @@
 				<uxap:subSections>
 					<uxap:ObjectPageSubSection>
 						<uxap:blocks>
-							<MessageStrip
-								text="Budget encumbrance is owned by S/4HANA Project System. KONSTRYX shows the headroom it reads back; the posting itself happens in S/4 at step 5 of the chain."
-								type="Information"
-								showIcon="true"
-								class="sapUiSmallMarginBottom"/>
 							<Table items="{path: 'view>/wbs', templateShareable: false}" mode="None">
 								<columns>
 									<Column width="9rem"><Text text="WBS"/></Column>

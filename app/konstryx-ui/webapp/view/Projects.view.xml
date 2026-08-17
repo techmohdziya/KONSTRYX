@@ -11,9 +11,6 @@
 				<f:heading>
 					<Title text="Projects" level="H2"/>
 				</f:heading>
-				<f:expandedContent>
-					<Text text="Mastered in KONSTRYX. A project reads NOT_SENT until the S/4 connector confirms it — nothing downstream should post against one that has not arrived."/>
-				</f:expandedContent>
 			</f:DynamicPageTitle>
 		</f:title>
 
@@ -29,7 +26,6 @@
 					<OverflowToolbar>
 						<Title id="projectCount" text="Projects" level="H4"/>
 						<ToolbarSpacer/>
-						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</headerToolbar>
 
@@ -38,7 +34,6 @@
 					<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Name"/></Column>
 					<Column width="8rem"><Text text="Stage"/></Column>
 					<Column width="12rem" hAlign="End"><Text text="Contract value"/></Column>
-					<Column width="10rem"><Text text="S/4 sync"/></Column>
 				</columns>
 
 				<items>
@@ -52,10 +47,6 @@
 							<ObjectNumber
 								number="{path: 'pj>contractValue', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, minFractionDigits: 0, maxFractionDigits: 0}}"
 								unit="{pj>ccy_code}"/>
-							<ObjectStatus
-								text="{pj>syncStatus}"
-								state="{= ${pj>syncStatus} === 'SENT' ? 'Success' : ${pj>syncStatus} === 'FAILED' ? 'Error' : 'Warning' }"
-								icon="{= ${pj>syncStatus} === 'SENT' ? 'sap-icon://connected' : 'sap-icon://disconnected' }"/>
 						</cells>
 					</ColumnListItem>
 				</items>

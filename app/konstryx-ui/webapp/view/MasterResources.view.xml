@@ -73,7 +73,6 @@
 						<ToolbarSpacer/>
 						<Button icon="sap-icon://expand-all" text="Expand all" press=".onExpandAll"/>
 						<Button icon="sap-icon://collapse-all" text="Collapse" press=".onCollapseAll"/>
-						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
 					</OverflowToolbar>
 				</t:extension>
 

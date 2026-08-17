@@ -17,23 +17,23 @@
   "companies": [
     {
       "key": "INFC",
-      "text": "INFC Â· Inflexion Contracting"
+      "text": "INFC · Inflexion Contracting"
     },
     {
       "key": "PMI",
-      "text": "PMI Â· Precision Metal Industries"
+      "text": "PMI · Precision Metal Industries"
     },
     {
       "key": "IFO",
-      "text": "IFO Â· Inflexion Fitout"
+      "text": "IFO · Inflexion Fitout"
     },
     {
       "key": "MJN",
-      "text": "MJN Â· Majan Joinery"
+      "text": "MJN · Majan Joinery"
     },
     {
       "key": "GROUP",
-      "text": "Group Â· consolidated"
+      "text": "Group · consolidated"
     }
   ],
   "masterTiles": [
@@ -182,18 +182,18 @@
       "title": "Site Plant Mobilization",
       "project": "PRJ-001",
       "projectName": "Marina Heights Tower",
-      "raisedBy": "Daud Patel Â· Site Engineer",
+      "raisedBy": "Daud Patel · Site Engineer",
       "raisedOn": "2026-05-02",
-      "approvedBy": "Vikram Rao Â· Project Manager",
+      "approvedBy": "Vikram Rao · Project Manager",
       "committee": "Plant Allocation Committee",
       "state": "Approved",
       "stateType": "Success",
       "lineCount": 5,
       "instances": 18,
       "wbsCount": 3,
-      "value": 716044,
-      "window": "14 Jun 2026 â†’ 14 Dec 2026",
-      "dominantLine": "L1 Â· Tower Crane LB280 (12T) Â· 39% of value",
+      "value": 685080,
+      "window": "14 Jun 2026 → 14 Dec 2026",
+      "dominantLine": "L1 · Tower Crane LB280 (12T) · 39% of value",
       "lines": [
         {
           "no": "L1",
@@ -299,9 +299,9 @@
       "title": "Concrete Works Package",
       "project": "PRJ-001",
       "projectName": "Marina Heights Tower",
-      "raisedBy": "Daud Patel Â· Site Engineer",
+      "raisedBy": "Daud Patel · Site Engineer",
       "raisedOn": "2026-05-05",
-      "approvedBy": "Vikram Rao Â· Project Manager",
+      "approvedBy": "Vikram Rao · Project Manager",
       "committee": "Material Procurement Cell",
       "state": "Approved",
       "stateType": "Success",
@@ -309,8 +309,8 @@
       "instances": 0,
       "wbsCount": 2,
       "value": 404931,
-      "window": "18 â€“ 22 May 2026",
-      "dominantLine": "L1 Â· Rebar 16 mm BS4449 Â· 73% of value",
+      "window": "18 – 22 May 2026",
+      "dominantLine": "L1 · Rebar 16 mm BS4449 · 73% of value",
       "lines": []
     },
     {
@@ -320,9 +320,9 @@
       "title": "Sub-structure Trade Package",
       "project": "PRJ-001",
       "projectName": "Marina Heights Tower",
-      "raisedBy": "Daud Patel Â· Site Engineer",
+      "raisedBy": "Daud Patel · Site Engineer",
       "raisedOn": "2026-05-04",
-      "approvedBy": "Vikram Rao Â· Project Manager",
+      "approvedBy": "Vikram Rao · Project Manager",
       "committee": "HR Allocation Team",
       "state": "Approved",
       "stateType": "Success",
@@ -330,8 +330,8 @@
       "instances": 24,
       "wbsCount": 2,
       "value": 814484,
-      "window": "14 May 2026 â†’ 14 Aug 2026",
-      "dominantLine": "L1 Â· Steel Fixer G1 (own) Â· 49% of value",
+      "window": "14 May 2026 → 14 Aug 2026",
+      "dominantLine": "L1 · Steel Fixer G1 (own) · 49% of value",
       "lines": []
     },
     {
@@ -341,9 +341,9 @@
       "title": "Concrete-Pour Logistics",
       "project": "PRJ-001",
       "projectName": "Marina Heights Tower",
-      "raisedBy": "Ahmed Hassan Â· Site Logistics",
+      "raisedBy": "Ahmed Hassan · Site Logistics",
       "raisedOn": "2026-05-20",
-      "approvedBy": "Vikram Rao Â· Project Manager",
+      "approvedBy": "Vikram Rao · Project Manager",
       "committee": "Fleet Ops Committee",
       "state": "In advisory",
       "stateType": "Warning",
@@ -351,8 +351,8 @@
       "instances": 15,
       "wbsCount": 2,
       "value": 342400,
-      "window": "01 Jun 2026 â†’ 30 Nov 2026",
-      "dominantLine": "L1 Â· Mixer Truck 10 mÂ³ Â· 51% of value",
+      "window": "01 Jun 2026 → 30 Nov 2026",
+      "dominantLine": "L1 · Mixer Truck 10 m³ · 51% of value",
       "lines": []
     }
   ],
@@ -367,7 +367,7 @@
       "date": "2026-05-02",
       "status": "Approved",
       "statusState": "Success",
-      "persona": "Daud Patel Â· Site Engineer",
+      "persona": "Daud Patel · Site Engineer",
       "intro": "Site originator submits the plant need for the super-structure phase. Header plus five line items; each line carries one equipment class, one WBS, an instance count and a mobilization window.",
       "fields": [
         {
@@ -376,7 +376,7 @@
         },
         {
           "label": "Request Type",
-          "value": "EQR Â· Equipment / Plant"
+          "value": "EQR · Equipment / Plant"
         },
         {
           "label": "Title",
@@ -384,23 +384,23 @@
         },
         {
           "label": "Line Count",
-          "value": "5 lines Â· 18 instances Â· 3 WBS"
+          "value": "5 lines · 18 instances · 3 WBS"
         },
         {
           "label": "Project",
-          "value": "PRJ-001 Â· Marina Heights Tower"
+          "value": "PRJ-001 · Marina Heights Tower"
         },
         {
           "label": "Need-by Window",
-          "value": "14 Jun 2026 â†’ 14 Dec 2026"
+          "value": "14 Jun 2026 → 14 Dec 2026"
         },
         {
           "label": "Raised By",
-          "value": "Daud Patel Â· Site Engineer"
+          "value": "Daud Patel · Site Engineer"
         },
         {
           "label": "Approved By",
-          "value": "Vikram Rao Â· Project Manager"
+          "value": "Vikram Rao · Project Manager"
         }
       ],
       "lineExtra": {
@@ -426,7 +426,7 @@
       "status": "Decided",
       "statusState": "Success",
       "persona": "Plant Allocation Committee",
-      "intro": "The Plant Allocation Committee decides the routing per line â€” own fleet or rental â€” and nominates the vendor where the line is procured. Two lines route to own fleet, three to rental.",
+      "intro": "The Plant Allocation Committee decides the routing per line — own fleet or rental — and nominates the vendor where the line is procured. Two lines route to own fleet, three to rental.",
       "fields": [
         {
           "label": "Advisory ID",
@@ -438,7 +438,7 @@
         },
         {
           "label": "Members",
-          "value": "Plant Manager Â· Lifting Supervisor Â· Project Plant Coordinator Â· Cost Engineer"
+          "value": "Plant Manager · Lifting Supervisor · Project Plant Coordinator · Cost Engineer"
         },
         {
           "label": "Decision Date",
@@ -446,7 +446,7 @@
         },
         {
           "label": "Routing Split",
-          "value": "2 lines own fleet Â· 3 lines rental"
+          "value": "2 lines own fleet · 3 lines rental"
         },
         {
           "label": "Own-fleet Value",
@@ -488,7 +488,7 @@
       "date": "2026-05-12",
       "status": "Cleared",
       "statusState": "Success",
-      "persona": "Sridhar Iyer Â· Plant Allocation Lead",
+      "persona": "Sridhar Iyer · Plant Allocation Lead",
       "intro": "The gate between advisory and reservation. Re-validates fleet pool, vendor frame agreement and site readiness in real time. A line that fails here goes back to advisory rather than forward to reservation.",
       "fields": [
         {
@@ -497,7 +497,7 @@
         },
         {
           "label": "Checked On",
-          "value": "12 May 2026 Â· 09:14"
+          "value": "12 May 2026 · 09:14"
         },
         {
           "label": "Pool Availability",
@@ -505,15 +505,15 @@
         },
         {
           "label": "Frame Agreement",
-          "value": "ARM Cranes FA-PLANT-2025/11 Â· valid to 31 Dec 2026"
+          "value": "ARM Cranes FA-PLANT-2025/11 · valid to 31 Dec 2026"
         },
         {
           "label": "Site Readiness",
-          "value": "Crane base cast Â· power distribution live"
+          "value": "Crane base cast · power distribution live"
         },
         {
           "label": "Operator Cover",
-          "value": "4 certified operators assigned Â· 2 TC, 1 MC, 1 relief"
+          "value": "4 certified operators assigned · 2 TC, 1 MC, 1 relief"
         },
         {
           "label": "Outcome",
@@ -551,8 +551,8 @@
       "date": "2026-05-12",
       "status": "Active",
       "statusState": "Success",
-      "persona": "Sridhar Iyer Â· Plant Allocation Lead",
-      "intro": "The operational reservation, driven by a state machine. This is the umbrella document the rest of the chain hangs from â€” every mobilization, log, variation and de-mobilization refers back to it.",
+      "persona": "Sridhar Iyer · Plant Allocation Lead",
+      "intro": "The operational reservation, driven by a state machine. This is the umbrella document the rest of the chain hangs from — every mobilization, log, variation and de-mobilization refers back to it.",
       "fields": [
         {
           "label": "Reservation ID",
@@ -560,27 +560,27 @@
         },
         {
           "label": "Type",
-          "value": "EQR Â· Equipment / Plant"
+          "value": "EQR · Equipment / Plant"
         },
         {
           "label": "State",
-          "value": "Active Â· 18 instances"
+          "value": "Active · 18 instances"
         },
         {
           "label": "Period",
-          "value": "14 Jun 2026 â†’ 14 Dec 2026"
+          "value": "14 Jun 2026 → 14 Dec 2026"
         },
         {
           "label": "Budget Encumbered",
-          "value": "AED 716,044"
+          "value": "AED 685,080"
         },
         {
           "label": "Cost to Date",
-          "value": "AED 177,580 Â· 24.8% consumed"
+          "value": "AED 177,580 · 24.8% consumed"
         },
         {
           "label": "S/4 Reference",
-          "value": "Activity Type EQ-TWC-12T Â· Service Product SVC-EQ-TWC-12T"
+          "value": "Activity Type EQ-TWC-12T · Service Product SVC-EQ-TWC-12T"
         },
         {
           "label": "Source Request",
@@ -614,7 +614,7 @@
       "date": "2026-05-12",
       "status": "Posted",
       "statusState": "Success",
-      "persona": "Rohan Menon Â· Cost Engineer",
+      "persona": "Rohan Menon · Cost Engineer",
       "readOnly": true,
       "intro": "Owned by S/4HANA Project System, not by KONSTRYX. The per-line encumbrance is posted against the WBS through the Universal Journal. KONSTRYX reads it and shows the sync state; it never authors it.",
       "fields": [
@@ -624,7 +624,7 @@
         },
         {
           "label": "System of Record",
-          "value": "S/4HANA Public Cloud Â· Project System"
+          "value": "S/4HANA Public Cloud · Project System"
         },
         {
           "label": "Posting Date",
@@ -632,7 +632,7 @@
         },
         {
           "label": "Total Encumbered",
-          "value": "AED 716,044"
+          "value": "AED 685,080"
         },
         {
           "label": "WBS-2.04 Super-structure",
@@ -645,10 +645,6 @@
         {
           "label": "WBS-0.10 Site Establishment",
           "value": "AED 258,300"
-        },
-        {
-          "label": "Last Sync",
-          "value": "22 Aug 2026 Â· 06:00 Â· SAP_COM_0308"
         }
       ],
       "lineExtra": {
@@ -678,7 +674,7 @@
       "date": "2026-06-14",
       "status": "Complete",
       "statusState": "Success",
-      "persona": "Sridhar Iyer Â· Plant Allocation Lead",
+      "persona": "Sridhar Iyer · Plant Allocation Lead",
       "intro": "Assets arrive on site. Each instance gets a 15-item condition checklist at mobilization; the identical checklist runs again at de-mobilization so the mob-vs-demob delta is clean. Sub-components bind to the parent here.",
       "fields": [
         {
@@ -687,23 +683,23 @@
         },
         {
           "label": "First Arrival",
-          "value": "14 Jun 2026 Â· Tower Crane LB280 #1"
+          "value": "14 Jun 2026 · Tower Crane LB280 #1"
         },
         {
           "label": "Last Arrival",
-          "value": "28 Jun 2026 Â· Generators 250 kVA"
+          "value": "28 Jun 2026 · Generators 250 kVA"
         },
         {
           "label": "Instances On Site",
-          "value": "17 of 18 Â· 1 generator deferred"
+          "value": "17 of 18 · 1 generator deferred"
         },
         {
           "label": "Inspection",
-          "value": "15-item condition checklist Â· 17 passed"
+          "value": "15-item condition checklist · 17 passed"
         },
         {
           "label": "Operators Mobilized",
-          "value": "4 Â· M. Rahman, J. Singh, A. Fahad, relief pool"
+          "value": "4 · M. Rahman, J. Singh, A. Fahad, relief pool"
         },
         {
           "label": "Lifting Gear Bound",
@@ -711,7 +707,7 @@
         },
         {
           "label": "Site Handover",
-          "value": "Signed by Daud Patel Â· 28 Jun 2026"
+          "value": "Signed by Daud Patel · 28 Jun 2026"
         }
       ],
       "lineExtra": {
@@ -741,20 +737,20 @@
       "date": "2026-08-21",
       "status": "Signed",
       "statusState": "Success",
-      "persona": "S. Kumar Â· Time Keeper",
-      "intro": "The daily record. Asset utilization and operator timesheet are deliberately separate tabs â€” they feed different SAP cost elements: the asset side posts a Service Entry Sheet, the operator side posts CATS. They are never merged.",
+      "persona": "S. Kumar · Time Keeper",
+      "intro": "The daily record. Asset utilization and operator timesheet are deliberately separate tabs — they feed different SAP cost elements: the asset side posts a Service Entry Sheet, the operator side posts CATS. They are never merged.",
       "fields": [
         {
           "label": "Log Date",
-          "value": "21 Aug 2026 Â· Day shift 06:00â€“18:00"
+          "value": "21 Aug 2026 · Day shift 06:00–18:00"
         },
         {
           "label": "Asset Hours",
-          "value": "142.5 productive Â· 11.0 idle Â· 4.5 standby"
+          "value": "142.5 productive · 11.0 idle · 4.5 standby"
         },
         {
           "label": "Operator Hours",
-          "value": "96.0 productive Â· 8.0 idle"
+          "value": "96.0 productive · 8.0 idle"
         },
         {
           "label": "Utilization",
@@ -766,11 +762,11 @@
         },
         {
           "label": "Operator Posting",
-          "value": "CATS Â· CAT2 batch 2026-08-21"
+          "value": "CATS · CAT2 batch 2026-08-21"
         },
         {
           "label": "Signed Off By",
-          "value": "Daud Patel Â· Site Engineer Â· 21 Aug 2026 19:40"
+          "value": "Daud Patel · Site Engineer · 21 Aug 2026 19:40"
         },
         {
           "label": "Cost to Date",
@@ -804,7 +800,7 @@
       "date": "2026-08-18",
       "status": "Approved",
       "statusState": "Success",
-      "persona": "Vikram Rao Â· Project Manager",
+      "persona": "Vikram Rao · Project Manager",
       "intro": "A per-line change order. Slab cycle slipped on the super-structure, so both cranes need a 30-day extension. The variation re-encumbers budget on WBS-2.04 and feeds the project cost variance.",
       "fields": [
         {
@@ -813,11 +809,11 @@
         },
         {
           "label": "Reason",
-          "value": "Slab cycle extension Â· super-structure L12â€“L18"
+          "value": "Slab cycle extension · super-structure L12–L18"
         },
         {
           "label": "Lines Affected",
-          "value": "L1 Tower Crane Â· L2 Mobile Crane"
+          "value": "L1 Tower Crane · L2 Mobile Crane"
         },
         {
           "label": "Duration Change",
@@ -833,11 +829,11 @@
         },
         {
           "label": "Budget Re-encumbrance",
-          "value": "Posted to WBS-2.04 Â· CMT-2026-0188-A"
+          "value": "Posted to WBS-2.04 · CMT-2026-0188-A"
         },
         {
           "label": "Approved By",
-          "value": "Vikram Rao Â· 18 Aug 2026"
+          "value": "Vikram Rao · 18 Aug 2026"
         }
       ],
       "lineExtra": {
@@ -867,7 +863,7 @@
       "date": "2027-01-13",
       "status": "Planned",
       "statusState": "Warning",
-      "persona": "Sridhar Iyer Â· Plant Allocation Lead",
+      "persona": "Sridhar Iyer · Plant Allocation Lead",
       "intro": "Assets return to the pool or to the rental vendor. The off-hire inspection uses the same 15-item checklist as mobilization, so damage attributable to this project is evident from the delta rather than argued after the fact.",
       "fields": [
         {
@@ -880,15 +876,15 @@
         },
         {
           "label": "Own Fleet Return",
-          "value": "10 instances â†’ Fleet Yard A / B"
+          "value": "10 instances → Fleet Yard A / B"
         },
         {
           "label": "Rental Off-hire",
-          "value": "8 instances â†’ ARM Cranes, Modulux, ARM Power"
+          "value": "8 instances → ARM Cranes, Modulux, ARM Power"
         },
         {
           "label": "Off-hire Inspection",
-          "value": "15-item checklist Â· delta vs mobilization"
+          "value": "15-item checklist · delta vs mobilization"
         },
         {
           "label": "Expected Damage Claim",
@@ -896,7 +892,7 @@
         },
         {
           "label": "Operator Release",
-          "value": "4 operators â†’ back to Plant pool"
+          "value": "4 operators → back to Plant pool"
         },
         {
           "label": "Final Meter Reading",
@@ -930,7 +926,7 @@
       "date": "2027-01-31",
       "status": "Not started",
       "statusState": "None",
-      "persona": "Rohan Menon Â· Cost Engineer",
+      "persona": "Rohan Menon · Cost Engineer",
       "intro": "Final reconciliation. Actual cost is set against the encumbrance and the residual is released back to the WBS, which is what closes the loop between the operational chain and the project's cost position.",
       "fields": [
         {
@@ -943,7 +939,7 @@
         },
         {
           "label": "Original Encumbrance",
-          "value": "AED 716,044"
+          "value": "AED 685,080"
         },
         {
           "label": "Variation Uplift",
@@ -981,62 +977,62 @@
   ],
   "lineTexts": {
     "L1": {
-      "reqText": "2 inst Ã— 180 d",
-      "advText": "Own fleet Â· Yard A",
-      "avcText": "Available Â· 2 of 2",
+      "reqText": "2 inst × 180 d",
+      "advText": "Own fleet · Yard A",
+      "avcText": "Available · 2 of 2",
       "resText": "Active",
       "cmtText": "AED 276,480",
       "mobText": "2 of 2 on site",
       "oplText": "58.0 h",
-      "varText": "+30 d Â· AED +64,000",
+      "varText": "+30 d · AED +64,000",
       "dmbText": "Return Yard A",
       "clsText": "Reconcile"
     },
     "L2": {
-      "reqText": "1 inst Ã— 90 d",
-      "advText": "Rental Â· ARM Cranes",
-      "avcText": "FA valid Â· quoted",
+      "reqText": "1 inst × 90 d",
+      "advText": "Rental · ARM Cranes",
+      "avcText": "FA valid · quoted",
       "resText": "Active",
       "cmtText": "AED 130,500",
       "mobText": "1 of 1 on site",
       "oplText": "22.5 h",
-      "varText": "+30 d Â· AED +33,500",
+      "varText": "+30 d · AED +33,500",
       "dmbText": "Off-hire ARM",
       "clsText": "Reconcile"
     },
     "L3": {
-      "reqText": "8 inst Ã— 45 d",
-      "advText": "Own fleet Â· Yard B",
-      "avcText": "Available Â· 8 of 8",
+      "reqText": "8 inst × 45 d",
+      "advText": "Own fleet · Yard B",
+      "avcText": "Available · 8 of 8",
       "resText": "Active",
       "cmtText": "AED 19,800",
       "mobText": "8 of 8 on site",
       "oplText": "36.0 h",
-      "varText": "â€”",
+      "varText": "—",
       "dmbText": "Return Yard B",
       "clsText": "Reconcile"
     },
     "L4": {
-      "reqText": "4 inst Ã— 180 d",
-      "advText": "Rental Â· Modulux",
-      "avcText": "FA valid Â· quoted",
+      "reqText": "4 inst × 180 d",
+      "advText": "Rental · Modulux",
+      "avcText": "FA valid · quoted",
       "resText": "Active",
       "cmtText": "AED 104,400",
       "mobText": "4 of 4 on site",
-      "oplText": "â€”",
-      "varText": "â€”",
+      "oplText": "—",
+      "varText": "—",
       "dmbText": "Off-hire Modulux",
       "clsText": "Reconcile"
     },
     "L5": {
-      "reqText": "3 inst Ã— 180 d",
-      "advText": "Rental Â· ARM Power",
-      "avcText": "2 of 3 Â· 1 deferred",
+      "reqText": "3 inst × 180 d",
+      "advText": "Rental · ARM Power",
+      "avcText": "2 of 3 · 1 deferred",
       "resText": "Partial",
       "cmtText": "AED 153,900",
       "mobText": "2 of 3 on site",
       "oplText": "26.0 h",
-      "varText": "â€”",
+      "varText": "—",
       "dmbText": "Off-hire ARM Power",
       "clsText": "Reconcile"
     }
@@ -1145,7 +1141,7 @@
         },
         {
           "title": "Operation Logs",
-          "subtitle": "Yesterday Â· unsigned",
+          "subtitle": "Yesterday · unsigned",
           "icon": "sap-icon://time-entry-request",
           "value": "3",
           "unit": "to sign",
