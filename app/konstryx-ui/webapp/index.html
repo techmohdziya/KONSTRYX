@@ -7,9 +7,18 @@
 
 	<link rel="icon" href="img/logo.png">
 
+	<!--
+		The UI5 runtime comes from SAP's CDN, pinned to the same version the
+		app is developed against, so local and deployed load identical
+		framework code. It used to be the relative "resources/sap-ui-core.js",
+		which serve.py proxied to a runtime on the developer's own disk — that
+		has no equivalent in Cloud Foundry and was why the deployed app could
+		never have rendered. Pinned rather than floating: an unannounced minor
+		bump should not be able to change a running client's UI.
+	-->
 	<script
 		id="sap-ui-bootstrap"
-		src="resources/sap-ui-core.js"
+		src="https://ui5.sap.com/1.150.0/resources/sap-ui-core.js"
 		data-sap-ui-theme="sap_horizon"
 		data-sap-ui-libs="sap.m,sap.f,sap.tnt,sap.uxap,sap.ui.layout"
 		data-sap-ui-compat-version="edge"

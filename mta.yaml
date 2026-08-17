@@ -30,14 +30,54 @@ modules:
       - name: konstryx-auth
       - name: konstryx-destination
 
-  # Entry point for the browser. Handles the XSUAA login and forwards the token
-  # to the service; nothing reaches the CAP service unauthenticated.
+  # The SAPUI5 app, built and uploaded to the HTML5 application repository.
   #
-  # It routes the UI through to konstryx-srv, which already serves the SAPUI5
-  # app as static content. That keeps the first deployment to one moving part.
-  # Once the app is split into several task-focused apps for the launchpad, the
-  # UI should move to the HTML5 application repository and be served from there
-  # rather than from the Java runtime.
+  # It is NOT served from the Java runtime. An earlier comment here claimed
+  # konstryx-srv "already serves the SAPUI5 app as static content" — it never
+  # did: the jar contains no UI at all (jar tf lists only service classes), so
+  # the approuter's /konstryx-ui route forwarded to nothing and the deployed
+  # app could not render. The repository is the right home for it and is what
+  # the launchpad reads when the app is reached by intent.
+  - name: konstryx-ui
+    type: html5
+    path: app/konstryx-ui
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci
+        - npx ui5 build --clean-dest --dest dist
+      supported-platforms: []
+      build-result: dist
+
+  # Building the app is not the same as shipping it. A type: html5 module only
+  # produces the artifact; this content module is what uploads it into the
+  # app-host, and without it the deploy creates both repository services and
+  # then puts nothing in them — the operation log says as much, "Service keys
+  # defined for content deployment: { }", while the app 404s behind the login.
+  - name: konstryx-ui-deployer
+    type: com.sap.application.content
+    path: gen
+    requires:
+      - name: konstryx-html5-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      # The artifact is named after the MODULE (konstryx-ui.zip), not after its
+      # build-result directory. Asking for "dist.zip" matched nothing, and the
+      # copy step reported success anyway — so an empty payload was uploaded
+      # and the repository answered "Could not find applications in the
+      # request". target-path is relative to this module's own path (gen), so
+      # the zip lands in gen/resources, which build-result then packages.
+      build-result: resources
+      requires:
+        - name: konstryx-ui
+          artifacts:
+            - konstryx-ui.zip
+          target-path: resources/
+
+  # Entry point for the browser. Handles the XSUAA login, serves the UI out of
+  # the HTML5 repository, and forwards the token to the service; nothing
+  # reaches the CAP service unauthenticated.
   - name: konstryx-approuter
     type: nodejs
     path: app/router
@@ -47,6 +87,7 @@ modules:
     requires:
       - name: konstryx-auth
       - name: konstryx-destination
+      - name: konstryx-html5-repo-runtime
       - name: srv-api
         group: destinations
         properties:
@@ -81,3 +122,16 @@ resources:
     parameters:
       service: destination
       service-plan: lite
+
+  # Two halves of the same service: app-host stores the built UI, app-runtime
+  # lets the approuter read it back out at request time.
+  - name: konstryx-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+  - name: konstryx-html5-repo-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime

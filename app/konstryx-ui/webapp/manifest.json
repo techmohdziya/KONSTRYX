@@ -76,6 +76,10 @@
       }
     }
   },
+  "sap.cloud": {
+    "public": true,
+    "service": "konstryx.app"
+  },
   "sap.ui": {
     "technology": "UI5",
     "deviceTypes": {

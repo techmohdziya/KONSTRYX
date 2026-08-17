@@ -3,7 +3,10 @@ metadata:
   name: konstryx
 type: application
 framework:
-  name: OpenUI5
+  # SAPUI5, not OpenUI5: the app uses sap.ui.export (Spreadsheet) for the
+  # Excel download on every list screen, and that library does not exist in
+  # OpenUI5. Building against OpenUI5 fails to resolve it.
+  name: SAPUI5
   version: "1.150.0"
   libraries:
     - name: sap.ui.core
@@ -12,5 +15,7 @@ framework:
     - name: sap.tnt
     - name: sap.uxap
     - name: sap.ui.layout
+    - name: sap.ui.table
+    - name: sap.ui.export
     - name: sap.ui.unified
     - name: themelib_sap_horizon

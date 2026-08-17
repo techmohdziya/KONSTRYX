@@ -1,0 +1,6 @@
+Staging directory for the MTA content deployer.
+
+mbt validates that konstryx-ui-deployer's `path: gen` exists before it runs
+any build step, so this directory has to be in the repo even though its real
+contents (dist.zip, produced from the konstryx-ui module) are generated and
+ignored.
