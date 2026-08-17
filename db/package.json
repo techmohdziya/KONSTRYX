@@ -10,6 +10,6 @@
     "node": "^20 || ^22"
   },
   "scripts": {
-    "start": "node node_modules/@sap/hdi-deploy/deploy.js --use-hdb-container-key"
+    "start": "node node_modules/@sap/hdi-deploy/deploy.js"
   }
 }
