@@ -103,7 +103,11 @@ sap.ui.define([
 				var oRow = {
 					id: oLine.ID,
 					lineNo: oReq.lineNo,
-					trade: oReq.description || oLine.tradeGrade,
+					// The request line's description carries the crew and source in
+					// its tail — "Steel Fixer G1 - own crews GNG-A/B". The Crew and
+					// Source columns already say both, so the trade cell keeps only
+					// the trade and stops competing for width with them.
+					trade: (oReq.description || oLine.tradeGrade || "").split(" - ")[0],
 					tradeGrade: oLine.tradeGrade,
 					crewId: oLine.crewId || "Floating",
 					crewLead: oLine.crewLead || "—",
@@ -113,12 +117,17 @@ sap.ui.define([
 						? "Own payroll"
 						: "LSC · " + (mVendor[oLine.vendor_ID] || "subcontract"),
 					durationDays: iDays,
+					headsDaysText: iLineHeads + " × " + iDays + " d",
 					window: formatWindow(oLine.mobDate, oLine.demobDate),
 					rateText: fRate.toLocaleString("en-US", { minimumFractionDigits: 2 }),
 					committedText: fCommit.toLocaleString("en-US", { minimumFractionDigits: 2 }),
 					wbsCode: mWbs[oReq.wbs_ID] || "—",
 					cbsCode: mCbs[oReq.cbs_ID] || "—",
-					inductionState: oLine.inductionState || "",
+					// Shortened for the cell: the seeded text is a sentence
+					// ("All inducted - HSE + skill verified") and it pushed the trade
+					// name into a second line. The full wording stays on the record.
+					inductionState: /inducted/i.test(oLine.inductionState || "")
+						? "Inducted" : (oLine.sourceType === "LSC" ? "Inducts on mob" : ""),
 					lineStatus: oReq.lineStatus || "",
 					requestDocNo: (oReq.parent || {}).docNo || ""
 				};

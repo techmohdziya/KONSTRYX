@@ -106,17 +106,23 @@
 									</OverflowToolbar>
 								</headerToolbar>
 
+								<!-- Eight columns, not ten, and only one of them flexible.
+								     Ten fixed columns came to 1,396px on their own, which is
+								     wider than a 1280px window: the table gave the flexible
+								     Trade column what was left, and what was left was nothing,
+								     so the primary identifier rendered at zero width. Related
+								     facts are paired into one cell instead — heads with their
+								     window, the committed value with the rate behind it — which
+								     both fits and reads better than a row of thin columns. -->
 								<columns>
-									<Column width="3.5rem"><Text text="#"/></Column>
+									<Column width="3rem"><Text text="#"/></Column>
 									<Column><Text text="Trade"/></Column>
-									<Column width="11rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Crew"/></Column>
-									<Column width="12rem"><Text text="Source"/></Column>
-									<Column width="5.5rem" hAlign="End"><Text text="Heads"/></Column>
-									<Column width="12rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Window"/></Column>
-									<Column width="9rem" hAlign="End"><Text text="Rate/head-day"/></Column>
-									<Column width="11rem" hAlign="End"><Text text="Committed"/></Column>
-									<Column width="10rem" minScreenWidth="Tablet" demandPopin="true"><Text text="WBS / CBS"/></Column>
-									<Column width="10rem"><Text text="Status"/></Column>
+									<Column width="9rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Crew"/></Column>
+									<Column width="10rem"><Text text="Source"/></Column>
+									<Column width="9rem" hAlign="End"><Text text="Heads × days"/></Column>
+									<Column width="10.5rem" hAlign="End"><Text text="Committed"/></Column>
+									<Column width="8rem" minScreenWidth="Tablet" demandPopin="true"><Text text="WBS / CBS"/></Column>
+									<Column width="8rem"><Text text="Status"/></Column>
 								</columns>
 
 								<items>
@@ -136,13 +142,14 @@
 											<ObjectStatus
 												text="{view>sourceLabel}"
 												state="{= ${view>sourceType} === 'OWN' ? 'Success' : 'Information' }"/>
-											<ObjectNumber number="{view>heads}"/>
 											<VBox>
-												<Text text="{view>window}"/>
-												<Text text="{view>durationDays} days" class="kxSubText"/>
+												<Text text="{view>headsDaysText}"/>
+												<Text text="{view>window}" class="kxSubText"/>
 											</VBox>
-											<ObjectNumber number="{view>rateText}" unit="AED"/>
-											<ObjectNumber number="{view>committedText}" unit="AED" emphasized="true"/>
+											<VBox>
+												<ObjectNumber number="{view>committedText}" unit="AED" emphasized="true"/>
+												<Text text="at {view>rateText}/head-day" class="kxSubText"/>
+											</VBox>
 											<VBox>
 												<Text text="{view>wbsCode}"/>
 												<Text text="CBS {view>cbsCode}" class="kxSubText"/>
