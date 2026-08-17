@@ -9,6 +9,8 @@ using { cuid, managed, Currency } from '@sap/cds/common';
 using { konstryx.common } from './common';
 using { konstryx.wf } from './wf';
 using { konstryx.master } from './master';
+using { konstryx.prj } from './prj';
+using { konstryx.admin } from './admin';
 
 // Issue against a reservation line (Konstryx + S/4 GI mirror).
 entity PullRequest : cuid, managed {
@@ -54,17 +56,53 @@ entity ReservationClosure : cuid, managed {
 }
 
 // ---- S/4 mirrors (created via API) ----
-entity PurchaseRequisition : cuid, managed, common.s4mirror {
-  prNo   : String(10);
-  status : String(20);
-  lines  : Composition of many PurchaseRequisitionLine on lines.parent = $self;
+
+/**
+ * The purchase requisition is NOT a KONSTRYX document (your ruling: "Resource
+ * request is KONSTRYX doc, Purchase request is S/4 number not internal").
+ * KONSTRYX raises it from the PROCURE-decided lines of a resource request, but
+ * S/4 assigns the number and owns the document from then on — so this entity
+ * deliberately does NOT carry common.documented and never draws a KONSTRYX
+ * number range. prNo stays empty until S/4 accepts it.
+ *
+ * s4outbound, not s4mirror: a mirror defaults syncStatus to OK, which would
+ * call a requisition that never reached S/4 a good one. Outbound defaults to
+ * NOT_SENT and keeps what S/4 said when it refused.
+ */
+entity PurchaseRequisition : cuid, managed, common.s4outbound {
+  /** The S/4 requisition number. Filled on acceptance, never issued here. */
+  prNo          : String(10);
+  status        : String(20);
+  /** Where it came from: the request whose PROCURE lines raised it. */
+  sourceRequest : Association to wf.ResourceRequest;
+  /**
+   * Carried rather than reached through sourceRequest so the buyer's worklist
+   * can filter and the authorization layer can scope without a join.
+   */
+  project       : Association to prj.Project;
+  company       : Association to admin.Company;
+  raisedBy      : String(120);
+  raisedOn      : Date;
+  lines         : Composition of many PurchaseRequisitionLine on lines.parent = $self;
 }
 
 entity PurchaseRequisitionLine : cuid {
   parent       : Association to PurchaseRequisition;
   lineNo       : Integer;
+  /** What was actually asked for. The S/4 material mapping is resolved at push. */
+  resource     : Association to master.ResourceNode;
   material     : Association to master.Material;
+  description  : String(255);
+  /**
+   * Account assignment. A requisition without these cannot commit against the
+   * right budget line when S/4 returns the commitment (chain step CMT).
+   */
+  wbs          : Association to prj.WBSElement;
+  cbs          : Association to prj.CBSInstance;
+  /** The request line this came from, so the chain stays traceable both ways. */
+  sourceLine   : Association to wf.ResourceRequestLine;
   qtyProcure   : Decimal(15,3);
+  uom          : String(10);
   estUnitPrice : Decimal(15,2);
   estTotal     : Decimal(15,2);
   needBy       : Date;

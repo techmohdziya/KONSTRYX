@@ -61,6 +61,8 @@ public class ChainHandler implements EventHandler {
     private static final String E_LINK = "konstryx.wf.DocumentLink";
     private static final String E_RESOURCE = "konstryx.master.ResourceNode";
     private static final String E_RATE = "konstryx.master.RateMaster";
+    private static final String E_PR = "konstryx.mat.PurchaseRequisition";
+    private static final String E_PR_LINE = "konstryx.mat.PurchaseRequisitionLine";
 
     private static final List<String> DECISIONS = List.of("IN_HOUSE", "PROCURE", "SUBSTITUTE", "REJECT");
 
@@ -414,6 +416,128 @@ public class ChainHandler implements EventHandler {
                 + encumbered.toPlainString() + " — the value the approval was shown.");
     }
 
+    // ------------------------------------------------------ purchase requisition
+
+    /**
+     * The other half of the advisory split. createReservation above consumes
+     * the IN_HOUSE lines; until this existed, a PROCURE line stopped at
+     * "Advised" and nothing ever picked it up.
+     *
+     * The requisition is deliberately not a KONSTRYX document — it is inserted
+     * straight through the persistence service rather than an ApplicationService
+     * precisely because there is no number to stamp: S/4 owns the requisition
+     * number, and prNo stays empty until S/4 accepts it. That is also why the
+     * entity carries s4outbound rather than s4mirror; it starts life NOT_SENT.
+     */
+    @On(event = "raisePurchaseRequisition", entity = "WorkflowService.ResourceRequests")
+    public void onRaisePurchaseRequisition(EventContext context) {
+        Row rr = targetOf(context, "Resource request not found.");
+        String rrId = str(rr.get("ID"));
+        String status = str(rr.get("status"));
+
+        // Advised is the earliest honest point: every line has a decision, so
+        // the PROCURE set is final. Later states are fine too — the in-house
+        // half may already have run ahead to AVC or reservation.
+        if (isBlank(status) || "Draft".equals(status) || "In Approval".equals(status)
+                || "In Advisory".equals(status) || "Rejected".equals(status)) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    rr.get("docNo") + " is " + status
+                            + " — every line must be decided before anything is procured.");
+        }
+
+        boolean already = db.run(Select.from(E_PR)
+                .where(p -> p.get("sourceRequest_ID").eq(rrId))).first().isPresent();
+        if (already) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    rr.get("docNo") + " already raised a requisition. Raising a second one "
+                            + "would ask the buyer to purchase the same scope twice.");
+        }
+
+        List<Row> procure = decidedLines(rrId, "PROCURE");
+        if (procure.isEmpty()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "No line was decided PROCURE, so there is nothing to requisition — "
+                            + "in-house lines are the fleet's to reserve, not the buyer's.");
+        }
+
+        String prId = UUID.randomUUID().toString();
+        Map<String, Object> pr = new LinkedHashMap<>();
+        pr.put("ID", prId);
+        pr.put("sourceRequest_ID", rrId);
+        pr.put("project_ID", rr.get("project_ID"));
+        pr.put("company_ID", rr.get("company_ID"));
+        pr.put("status", "Draft");
+        pr.put("raisedBy", userInfo.getName());
+        pr.put("raisedOn", java.time.LocalDate.now());
+        // s4outbound's own default is NOT_SENT; stated here so the record reads
+        // honestly even if the aspect default ever changes.
+        pr.put("syncStatus", "NOT_SENT");
+        pr.put("syncAttempts", 0);
+        db.run(Insert.into(E_PR).entry(pr));
+
+        BigDecimal value = BigDecimal.ZERO;
+        int lineNo = 0;
+        for (Row line : procure) {
+            BigDecimal estTotal = dec(line.get("estTotal"));
+            if (estTotal == null) {
+                estTotal = BigDecimal.ZERO;
+            }
+
+            Map<String, Object> prLine = new LinkedHashMap<>();
+            prLine.put("ID", UUID.randomUUID().toString());
+            prLine.put("parent_ID", prId);
+            prLine.put("lineNo", ++lineNo);
+            prLine.put("sourceLine_ID", line.get("ID"));
+            prLine.put("resource_ID", line.get("resource_ID"));
+            prLine.put("description", line.get("description"));
+            // Account assignment travels with the line. Without it the
+            // commitment S/4 returns has no budget line to land on.
+            prLine.put("wbs_ID", line.get("wbs_ID"));
+            prLine.put("cbs_ID", line.get("cbs_ID"));
+            prLine.put("qtyProcure", line.get("qty"));
+            prLine.put("uom", line.get("uom"));
+            prLine.put("estUnitPrice", line.get("estUnitCost"));
+            prLine.put("estTotal", estTotal);
+            prLine.put("needBy", line.get("needBy"));
+            prLine.put("status", "Draft");
+            db.run(Insert.into(E_PR_LINE).entry(prLine));
+
+            Map<String, Object> patch = new HashMap<>();
+            patch.put("lineStatus", "Requisitioned");
+            String lineId = str(line.get("ID"));
+            db.run(Update.entity(E_RR_LINE).data(patch).where(l -> l.get("ID").eq(lineId)));
+
+            value = value.add(estTotal);
+        }
+
+        // The requisition has no number of its own to link by, so the link
+        // carries the KONSTRYX id until S/4 returns a prNo.
+        link(str(rr.get("docNo")), "PR:" + prId, "REQUISITION");
+        history("PR", "PR:" + prId, "—", "Draft",
+                "Raised from " + rr.get("docNo") + " (" + lineNo + " procured line(s))");
+
+        result(context, "Requisition raised from " + rr.get("docNo") + ": " + lineNo
+                + " line(s) worth " + value.toPlainString()
+                + ", awaiting a purchase requisition number from S/4.");
+    }
+
+    /** Request lines whose advisory decision matches. */
+    private List<Row> decidedLines(String rrId, String decision) {
+        List<Row> matched = new ArrayList<>();
+        for (Row line : linesOf(rrId)) {
+            Object advisoryId = line.get("advisory_ID");
+            if (advisoryId == null) {
+                continue;
+            }
+            Optional<Row> advisory = db.run(Select.from(E_ADVISORY)
+                    .where(a -> a.get("ID").eq(advisoryId.toString()))).first();
+            if (advisory.isPresent() && decision.equals(str(advisory.get().get("decision")))) {
+                matched.add(line);
+            }
+        }
+        return matched;
+    }
+
     @On(event = "close", entity = "WorkflowService.Reservations")
     public void onClose(EventContext context) {
         Row reservation = targetOf(context, "Reservation not found.");
@@ -455,19 +579,7 @@ public class ChainHandler implements EventHandler {
     }
 
     private List<Row> inHouseLines(String rrId) {
-        List<Row> inHouse = new ArrayList<>();
-        for (Row line : linesOf(rrId)) {
-            Object advisoryId = line.get("advisory_ID");
-            if (advisoryId == null) {
-                continue;
-            }
-            Optional<Row> advisory = db.run(Select.from(E_ADVISORY)
-                    .where(a -> a.get("ID").eq(advisoryId.toString()))).first();
-            if (advisory.isPresent() && "IN_HOUSE".equals(str(advisory.get().get("decision")))) {
-                inHouse.add(line);
-            }
-        }
-        return inHouse;
+        return decidedLines(rrId, "IN_HOUSE");
     }
 
     private void move(String rrId, Row rr, String from, String to, String comment) {

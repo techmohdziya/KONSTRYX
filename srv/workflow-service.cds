@@ -45,6 +45,19 @@ service WorkflowService @(path:'/workflow') {
        * given — so what is locked is exactly what was signed for.
        */
       action createReservation() returns String;
+
+      /**
+       * The other half of the advisory split: raises a purchase requisition
+       * from the PROCURE-decided lines, the way createReservation covers the
+       * IN_HOUSE ones. Until now a PROCURE line dead-ended at "Advised" and
+       * nothing consumed it.
+       *
+       * The requisition is deliberately not a KONSTRYX document — it draws no
+       * number range and gets no docNo, because S/4 owns the requisition
+       * number. It is created here as NOT_SENT with its account assignment
+       * carried from each request line, and takes its prNo when S/4 accepts it.
+       */
+      action raisePurchaseRequisition() returns String;
     };
   entity ResourceRequestLines as projection on wf.ResourceRequestLine;
 

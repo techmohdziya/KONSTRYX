@@ -13,8 +13,15 @@ service MaterialService @(path:'/material') {
   entity ConsumptionRecords  as projection on mat.ConsumptionRecord;
   entity ReservationClosures as projection on mat.ReservationClosure;
 
+  /**
+   * Raised by WorkflowService.raisePurchaseRequisition, never keyed by hand —
+   * read-only here for the same reason a reservation is: the document exists
+   * because a decision upstream created it. S/4 owns its number.
+   */
+  @readonly entity PurchaseRequisitions     as projection on mat.PurchaseRequisition;
+  @readonly entity PurchaseRequisitionLines as projection on mat.PurchaseRequisitionLine;
+
   // S/4 mirrors — read-only
-  @readonly entity PurchaseRequisitions as projection on mat.PurchaseRequisition;
   @readonly entity PurchaseOrders       as projection on mat.PurchaseOrder;
   @readonly entity GoodsReceipts        as projection on mat.GoodsReceipt;
 
