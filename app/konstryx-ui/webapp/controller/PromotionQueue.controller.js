@@ -11,6 +11,33 @@ sap.ui.define([
 	"use strict";
 
 	/**
+	 * objectType is not free text: PromotionHandler (RequestSide.onRequestPromotion,
+	 * server-side) stamps it from context.getTarget().getQualifiedName() — the
+	 * exposed service entity's own qualified name, e.g. "MasterDataService.Resources"
+	 * — and reuses that exact string in Update.entity(objectType) on approval. So
+	 * the closed set here is exactly the entities that expose a requestPromotion
+	 * action in masterdata-service.cds; add a row here whenever one more does.
+	 *
+	 * Every row in this queue is master data being promoted (that is the whole
+	 * point of the queue), never a project transaction, so the link always goes
+	 * straight to the master maintenance screen for that code — never to a
+	 * project-instance view. Unlike ObjectLinks.REGISTRY (which offers several
+	 * targets because a transactional row's CBS reference could mean either the
+	 * assigned instance or the library), there is exactly one correct target
+	 * here, so this skips the picker/popover entirely.
+	 */
+	var OBJECT_TYPE_TARGETS = {
+		"MasterDataService.Resources": {
+			route: "resourceDetail",
+			args: function (sCode) { return { code: encodeURIComponent(sCode) }; }
+		},
+		"MasterDataService.CBSLibrary": {
+			route: "masterCBS",
+			args: function () { return undefined; }
+		}
+	};
+
+	/**
 	 * The steward queue.
 	 *
 	 * Approving is not a status flip: the service promotes the referenced master
@@ -100,6 +127,19 @@ sap.ui.define([
 		},
 
 		onFilterChange: function () { this._applyFilters(); },
+
+		onObjectLink: function (oEvent) {
+			var oCtx = oEvent.getSource().getBindingContext("md"),
+				sType = oCtx.getProperty("objectType"),
+				sCode = oCtx.getProperty("objectKey"),
+				oTarget = OBJECT_TYPE_TARGETS[sType];
+
+			if (!oTarget) {
+				MessageToast.show("No master screen is registered for " + sType + " yet.");
+				return;
+			}
+			this.navTo(oTarget.route, oTarget.args(sCode));
+		},
 
 		onTableSettings: function () {
 			ListPersonalization.openSettings(this.byId("queueTable"),

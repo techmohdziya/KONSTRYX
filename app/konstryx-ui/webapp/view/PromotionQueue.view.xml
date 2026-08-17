@@ -90,7 +90,7 @@
 				<items>
 					<ColumnListItem>
 						<cells>
-							<ObjectIdentifier title="{md>objectKey}"/>
+							<Link text="{md>objectKey}" press=".onObjectLink"/>
 							<Text text="{md>objectType}"/>
 							<HBox alignItems="Center">
 								<ObjectStatus text="{md>currentScope}" state="Warning"/>
