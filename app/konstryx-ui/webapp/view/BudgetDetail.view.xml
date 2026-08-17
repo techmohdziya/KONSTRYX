@@ -1,0 +1,195 @@
+<mvc:View
+	controllerName="konstryx.controller.BudgetDetail"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core"
+	height="100%">
+
+	<f:DynamicPage id="budgetDetailPage" headerExpanded="true" fitContent="false">
+
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading>
+					<HBox alignItems="Center">
+						<Title id="bdTitle" text="{view>/budget/docNo}" level="H2"/>
+						<ObjectStatus text="{= ${view>/budget/status} || 'Draft' }" class="sapUiTinyMarginBegin"
+							state="{= ${view>/budget/status} === 'Approved' || ${view>/budget/status} === 'Baselined' || ${view>/budget/status} === 'Locked' ? 'Success' : !${view>/budget/status} || ${view>/budget/status} === 'Draft' ? 'None' : 'Warning' }"/>
+					</HBox>
+				</f:heading>
+				<f:expandedContent>
+					<Text id="bdSubtitle" text="{view>/budget/subtitle}"/>
+				</f:expandedContent>
+				<f:actions>
+					<Button id="generateLinesBtn" text="Generate Lines" icon="sap-icon://synchronize"
+					        enabled="{= !${view>/budget/status} || ${view>/budget/status} === 'Draft' }" press=".onGenerateLines"/>
+					<Button id="submitBtn" text="Submit" icon="sap-icon://paper-plane"
+					        enabled="{= (!${view>/budget/status} || ${view>/budget/status} === 'Draft' || ${view>/budget/status} === 'Rejected') &amp;&amp; ${view>/budget/hasLines} }" press=".onSubmit"/>
+					<Button id="baselineBtn" text="Baseline" icon="sap-icon://locked" type="Emphasized"
+					        enabled="{= ${view>/budget/status} === 'Approved' }" press=".onBaseline"/>
+					<Button id="refreshControlBtn" text="Refresh Control" icon="sap-icon://refresh"
+					        press=".onRefreshControl"/>
+				</f:actions>
+			</f:DynamicPageTitle>
+		</f:title>
+
+		<f:header>
+			<f:DynamicPageHeader pinnable="true">
+				<HBox wrap="Wrap" class="kxFilterBar">
+					<GenericTile class="sapUiTinyMarginEnd" header="Total Amount">
+						<TileContent unit="AED"><NumericContent id="kpiTotal" withMargin="false" value="0"/></TileContent>
+					</GenericTile>
+					<GenericTile class="sapUiTinyMarginEnd" header="Committed">
+						<TileContent unit="AED"><NumericContent id="kpiCommitted" withMargin="false" value="0"/></TileContent>
+					</GenericTile>
+					<GenericTile class="sapUiTinyMarginEnd" header="Encumbered">
+						<TileContent unit="AED"><NumericContent id="kpiEncumbered" withMargin="false" value="0"/></TileContent>
+					</GenericTile>
+					<GenericTile class="sapUiTinyMarginEnd" header="Actual">
+						<TileContent unit="AED"><NumericContent id="kpiActual" withMargin="false" value="0"/></TileContent>
+					</GenericTile>
+					<GenericTile class="sapUiTinyMarginEnd" header="Available">
+						<TileContent unit="AED"><NumericContent id="kpiAvailable" withMargin="false" value="0"/></TileContent>
+					</GenericTile>
+				</HBox>
+			</f:DynamicPageHeader>
+		</f:header>
+
+		<f:content>
+			<IconTabBar id="bdTabs" expanded="true" class="sapUiResponsiveContentPadding">
+				<items>
+
+					<!-- ====== Budget Lines (WBS/CBS x cost nature control record) ====== -->
+					<IconTabFilter id="linesTab" text="Budget Lines" icon="sap-icon://grid" key="LINES">
+						<Table id="linesTable" items="{path: 'bud>/BudgetLines', templateShareable: false}" sticky="ColumnHeaders">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title id="linesTitle" text="Budget Lines" level="H4"/>
+									<VariantManagement id="linesVariant" class="sapUiTinyMarginBegin"
+									                   supportDefault="true" supportFavorites="false" supportPublic="true"
+									                   select=".onLinesVariantSelect" save=".onLinesVariantSave"/>
+									<ToolbarSpacer/>
+									<Button text="Adapt Filters" icon="sap-icon://filter" tooltip="Filter this list" press=".onLinesAdaptFilters"/>
+									<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+									        tooltip="Download the list as it is arranged here" press=".onLinesExportExcel"/>
+									<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onLinesTableSettings"/>
+									<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column id="lnCbs" width="9rem"><Text text="CBS"/></Column>
+								<Column id="lnCategory" width="8rem"><Text text="Category"/></Column>
+								<Column id="lnAmount" hAlign="End"><Text text="Amount"/></Column>
+								<Column id="lnCommitted" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="Committed"/></Column>
+								<Column id="lnEncumbered" hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="Encumbered"/></Column>
+								<Column id="lnActual" hAlign="End" minScreenWidth="Desktop" demandPopin="true"><Text text="Actual"/></Column>
+								<Column id="lnAvailable" hAlign="End"><Text text="Available"/></Column>
+								<Column id="lnUsedPct" width="8rem" hAlign="End" minScreenWidth="Desktop" demandPopin="true"><Text text="% Used"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{parts: [{path: 'bud>cbs_ID'}, {path: 'view>/cbsCodeById'}], formatter: '.formatCbsCode'}"/>
+										<ObjectStatus text="{bud>category}" state="Information"/>
+										<ObjectNumber number="{path: 'bud>amount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"/>
+										<ObjectNumber number="{path: 'bud>committed', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"/>
+										<ObjectNumber number="{path: 'bud>encumbered', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"/>
+										<ObjectNumber number="{path: 'bud>actual', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"/>
+										<ObjectNumber number="{path: 'bud>available', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2}}"
+											state="{= ${bud>available} &lt; 0 ? 'Error' : 'None' }"/>
+										<ObjectNumber number="{path: 'bud>usedPct', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {maxFractionDigits: 1}}" unit="%"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</IconTabFilter>
+
+					<!-- ====== Ledger & History (KX-BUD-004) ====== -->
+					<IconTabFilter id="ledgerTab" text="Ledger &amp; History" icon="sap-icon://history" key="LEDGER">
+						<Table id="ledgerTable" items="{path: 'bud>/LedgerEntries', templateShareable: false}" sticky="ColumnHeaders"
+						       noDataText="No movement yet — the ORIGINAL entries appear once Generate Lines runs.">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title id="ledgerTitle" text="Ledger" level="H4"/>
+									<VariantManagement id="ledgerVariant" class="sapUiTinyMarginBegin"
+									                   supportDefault="true" supportFavorites="false" supportPublic="true"
+									                   select=".onLedgerVariantSelect" save=".onLedgerVariantSave"/>
+									<ToolbarSpacer/>
+									<Button text="Shift" icon="sap-icon://shift-right"
+									        enabled="{= ${view>/budget/status} === 'Baselined' }" press=".onShift"/>
+									<Button text="Risk Transfer" icon="sap-icon://warning2"
+									        enabled="{= ${view>/budget/status} === 'Baselined' }" press=".onRiskTransfer"/>
+									<Button text="Variation" icon="sap-icon://add-document"
+									        enabled="{= ${view>/budget/status} === 'Baselined' }" press=".onVariation"/>
+									<Button icon="sap-icon://excel-attachment" text="Export to Excel"
+									        tooltip="Download the list as it is arranged here" press=".onLedgerExportExcel"/>
+									<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onLedgerTableSettings"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column id="lgCategory" width="9rem"><Text text="Category"/></Column>
+								<Column id="lgCbs" width="8rem"><Text text="CBS"/></Column>
+								<Column id="lgAmount" hAlign="End"><Text text="Δ (AED)"/></Column>
+								<Column id="lgReference" width="12rem" minScreenWidth="Tablet" demandPopin="true"><Text text="Reference"/></Column>
+								<Column id="lgReason" minScreenWidth="Desktop" demandPopin="true"><Text text="Reason"/></Column>
+								<Column id="lgCreated" width="10rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Posted"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<ObjectStatus text="{bud>category}"
+											state="{= ${bud>category} === 'ORIGINAL' ? 'Information' : ${bud>category} === 'VARIATION' ? 'Success' : ${bud>category} === 'RISK_TRANSFER' ? 'Warning' : 'None' }"/>
+										<Text text="{parts: [{path: 'bud>line/cbs_ID'}, {path: 'view>/cbsCodeById'}], formatter: '.formatCbsCode'}"/>
+										<ObjectNumber number="{path: 'bud>amount', type: 'sap.ui.model.odata.type.Decimal', formatOptions: {groupingEnabled: true, maxFractionDigits: 2, showMeasure: false}}"
+											state="{= ${bud>amount} &lt; 0 ? 'Error' : ${bud>amount} &gt; 0 ? 'Success' : 'None' }"/>
+										<Text text="{= ${bud>reference} ? ${bud>reference} : '—' }"/>
+										<Text text="{bud>reason}"/>
+										<Text text="{bud>createdAt}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</IconTabFilter>
+
+					<!-- ====== Approvals ====== -->
+					<IconTabFilter id="approvalsTab" text="Approvals" icon="sap-icon://approvals" key="APPROVALS">
+						<Table id="approvalsTable" items="{view>/approvals/steps}"
+						       noDataText="Not yet submitted for approval.">
+							<headerToolbar>
+								<OverflowToolbar>
+									<Title text="Approval chain" level="H4"/>
+									<ToolbarSpacer/>
+									<ObjectStatus text="{view>/approvals/instanceStatus}"
+										state="{= ${view>/approvals/instanceStatus} === 'APPROVED' ? 'Success' : ${view>/approvals/instanceStatus} === 'REJECTED' ? 'Error' : 'Warning' }"
+										visible="{= !!${view>/approvals/instanceStatus} }"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<columns>
+								<Column width="4rem"><Text text="Step"/></Column>
+								<Column><Text text="Approver role"/></Column>
+								<Column><Text text="Decision"/></Column>
+								<Column><Text text="Acted by"/></Column>
+								<Column minScreenWidth="Tablet" demandPopin="true"><Text text="Decided at"/></Column>
+								<Column minScreenWidth="Desktop" demandPopin="true"><Text text="Comment"/></Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{view>stepNo}"/>
+										<Text text="{view>name}"/>
+										<ObjectStatus text="{view>decision}"
+											state="{= ${view>decision} === 'APPROVED' ? 'Success' : ${view>decision} === 'REJECTED' ? 'Error' : 'Warning' }"/>
+										<Text text="{= ${view>actedBy} ? ${view>actedBy} : '—' }"/>
+										<Text text="{= ${view>decidedAt} ? ${view>decidedAt} : '—' }"/>
+										<Text text="{view>comment}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</IconTabFilter>
+
+				</items>
+			</IconTabBar>
+		</f:content>
+	</f:DynamicPage>
+</mvc:View>
