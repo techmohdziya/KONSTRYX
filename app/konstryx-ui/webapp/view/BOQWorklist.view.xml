@@ -61,6 +61,7 @@
 						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
 						        tooltip="Download the list as it is arranged here" press=".onExportExcel"/>
 						<Button icon="sap-icon://action-settings" tooltip="Columns, sort, group and filter" press=".onTableSettings"/>
+						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected" visible="{/ui/showIntegrationStatus}"/>
 					</OverflowToolbar>
 				</headerToolbar>
 

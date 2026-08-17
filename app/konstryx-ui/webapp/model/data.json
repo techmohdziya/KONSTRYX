@@ -1,4 +1,9 @@
 {
+  "ui": {
+    "//": "Display switches for scaffolding the screens carry while the product is still being built. Hidden rather than deleted, so the markup stays in place and one flag brings a whole class of it back.",
+    "showIntegrationStatus": false,
+    "showGuidanceText": false
+  },
   "project": {
     "id": "PRJ-001",
     "name": "Marina Heights Tower",

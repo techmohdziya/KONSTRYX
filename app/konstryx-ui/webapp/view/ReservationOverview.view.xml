@@ -14,7 +14,7 @@
 					<Title text="Reservation Overview" level="H2"/>
 				</f:heading>
 				<f:expandedContent>
-					<Text text="Chain progress per reservation"/>
+					<Text text="Chain progress and S/4 connection state per reservation"/>
 				</f:expandedContent>
 				<f:actions>
 					<Button icon="sap-icon://refresh" tooltip="Recompute from the live documents" press=".onRefresh"/>
@@ -47,11 +47,28 @@
 						</VBox>
 					</HBox>
 
-					<!-- The "S/4HANA connection status" panel was removed at the user's
-					     request, along with the per-row S/4 commitment column and the
-					     connected/disconnected iconography. All of it reported on our own
-					     integration plumbing rather than on the reservation, which is what
-					     made the screen read as a wireframe instead of a live list. -->
+					<!-- S/4 connectivity, honestly. One outbound path is live;
+					     the commitment leg is not, and this panel says which. -->
+					<Panel headerText="S/4HANA connection status" expandable="true" expanded="true" class="sapUiNoContentPadding" visible="{/ui/showIntegrationStatus}">
+						<HBox wrap="Wrap" class="sapUiSmallMargin">
+							<ObjectStatus class="sapUiMediumMarginEnd"
+								title="Enterprise Project (SAP_COM_0308)"
+								text="LIVE · S/4 sandbox"
+								state="Success" icon="sap-icon://connected"/>
+							<ObjectStatus class="sapUiMediumMarginEnd"
+								title="Budget Commitment · CMT"
+								text="Connector pending — encumbrance is KONSTRYX-side only"
+								state="Warning" icon="sap-icon://disconnected"/>
+							<ObjectStatus class="sapUiMediumMarginEnd"
+								title="Procurement (PR/PO/GR)"
+								text="Not connected — S/4-owned steps, seams built"
+								state="Warning" icon="sap-icon://disconnected"/>
+							<ObjectStatus
+								title="Business Partner (SAP_COM_0008)"
+								text="Arrangement active · mirror not built"
+								state="Information" icon="sap-icon://chain-link"/>
+						</HBox>
+					</Panel>
 				</VBox>
 			</f:DynamicPageHeader>
 		</f:header>
@@ -75,6 +92,7 @@
 						<Button icon="sap-icon://excel-attachment" text="Export to Excel"
 						        tooltip="Download the list as it is arranged here"
 						        press=".onExportExcel"/>
+						<ObjectStatus text="live · computed from documents" state="Success" icon="sap-icon://connected" visible="{/ui/showIntegrationStatus}"/>
 					</OverflowToolbar>
 				</headerToolbar>
 
@@ -85,6 +103,7 @@
 					<Column width="7rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Flow"/></Column>
 					<Column width="12rem" hAlign="End"><Text text="Encumbered"/></Column>
 					<Column><Text text="Chain progress"/></Column>
+					<Column width="13rem" visible="{/ui/showIntegrationStatus}"><Text text="S/4 commitment"/></Column>
 				</columns>
 
 				<items>
@@ -98,6 +117,10 @@
 							<Link text="{view>rrDocNo}" press=".onRequestLink" wrapping="false"/>
 							<VBox>
 								<Text text="{view>projectCode}"/>
+								<ObjectStatus visible="{/ui/showIntegrationStatus}"
+									text="{= ${view>projectSync} === 'SENT' ? 'Project in S/4' : 'Project not sent' }"
+									state="{= ${view>projectSync} === 'SENT' ? 'Success' : 'Warning' }"
+									icon="{= ${view>projectSync} === 'SENT' ? 'sap-icon://connected' : 'sap-icon://disconnected' }"/>
 							</VBox>
 							<Text text="{view>executionFlow}"/>
 							<VBox>
@@ -112,6 +135,7 @@
 									height="1.25rem"/>
 								<Text text="Pending: {view>pendingSteps}" class="kxSubText"/>
 							</VBox>
+							<ObjectStatus text="{view>s4Commitment}" state="Warning" icon="sap-icon://disconnected"/>
 						</cells>
 					</ColumnListItem>
 				</items>

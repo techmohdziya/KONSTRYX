@@ -87,12 +87,13 @@
 				<uxap:subSections>
 					<uxap:ObjectPageSubSection>
 						<uxap:blocks>
-							<!-- The read-only warning strip and the intro paragraph were
-							     removed at the user's request: both restated who owns the
-							     document in prose, and between them they pushed the actual
-							     document fields below the fold. The ownership fact is still
-							     on the screen, as the "Owned by" header field, which is
-							     where it belongs. -->
+							<MessageStrip
+								text="{view>/readOnlyText}"
+								type="Warning"
+								showIcon="true"
+								visible="{= ${view>/doc/readOnly} &amp;&amp; ${/ui/showGuidanceText} }"
+								class="sapUiSmallMarginBottom"/>
+							<Text text="{view>/doc/intro}" class="kxIntro" visible="{/ui/showGuidanceText}"/>
 							<form:SimpleForm
 								editable="false"
 								layout="ColumnLayout"

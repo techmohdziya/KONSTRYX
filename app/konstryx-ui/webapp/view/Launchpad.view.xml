@@ -9,7 +9,14 @@
 		<content>
 			<VBox class="kxLaunchpadHeader">
 				<Title text="Engineering Construction &amp; Operations" level="H2"/>
+				<Text visible="{/ui/showGuidanceText}" text="{/user/name} · {/user/role} · {/project/id} {/project/name} · data date {/project/dataDate}"/>
 			</VBox>
+
+			<MessageStrip visible="{/ui/showIntegrationStatus}"
+				text="S/4HANA Public Cloud is the system of record for budget, procurement and finance. KONSTRYX owns the resource workflow on top of it and reads S/4 through the SAP_COM_* scenarios."
+				type="Information"
+				showIcon="true"
+				class="kxLaunchpadStrip"/>
 
 <!-- The wireframe's segregation is the group reference: Setup & Budget,
 			     then the Resource Workflow split by process phase, then Masters.

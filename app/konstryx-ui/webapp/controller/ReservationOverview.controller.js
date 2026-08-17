@@ -64,6 +64,7 @@ sap.ui.define([
 					rrID: oRow.rrID,
 					rrDocNo: oRow.rrDocNo,
 					projectCode: oRow.projectCode,
+					projectSync: oRow.projectSync,
 					executionFlow: oRow.executionFlow,
 					status: oRow.status,
 					lines: oRow.lines,
@@ -72,7 +73,9 @@ sap.ui.define([
 					stepsDone: oRow.stepsDone,
 					stepsTotal: oRow.stepsTotal,
 					progressPct: Math.round(100 * oRow.stepsDone / oRow.stepsTotal),
-					pendingSteps: oRow.pendingSteps
+					pendingSteps: oRow.pendingSteps,
+					s4Commitment: oRow.s4Commitment === "CONNECTOR PENDING"
+						? "Connector pending" : oRow.s4Commitment
 				};
 			});
 
@@ -114,6 +117,7 @@ sap.ui.define([
 							{ label: "Reservation", property: "docNo" },
 							{ label: "Request", property: "rrDocNo" },
 							{ label: "Project", property: "projectCode" },
+							{ label: "Project S/4 sync", property: "projectSync" },
 							{ label: "Flow", property: "executionFlow" },
 							{ label: "Status", property: "status" },
 							{ label: "Lines", property: "lines", type: "Number" },
@@ -121,7 +125,8 @@ sap.ui.define([
 							{ label: "Consumed %", property: "burnPct", type: "Number" },
 							{ label: "Steps done", property: "stepsDone", type: "Number" },
 							{ label: "Steps total", property: "stepsTotal", type: "Number" },
-							{ label: "Pending steps", property: "pendingSteps" }
+							{ label: "Pending steps", property: "pendingSteps" },
+							{ label: "S/4 commitment", property: "s4Commitment" }
 						]
 					},
 					dataSource: aRows,
