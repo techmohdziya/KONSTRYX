@@ -52,6 +52,9 @@ public class ProcurementHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
+    @Autowired
+    private com.inflexion.konstryx.s4.S4RequisitionConnector s4Connector;
+
     // ------------------------------------------------- requisition, return leg
 
     @On(event = "recordRequisitionResult", entity = "MaterialService.PurchaseRequisitions")
@@ -70,6 +73,51 @@ public class ProcurementHandler implements EventHandler {
                             + "Nothing to record — the requisition stays unsent.");
         }
 
+        applyOutcome(pr, success, prNo, str(context.get("s4System")), message);
+
+        result(context, success
+                ? "Requisition is now in S/4 as " + prNo + "."
+                : "S/4 refused the requisition: " + message);
+    }
+
+    /**
+     * The live push. The connector talks to S/4 and returns what happened;
+     * recording it goes through the same method recordRequisitionResult uses,
+     * so a connector run and a manual correction leave identical state.
+     */
+    @On(event = "syncToS4", entity = "MaterialService.PurchaseRequisitions")
+    public void onSyncToS4(EventContext context) {
+        Row pr = targetOf(context, "Requisition not found.");
+        if (!isBlank(str(pr.get("prNo")))) {
+            throw new ServiceException(ErrorStatuses.CONFLICT,
+                    "S/4 already numbered this requisition " + pr.get("prNo")
+                            + ". Sending it again would order the same scope twice.");
+        }
+        // Readiness before connectivity. Whether the document can be ordered at
+        // all is a KONSTRYX question, and answering it first means the buyer
+        // gets told what to fix rather than a connection error that hides it.
+        String blocked = s4Connector.blocker(pr);
+        if (blocked != null) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST, blocked);
+        }
+        if (!s4Connector.isConfigured()) {
+            throw new ServiceException(ErrorStatuses.SERVER_ERROR,
+                    "No S/4 connection is configured. The requisition stays unsent.");
+        }
+
+        com.inflexion.konstryx.s4.S4RequisitionConnector.SyncOutcome outcome =
+                s4Connector.push(pr);
+        applyOutcome(pr, outcome.success, outcome.prNo, outcome.s4System, outcome.message);
+
+        result(context, outcome.success
+                ? "Requisition is now in S/4 as " + outcome.prNo + ". " + outcome.message
+                : "S/4 refused the requisition: " + outcome.message);
+    }
+
+    /** One writer for requisition sync state, whichever path produced it. */
+    private void applyOutcome(Row pr, boolean success, String prNo,
+                              String s4System, String message) {
+        String prId = str(pr.get("ID"));
         Map<String, Object> patch = new HashMap<>();
         patch.put("syncStatus", success ? "SENT" : "FAILED");
         patch.put("lastSyncedAt", Instant.now());
@@ -79,14 +127,10 @@ public class ProcurementHandler implements EventHandler {
         if (success) {
             patch.put("prNo", prNo);
             patch.put("s4Key", prNo);
-            patch.put("s4System", str(context.get("s4System")));
+            patch.put("s4System", s4System);
             patch.put("status", "Requisitioned");
         }
         db.run(Update.entity(E_PR).data(patch).where(p -> p.get("ID").eq(prId)));
-
-        result(context, success
-                ? "Requisition is now in S/4 as " + prNo + "."
-                : "S/4 refused the requisition: " + message);
     }
 
     // ------------------------------------------------------ purchase order mirror

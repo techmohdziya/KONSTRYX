@@ -126,18 +126,19 @@ authentication is acceptable for a development tenant only.
 | GL line items | `API_GLACCOUNTLINEITEM` |
 | Supplier invoice | `API_SUPPLIERINVOICE_PROCESS_SRV` |
 
-The CAP service already declares the remote service in `application.yaml`:
+**Nothing is imported and `srv/external/` does not exist**, deliberately. An
+earlier draft of this document told you to `cds import` each EDMX and declare
+`cds.remote.services` in `application.yaml`; that declaration was removed after
+it crash-looped the deployed service on `CdsDefinitionNotFoundException` — CAP
+resolves a declared remote service at startup whether or not anything consumes
+it, and nothing did.
 
-```yaml
-cds:
-  remote.services:
-    - name: "S4"
-      destination:
-        name: "S4HANA_CLOUD"
-```
-
-To consume an API, import its EDMX into `srv/external/` and generate a CDS
-projection — `cds import`. Nothing is imported yet.
+The two live connectors call the APIs as raw OData V2 through `S4Connection`,
+which owns the credentials, the cookie jar and the CSRF handshake that V2
+writes need. Nothing above that class ever sees a password. Adding an API means
+adding a connector next to `S4ProjectConnector` and `S4RequisitionConnector`,
+not generating a projection. `cds import` remains available if a flow ever
+needs typed remote entities rather than a document-shaped POST.
 
 ### 2.4 Project sync — the outbound case
 
@@ -157,7 +158,41 @@ that can never post. Failed calls go to `konstryx.int.ErrorQueueItem` with the
 payload retained, and the project must show its unsynchronised state in the UI
 rather than looking normal.
 
-### 2.5 Primavera P6
+### 2.5 Purchase requisition sync — the second outbound case
+
+The requisition is the other flow that pushes, and it pushes for a different
+reason: KONSTRYX decides **what** to buy, S/4 owns the document from the moment
+it accepts one (D-21). The requisition therefore carries no KONSTRYX number and
+draws no number range — `prNo` stays empty until S/4 issues one.
+
+1. A resource request's advisory decision sends some lines to `PROCURE`.
+2. `raisePurchaseRequisition` builds the requisition from those lines, carrying
+   each line's quantity, approved value, need-by, **its WBS/CBS account
+   assignment**, and the S/4 material its resource is mapped to.
+3. `MaterialService.syncToS4` posts the whole document to
+   `API_PURCHASEREQ_PROCESS_SRV` in one deep insert — header, items, and each
+   item's account assignment. Not a style choice: an item posted separately
+   would be a requisition of its own, and one posted without its account
+   assignment would commit against nothing.
+4. S/4 returns the requisition number; `recordRequisitionResult` stamps it.
+   That action is also the manual entry point, so a connector run and a
+   correction write identical state.
+
+**Three things stop the push before a connection is opened**, because each is a
+KONSTRYX fact about the document rather than something S/4 must be contacted to
+discover: a line whose resource has no material mapped, a line whose WBS
+element has no `s4Key` yet (the project was never synced), and a requisition
+S/4 has already numbered. A refused push leaves the requisition `NOT_SENT` and
+does not count as an attempt.
+
+**Configuration.** `S4_PR_TYPE` (default `NB`), `S4_PLANT`, `S4_PURCH_ORG`,
+`S4_PURCH_GROUP`, and account assignment category `P` for a project. Unlike the
+project connector's defaults — which were read off the tenant's own projects —
+these are S/4 standard-content values and have **not** been confirmed against a
+live tenant: `SAP_COM_0053` is not activated yet, so the live POST has never
+run. Expect to set them per tenant.
+
+### 2.6 Primavera P6
 
 P6 is the alternative source: where a client plans in P6, the project and its
 activity structure come **into** KONSTRYX rather than being created there.

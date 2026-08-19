@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sap.cds.Row;
 import com.sap.cds.ql.Select;
+import com.sap.cds.ql.Update;
 import com.sap.cds.services.persistence.PersistenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -116,8 +119,18 @@ public class S4ProjectConnector {
                         mapper.writeValueAsString(element));
                 if (wbsResponse.status == 201) {
                     wbsSent++;
+                    // Record what S/4 called it, not what we asked it to be
+                    // called. A requisition's account assignment names the WBS
+                    // element by its S/4 id, and re-deriving that id from the
+                    // KONSTRYX code would put the same normalising rule in two
+                    // places — where a truncation or a rename in S/4 would make
+                    // the second copy a guess.
+                    String elementKey = mapper.readTree(wbsResponse.body).path("d")
+                            .path("ProjectElement").asText(element.get("ProjectElement").asText());
+                    recordWbs(wbs, "SENT", elementKey, null);
                 } else {
                     wbsFailed++;
+                    recordWbs(wbs, "FAILED", null, errorText(wbsResponse.body));
                     if (wbsErrors.length() < 300) {
                         wbsErrors.append(" [").append(wbs.get("code")).append(": ")
                                 .append(errorText(wbsResponse.body)).append("]");
@@ -141,6 +154,23 @@ public class S4ProjectConnector {
     }
 
     // ----------------------------------------------------------------- helpers
+
+    /** Sync state for one WBS element, written the same way the project's is. */
+    private void recordWbs(Row wbs, String status, String s4Key, String message) {
+        String wbsId = str(wbs.get("ID"));
+        Object attempts = wbs.get("syncAttempts");
+        Map<String, Object> update = new HashMap<>();
+        update.put("syncStatus", status);
+        update.put("syncMessage", message);
+        update.put("syncAttempts",
+                (attempts instanceof Number n ? n.intValue() : 0) + 1);
+        if (s4Key != null) {
+            update.put("s4Key", s4Key);
+            update.put("s4System", systemId());
+            update.put("lastSyncedAt", Instant.now());
+        }
+        db.run(Update.entity(E_WBS).data(update).where(w -> w.get("ID").eq(wbsId)));
+    }
 
     /**
      * The logical system recorded against a synced project, derived from the

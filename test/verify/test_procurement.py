@@ -435,6 +435,54 @@ assert_(cementLine.get("material_ID") == cement.get("s4Material_ID"),
         "the push now has something to order",
         cementLine.get("material_ID"))
 
+head("11. The push refuses what it cannot honestly order")
+# Every case here stops at a gate BEFORE any connection is opened. That is
+# deliberate and must stay that way: .env points at the live tenant, so a
+# requisition that cleared every gate would post a real purchase requisition
+# from a test run. The live POST is exercised by hand against a tenant with
+# SAP_COM_0053 activated, never from this suite.
+sync3 = (f"/material/PurchaseRequisitions({prs3['value'][0]['ID']})"
+         "/MaterialService.syncToS4")
+s, msg = call(sync3, method="POST", body={})
+check(400, "cement is orderable but its WBS is not in S/4 yet", s, msg)
+assert_("WBS" in str(msg) and "commit against nothing" in str(msg),
+        "and it says which line and why, not just that the push failed", msg)
+
+# A requisition that names nothing S/4 can order. The crane is hired, not
+# bought, so its resource has no material — the ask is valid, the order is not.
+rid4, docno4 = new_request([
+    {"resource_ID": crane, "description": "Tower crane", "qty": 1, "uom": "inst",
+     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
+])
+check(200, "submitted", *rr_action(rid4, "submit"))
+approve(docno4)
+check(200, "the crane is bought in this time", *rr_action(rid4, "decideLine",
+    {"lineNo": 1, "decision": "PROCURE", "rationale": "No fleet unit free."}))
+check(200, "requisition raised", *rr_action(rid4, "raisePurchaseRequisition"))
+s, prs4 = call(f"/material/PurchaseRequisitions?$filter=sourceRequest_ID eq {rid4}"
+               "&$select=ID,syncStatus")
+s, msg4 = call(f"/material/PurchaseRequisitions({prs4['value'][0]['ID']})"
+               "/MaterialService.syncToS4", method="POST", body={})
+check(400, "a line with no material is refused before anything is sent", s, msg4)
+assert_("material" in str(msg4).lower(),
+        "and the buyer is told to map the resource, not handed a connection error",
+        msg4)
+s, pr4 = call(f"/material/PurchaseRequisitions({prs4['value'][0]['ID']})"
+              "?$select=syncStatus,syncAttempts")
+assert_(pr4.get("syncStatus") == "NOT_SENT",
+        "a refused push leaves it NOT_SENT — nothing was attempted, so nothing "
+        "may read as FAILED", pr4.get("syncStatus"))
+assert_(not pr4.get("syncAttempts"),
+        "and it does not count as an attempt", pr4.get("syncAttempts"))
+
+# Section 7 already had S/4 number this one 1000004711.
+s, msg5 = call(f"/material/PurchaseRequisitions({pr['ID']})"
+               "/MaterialService.syncToS4", method="POST", body={})
+check(409, "an already-numbered requisition will not be sent a second time",
+      s, msg5)
+assert_("1000004711" in str(msg5),
+        "and the message names the number S/4 already gave it", msg5)
+
 print()
 print("=" * 78)
 passed = sum(1 for r in results if r)

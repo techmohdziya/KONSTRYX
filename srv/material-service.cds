@@ -21,6 +21,15 @@ service MaterialService @(path:'/material') {
   @readonly entity PurchaseRequisitions     as projection on mat.PurchaseRequisition
     actions {
       /**
+       * The live push (SAP_COM_0053). Sends the requisition and records what
+       * came back — the counterpart of recordRequisitionResult, exactly as
+       * ProjectService.syncToS4 is to recordSyncResult. Only a requisition S/4
+       * has not already numbered may go; re-sending an accepted one would buy
+       * the same scope twice.
+       */
+      action syncToS4() returns String;
+
+      /**
        * The requisition's inbound half: S/4 accepted it and issued a number,
        * or refused it. Called by the connector, and the same entry point a
        * manual correction uses — one writer for sync state either way, the
