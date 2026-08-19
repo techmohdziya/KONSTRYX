@@ -89,8 +89,14 @@ entity PurchaseRequisition : cuid, managed, common.s4outbound {
 entity PurchaseRequisitionLine : cuid {
   parent       : Association to PurchaseRequisition;
   lineNo       : Integer;
-  /** What was actually asked for. The S/4 material mapping is resolved at push. */
+  /** What was actually asked for, in KONSTRYX terms. */
   resource     : Association to master.ResourceNode;
+  /**
+   * What to order, in S/4 terms. Resolved from the resource when the requisition
+   * is raised, not when it is pushed, so remapping a resource later cannot
+   * change what an already-open requisition buys. Empty where the resource has
+   * no material registered — the ask is still valid, it is the push that stalls.
+   */
   material     : Association to master.Material;
   description  : String(255);
   /**

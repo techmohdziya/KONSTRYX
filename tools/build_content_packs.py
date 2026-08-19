@@ -213,11 +213,15 @@ PACKS = [
     },
     {
         "packId": "MASTER_DATA",
-        "version": "1.0.0",
+        # 1.1.0 adds the mirrored S/4 materials the resource hierarchy now
+        # references. A pack is applied once per version, so an installation
+        # already holding 1.0.0 would never see the new rows under the old
+        # number — the version has to move for an upgrade to carry them.
+        "version": "1.1.0",
         "sequence": 40,
         "description": (
             "The wireframe's own masters: resource hierarchy, CBS library, "
-            "rates, norms, templates and the mirrored vendors."
+            "rates, norms, templates and the mirrored vendors and materials."
         ),
         "file": "master-data.json",
         "items": [
@@ -228,6 +232,9 @@ PACKS = [
                 ["code", "scope", "owningCompany_ID"],
                 selfref="parent_ID",
             ),
+            # Before ResourceNode: a resource names the S/4 material it buys as,
+            # so the mirror rows have to exist for that reference to resolve.
+            item("konstryx.master.Material", "konstryx.master-Material.csv", ["materialCode"]),
             item(
                 "konstryx.master.ResourceNode",
                 "konstryx.master-ResourceNode.csv",

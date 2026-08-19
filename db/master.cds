@@ -21,6 +21,23 @@ entity ResourceNode : cuid, managed, common.scoped {
   description  : String(255);
   consUoM      : String(10);
   outputUoM    : String(10);
+  /**
+   * The S/4 material this resource buys as. Without it a requisition can say
+   * what was wanted in KONSTRYX terms but not what to order, because
+   * API_PURCHASEREQ_PROCESS_SRV is keyed on the material number, not on a
+   * description (I-35).
+   *
+   * One material per resource, not one per company — decided 2026-08-17. The
+   * group is on a single S/4 client, where a material number is client-level:
+   * every company code sees the same number and only the plant and valuation
+   * extensions differ. Where a company genuinely buys a different item, that
+   * item is already its own COMPANY-scoped leaf, so the company dimension is
+   * carried by the hierarchy and does not need repeating here.
+   *
+   * A reference, never a master: materials are created in S/4 and registered
+   * here, which is why this points at the mirror rather than holding a code.
+   */
+  s4Material   : Association to Material;
   defaultCBS   : Association to CBSNode;
   linkedRate   : Association to RateMaster;
   // Association, not Composition. A self-referencing composition sends CAP's

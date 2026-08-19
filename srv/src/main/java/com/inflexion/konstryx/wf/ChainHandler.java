@@ -489,6 +489,14 @@ public class ChainHandler implements EventHandler {
             prLine.put("lineNo", ++lineNo);
             prLine.put("sourceLine_ID", line.get("ID"));
             prLine.put("resource_ID", line.get("resource_ID"));
+            // What to actually order. Resolved when the requisition is raised
+            // rather than when it is pushed, so the line records the material
+            // that was mapped at the time it was raised — remapping a resource
+            // later must not silently change what an open requisition buys.
+            // Null where the resource has no material registered yet: the
+            // KONSTRYX line is still a valid ask, it is the push to S/4 that
+            // has nothing to name (I-35).
+            prLine.put("material_ID", materialOf(str(line.get("resource_ID"))));
             prLine.put("description", line.get("description"));
             // Account assignment travels with the line. Without it the
             // commitment S/4 returns has no budget line to land on.
@@ -628,6 +636,15 @@ public class ChainHandler implements EventHandler {
     private static void result(EventContext context, String message) {
         context.put("result", message);
         context.setCompleted();
+    }
+
+    /** The S/4 material registered against a resource, or null if none is mapped. */
+    private String materialOf(String resourceId) {
+        if (isBlank(resourceId)) {
+            return null;
+        }
+        return db.run(Select.from(E_RESOURCE).where(r -> r.get("ID").eq(resourceId)))
+                .first().map(r -> str(r.get("s4Material_ID"))).orElse(null);
     }
 
     private static String str(Object v) { return v == null ? null : String.valueOf(v); }

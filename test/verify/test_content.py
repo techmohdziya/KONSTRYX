@@ -99,7 +99,7 @@ assert_(proc.returncode == 0,
 FIXTURE_PACKS = {
     "ORGANISATION": 5,
     "PERSONAS": 139,
-    "MASTER_DATA": 145,
+    "MASTER_DATA": 156,   # 145 + the 11 mirrored S/4 materials (I-35)
     "DEMO_PROJECT": 116,
     "DEMO_USERS": 8,
 }

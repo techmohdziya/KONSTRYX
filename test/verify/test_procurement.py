@@ -249,7 +249,7 @@ assert_(codes is not None and "PR" not in codes,
 head("5. Only the procured line travels, with its account assignment")
 s, prLines = call(f"/material/PurchaseRequisitionLines?$filter=parent_ID eq {pr['ID']}"
                   "&$select=ID,lineNo,qtyProcure,uom,estUnitPrice,estTotal,description,"
-                  "wbs_ID,cbs_ID,sourceLine_ID,resource_ID,status&$orderby=lineNo")
+                  "wbs_ID,cbs_ID,sourceLine_ID,resource_ID,material_ID,status&$orderby=lineNo")
 lines = prLines["value"]
 assert_(len(lines) == 1, "one line requisitioned, not both", len(lines))
 line = lines[0]
@@ -264,6 +264,10 @@ assert_(line.get("wbs_ID") == wbs_id,
 assert_(line.get("sourceLine_ID"), "the line points back at the request line it came from")
 assert_(float(line.get("estTotal") or 0) > 0,
         "the approved value travels, not a fresh price", line.get("estTotal"))
+assert_(line.get("material_ID") is None,
+        "no material is claimed for a resource that has none registered — the "
+        "vibrator kits are hired, and an invented number would push a real order",
+        line.get("material_ID"))
 
 s, rrLines = call(f"/workflow/ResourceRequestLines?$filter=parent_ID eq {rid2}"
                   "&$select=lineNo,lineStatus&$orderby=lineNo")
@@ -385,6 +389,51 @@ eqr2 = [l for l in again["value"]
 assert_(eqr2 and abs(float(eqr2[0].get("committed") or 0) - 231.0) < 0.01,
         "refreshing again leaves it at 231.00 — commitment is derived, not accumulated",
         eqr2[0].get("committed") if eqr2 else "no line")
+
+head("10. A requisition line names the S/4 material its resource buys as")
+# The other half of check 5. A description is enough for the KONSTRYX side of the
+# chain but not for API_PURCHASEREQ_PROCESS_SRV, which orders against a material
+# number — so the resource has to carry one and the line has to pick it up (I-35).
+s, res = call("/masterdata/Resources?$filter=IsActiveEntity eq true and "
+              "code eq 'MAT-CEM-OPC53-50'&$select=ID,s4Material_ID")
+cement = res["value"][0]
+assert_(cement.get("s4Material_ID"),
+        "the cement resource records the S/4 material it is bought as")
+
+s, mats = call("/masterdata/Materials?$filter=materialCode eq '100023451'"
+               "&$select=ID,materialCode,description")
+assert_(len(mats["value"]) == 1, "the S/4 mirror holds 100023451",
+        len(mats["value"]))
+assert_(cement.get("s4Material_ID") == mats["value"][0]["ID"],
+        "and it is the material the wireframe maps that resource to")
+
+rid3, docno3 = new_request([
+    {"resource_ID": crane, "description": "Tower crane", "qty": 1, "uom": "inst",
+     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
+    {"resource_ID": cement["ID"], "description": "Cement OPC 53 grade 50 kg",
+     "qty": 200, "uom": "bag", "wbs_ID": wbs_id, "cbs_ID": slab["ID"],
+     "needBy": "2026-09-15"},
+])
+check(200, "submitted", *rr_action(rid3, "submit"))
+approve(docno3)
+check(200, "crane stays in-house", *rr_action(rid3, "decideLine",
+    {"lineNo": 1, "decision": "IN_HOUSE", "rationale": "Own fleet."}))
+check(200, "cement goes to procurement", *rr_action(rid3, "decideLine",
+    {"lineNo": 2, "decision": "PROCURE", "rationale": "Bought in, not stocked."}))
+check(200, "requisition raised", *rr_action(rid3, "raisePurchaseRequisition"))
+
+s, prs3 = call(f"/material/PurchaseRequisitions?$filter=sourceRequest_ID eq {rid3}"
+               "&$select=ID")
+s, lines3 = call("/material/PurchaseRequisitionLines?$filter=parent_ID eq "
+                 f"{prs3['value'][0]['ID']}&$select=lineNo,resource_ID,material_ID"
+                 "&$orderby=lineNo")
+assert_(len(lines3["value"]) == 1, "only the cement line was requisitioned",
+        len(lines3["value"]))
+cementLine = lines3["value"][0]
+assert_(cementLine.get("material_ID") == cement.get("s4Material_ID"),
+        "the requisition line carries 100023451, resolved from its resource — "
+        "the push now has something to order",
+        cementLine.get("material_ID"))
 
 print()
 print("=" * 78)
