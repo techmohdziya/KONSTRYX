@@ -4,11 +4,13 @@ How KONSTRYX connects to SAP S/4HANA Public Cloud, SuccessFactors, Ariba and
 Primavera P6: which system owns what, which direction data flows, and what has
 to be configured on each side.
 
-> **Status.** The mirror entities and the sync-configuration model exist in the
-> data model. **No connector is implemented yet** — there is no S/4 dev tenant
-> to build or validate one against (tracker Q-09 / S-15). This document is the
-> integration design and the configuration runbook, not a description of
-> working code.
+> **Status.** Two connectors are implemented and one of them is proven live.
+> `S4ProjectConnector` creates the Enterprise Project and its WBS elements on
+> tenant my401381 (`SAP_COM_0308`, confirmed working end to end).
+> `S4RequisitionConnector` is written but **has never reached S/4** —
+> `SAP_COM_0102` is not activated, so its payload shape and org defaults are
+> informed assumptions, not verified fact. Everything else below is design and
+> configuration runbook, not a description of working code.
 
 ---
 
@@ -90,11 +92,11 @@ Scenarios needed:
 > destination names only, and the mock users in the default profile exist for
 > local development and have no meaning once deployed.
 
-Create a destination named **`S4HANA_CLOUD`** (the name the service expects —
-see `application.yaml`, cloud profile):
+Create a destination named **`ITS_S4`** — the name `S4Connection` looks up,
+overridable per environment with `S4_DESTINATION`:
 
 ```
-Name            S4HANA_CLOUD
+Name            ITS_S4
 Type            HTTP
 URL             https://<tenant>-api.s4hana.cloud.sap
 Proxy Type      Internet
@@ -103,15 +105,42 @@ User            <communication user>
 Password        <communication user password>
 ```
 
-Additional properties for the CAP remote service:
+Additional properties:
 
 ```
 sap-client      100
-HTML5.DynamicDestination   true
 ```
 
 Prefer **client certificate** authentication for production. Basic
 authentication is acceptable for a development tenant only.
+
+**Create it in the subaccount, not in `mta.yaml`.** The destination holds a
+communication-user password, and a destination declared in the descriptor would
+put that password in this repository. `mta.yaml` binds `konstryx-srv` to the
+`konstryx-destination` service instance and stops there; whoever administers the
+subaccount enters the credentials once, in the cockpit. Rotating them is then a
+cockpit change, not a redeploy.
+
+**How to tell which way a running instance is authenticated.** `S4Connection`
+resolves at startup and says so in the log — one of:
+
+```
+S/4 connection uses destination ITS_S4 -> https://…
+Destination ITS_S4 did not resolve (DestinationNotFoundException); falling back to the local environment
+S/4 connection configured locally for https://…
+S/4 connection not configured — outbound sync stays queued
+```
+
+A deployed instance showing the second line is misconfigured: the binding is
+missing or the destination is not there under that name. Locally the second and
+third lines together are the normal, expected pair.
+
+> **Superseded.** This section previously named the destination `S4HANA_CLOUD`
+> and described it as feeding CAP's remote-service layer. Neither was ever true
+> in running code: no remote service was declared after the first deployment
+> removed them, and `S4Connection` read `S4_HOST` / `S4_USER` / `S4_PASSWORD`
+> straight from the environment on every environment including Cloud Foundry.
+> The destination is now genuinely wired, under the name you gave: `ITS_S4`.
 
 ### 2.3 Released APIs
 

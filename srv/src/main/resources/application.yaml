@@ -81,10 +81,13 @@ cds:
 # INTEGRATION.md), so startup died with "Cannot find service 'S4'".
 #
 # Nothing consumed them either. The live S/4 integration is S4Connection,
-# which talks to the API over java.net.http and takes its host and
-# credentials from the environment; it never goes through CAP's remote
-# service layer. The block only existed under `cloud`, so it could not fail
-# locally and had never run anywhere until the first real deployment.
+# which talks to the API over java.net.http and resolves the `ITS_S4`
+# destination through the Cloud SDK (falling back to S4_HOST/S4_USER/
+# S4_PASSWORD locally, where no destination service is bound). It uses the
+# destination SERVICE, not CAP's remote-service layer, so it needs the
+# konstryx-destination binding in mta.yaml and nothing here. The block only
+# existed under `cloud`, so it could not fail locally and had never run
+# anywhere until the first real deployment.
 #
 # Re-add a service here at the point its EDMX is actually imported and a
 # handler actually calls it — not before.
