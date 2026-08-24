@@ -80,6 +80,7 @@ public class S4RequisitionConnector {
     private static final String E_PR_LINE = "konstryx.mat.PurchaseRequisitionLine";
     private static final String E_WBS = "konstryx.prj.WBSElement";
     private static final String E_MATERIAL = "konstryx.master.Material";
+    private static final String E_COMPANY = "konstryx.admin.Company";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -133,6 +134,26 @@ public class S4RequisitionConnector {
                         + "project first.";
             }
         }
+        // Org last, deliberately. It is a property of the whole document and an
+        // admin precondition rather than something the buyer fixes line by
+        // line, so it is reported once the document itself is orderable —
+        // otherwise a missing purchasing group masks every real line problem
+        // behind it. Refused rather than defaulted, because S/4 accepts a
+        // wrong-but-valid plant without complaint and the requisition then
+        // lands in the wrong org, which nobody notices until somebody tries to
+        // receive against it.
+        Row company = companyOf(requisition);
+        for (String[] required : new String[][] {
+                { "defaultPlant", "S4_PLANT", "plant" },
+                { "purchOrg", "S4_PURCH_ORG", "purchasing organisation" },
+                { "purchGroup", "S4_PURCH_GROUP", "purchasing group" } }) {
+            if (orgOf(company, required[0], required[1]) == null) {
+                return "No " + required[2] + " is configured for the company raising "
+                        + "this requisition. Set it on the company master — read the "
+                        + "value from S/4 rather than choosing one — or override with "
+                        + required[1] + ".";
+            }
+        }
         return null;
     }
 
@@ -147,6 +168,7 @@ public class S4RequisitionConnector {
                 return new SyncOutcome(false, null, null, blocked);
             }
             List<Row> lines = linesOf(prId);
+            Row company = companyOf(requisition);
 
             ObjectNode header = mapper.createObjectNode();
             header.put("PurchaseRequisitionType", envOr("S4_PR_TYPE", "NB"));
@@ -162,9 +184,20 @@ public class S4RequisitionConnector {
                 item.put("PurchaseRequisitionItemText", trim(str(line.get("description")), 40));
                 item.put("RequestedQuantity", plain(line.get("qtyProcure")));
                 item.put("BaseUnit", uom(line));
-                item.put("Plant", envOr("S4_PLANT", "1010"));
-                item.put("PurchasingOrganization", envOr("S4_PURCH_ORG", "1010"));
-                item.put("PurchasingGroup", envOr("S4_PURCH_GROUP", "001"));
+                // Org comes from the company that raised the requisition, not
+                // from a constant. Plant and purchasing organisation differ per
+                // legal entity, so a single build-wide value would be wrong for
+                // every company but one. The env overrides remain as an escape
+                // hatch for a tenant whose companies are not yet seeded.
+                item.put("Plant", orgOf(company, "defaultPlant", "S4_PLANT"));
+                item.put("PurchasingOrganization",
+                        orgOf(company, "purchOrg", "S4_PURCH_ORG"));
+                item.put("PurchasingGroup",
+                        orgOf(company, "purchGroup", "S4_PURCH_GROUP"));
+                String coCode = orgOf(company, "s4CoCode", "S4_COMPANY_CODE");
+                if (coCode != null) {
+                    item.put("CompanyCode", coCode);
+                }
                 // 'P' — account assignment to a project. Without it S/4 books
                 // the requisition to stock and the WBS below is ignored.
                 item.put("AccountAssignmentCategory", "P");
@@ -172,6 +205,16 @@ public class S4RequisitionConnector {
                 BigDecimal price = dec(line.get("estUnitPrice"));
                 if (price != null) {
                     item.put("PurchaseRequisitionPrice", price.toPlainString());
+                    // A price without its currency is a number with no meaning,
+                    // and the item type declares the field, so send it. Company
+                    // currency, because that is what the estimate was made in —
+                    // group reporting currency is a reporting concern (Q-08)
+                    // and converting here would put a rate nobody chose onto a
+                    // purchasing document.
+                    String ccy = orgOf(company, "ccy_code", "S4_CURRENCY");
+                    if (ccy != null) {
+                        item.put("PurReqnItemCurrency", ccy);
+                    }
                 }
 
                 ArrayNode accounts = item.putArray("_PurchaseReqnAcctAssgmt");
@@ -220,6 +263,44 @@ public class S4RequisitionConnector {
     }
 
     // ----------------------------------------------------------------- helpers
+
+    /** The company that raised this requisition, or null if it names none. */
+    private Row companyOf(Row requisition) {
+        Object companyId = requisition.get("company_ID");
+        if (companyId == null) {
+            return null;
+        }
+        String id = String.valueOf(companyId);
+        return db.run(Select.from(E_COMPANY).where(c -> c.get("ID").eq(id)))
+                .first().orElse(null);
+    }
+
+    /**
+     * One org value: the environment override if set, else the company's, else
+     * null.
+     *
+     * **The environment wins, and that ordering is deliberate.** The company
+     * master is the right home for org data and the normal source of it. But
+     * content packs are insert-if-missing by design — they never update a row
+     * that already exists — so a tenant seeded with wrong org values cannot be
+     * corrected by shipping a new pack. Without an override that outranks the
+     * stored value there would be no way to fix such a tenant short of editing
+     * its database. An operator setting `S4_PLANT` is making a deliberate,
+     * visible, temporary intervention; the stored value is the default it
+     * displaces.
+     *
+     * Null rather than a plausible-looking constant when neither is set. A
+     * wrong plant does not fail cleanly — S/4 accepts a valid-but-wrong one and
+     * the requisition lands in the wrong org, which is worse than a refusal
+     * somebody has to read.
+     */
+    private static String orgOf(Row company, String field, String envKey) {
+        String override = blankToNull(System.getenv(envKey));
+        if (override != null) {
+            return override;
+        }
+        return company == null ? null : blankToNull(str(company.get(field)));
+    }
 
     /** A requisition's lines in the order S/4 will number them. */
     private List<Row> linesOf(String prId) {

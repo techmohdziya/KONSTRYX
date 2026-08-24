@@ -179,7 +179,16 @@ def item(entity: str, csv_name: str, keys: list[str], selfref: str | None = None
 PACKS = [
     {
         "packId": "ORGANISATION",
-        "version": "1.0.0",
+        # 1.1.0 carries the org values read off tenant my434396 on 2026-08-24
+        # (S4Probe): plant/purchOrg 3310, purchasing group 001, company code
+        # 3310. The previous 1000/2000/3000/4000 were placeholders that
+        # exist in no tenant. Only INFC is filled — which S/4 org each other
+        # legal entity maps to is a business decision, and an empty value is
+        # refused with a clear message rather than landing somewhere wrong.
+        # NOTE a version bump only helps a NEW installation: packs are
+        # insert-if-missing and never update an existing row, so a tenant
+        # already holding the placeholders needs the S4_* env overrides.
+        "version": "1.1.0",
         "sequence": 20,
         "description": (
             "Company group and legal entities. Everything else is scoped by "

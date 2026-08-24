@@ -21,6 +21,13 @@ entity Company : cuid, managed {
   s4CoCode     : String(4);         // S/4 company code
   defaultPlant : String(4);
   purchOrg     : String(4);
+  /**
+   * The buying group a requisition is raised under. Sits here with the rest of
+   * the S/4 org data rather than in an environment variable, because it varies
+   * per company exactly as the plant and purchasing org do — a group-wide
+   * default would be wrong for every company but one.
+   */
+  purchGroup   : String(3);
   salesOrg     : String(4);
   profitCtr    : String(10);
   ccy          : Currency;

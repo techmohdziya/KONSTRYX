@@ -529,6 +529,52 @@ check(409, "an already-numbered requisition will not be sent a second time",
 assert_("1000004711" in str(msg5),
         "and the message names the number S/4 already gave it", msg5)
 
+head("13. Org data is a precondition, and it is not guessed")
+# Plant, purchasing organisation and purchasing group come from the company
+# that raised the requisition, never from a constant: they differ per legal
+# entity, so one build-wide value would be wrong for every company but one.
+# Missing org is REFUSED rather than defaulted — S/4 accepts a wrong-but-valid
+# plant without complaint, and the requisition then lands in the wrong org,
+# which nobody notices until somebody tries to receive against it.
+s, comp = call(f"/admin/Companies?$filter=ID eq {project['company_ID']}"
+               "&$select=code,defaultPlant,purchOrg,purchGroup,s4CoCode,ccy_code",
+               user="admin")
+if s == 200 and comp.get("value"):
+    c = comp["value"][0]
+    assert_(c.get("defaultPlant") == "3310" and c.get("purchOrg") == "3310"
+            and c.get("purchGroup") == "001" and c.get("s4CoCode") == "3310",
+            "INFC carries the org combination read off the tenant, not a "
+            "placeholder — plant/purchOrg 3310, group 001, company code 3310",
+            f"{c.get('defaultPlant')}/{c.get('purchOrg')}/"
+            f"{c.get('purchGroup')}/{c.get('s4CoCode')}")
+    assert_(c.get("ccy_code") == "AED",
+            "and a currency, which the price rides with — the tenant's own "
+            "requisitions are all AED", c.get("ccy_code"))
+else:
+    assert_(False, "company readable for org checks", f"status {s}")
+
+# rid5's crane line clears both line gates (service product mapped), so this
+# requisition reaches the org gate — which is the only way to exercise it.
+s, msgOrg = call(f"/material/PurchaseRequisitions({prs5['value'][0]['ID']})"
+                 "/MaterialService.syncToS4", method="POST", body={})
+assert_("WBS" in str(msgOrg),
+        "with org resolved, the crane requisition now stops only at the WBS "
+        "gate — the last thing standing between it and S/4", msgOrg)
+
+# The other three companies are deliberately empty: which S/4 org each legal
+# entity maps to is a business decision, and a guess would land a real
+# requisition in the wrong org rather than fail.
+s, others = call("/admin/Companies?$filter=code ne 'INFC'"
+                 "&$select=code,defaultPlant,purchOrg,purchGroup", user="admin")
+if s == 200:
+    blank = [o for o in others["value"] if not o.get("defaultPlant")]
+    assert_(len(blank) == len(others["value"]),
+            "the companies whose S/4 org nobody has decided carry nothing, so "
+            "their requisitions are refused rather than misrouted",
+            f"{len(blank)} of {len(others['value'])} empty")
+else:
+    assert_(False, "other companies readable", f"status {s}")
+
 print()
 print("=" * 78)
 passed = sum(1 for r in results if r)

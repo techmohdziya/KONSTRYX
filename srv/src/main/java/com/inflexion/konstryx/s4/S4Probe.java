@@ -1,5 +1,7 @@
 package com.inflexion.konstryx.s4;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,13 +62,67 @@ public class S4Probe {
             log.warn("S4_PROBE={} but no S/4 connection is configured — nothing to probe.", what);
             return;
         }
+        String service = System.getenv().getOrDefault("S4_PR_SERVICE",
+                "/sap/opu/odata4/sap/api_purchaserequisition_2/srvd_a2x/sap/purchaserequisition/0001");
         if ("requisition".equalsIgnoreCase(what)) {
-            probe(System.getenv().getOrDefault("S4_PR_SERVICE",
-                    "/sap/opu/odata4/sap/api_purchaserequisition_2/srvd_a2x/sap/purchaserequisition/0001"));
+            probe(service);
+        } else if ("org".equalsIgnoreCase(what)) {
+            probeOrg(service);
         } else {
             // Anything else is treated as a literal service path, so a wrong
             // guess above can be corrected without another build.
             probe(what);
+        }
+    }
+
+    /**
+     * The org values this tenant actually uses, read off requisitions it has
+     * already raised.
+     *
+     * Plant, purchasing organisation and purchasing group are not things to
+     * reason about — SAP standard content ships several plausible sets and only
+     * the tenant knows which one is configured. This is the same method that
+     * produced the project connector's known-good defaults: look at what is
+     * already there rather than pick a number that looks right.
+     */
+    private void probeOrg(String servicePath) {
+        String url = servicePath + "/PurchaseReqnItem?%24top=25&%24select="
+                + "Plant,PurchasingOrganization,PurchasingGroup,PurReqnItemCurrency,CompanyCode";
+        log.info("S4Probe: GET {} on {}", url, connection.host());
+        try {
+            S4Connection.S4Response response = connection.get(url);
+            if (response.status != 200) {
+                log.warn("S4Probe: org read returned {} — {}", response.status,
+                        excerpt(response.body));
+                return;
+            }
+            // Distinct combinations, not every row: twenty-five items from one
+            // requisition would otherwise print the same values twenty-five
+            // times and say nothing about which are in use across the tenant.
+            // Parsed properly here, unlike $metadata above — this is JSON we
+            // asked for and a field we intend to read, not a diagnostic
+            // scrape of a document that might be malformed.
+            Set<String> combos = new LinkedHashSet<>();
+            for (JsonNode row : new ObjectMapper().readTree(response.body).path("value")) {
+                combos.add(String.format(
+                        "plant=%s  purchOrg=%s  purchGroup=%s  currency=%s  coCode=%s",
+                        row.path("Plant").asText("-"),
+                        row.path("PurchasingOrganization").asText("-"),
+                        row.path("PurchasingGroup").asText("-"),
+                        row.path("PurReqnItemCurrency").asText("-"),
+                        row.path("CompanyCode").asText("-")));
+            }
+            if (combos.isEmpty()) {
+                log.warn("S4Probe: no requisition items on this tenant to read org values "
+                        + "from. Body starts: {}", excerpt(response.body));
+                return;
+            }
+            log.info("S4Probe: org combinations in use ({}):", combos.size());
+            for (String combo : combos) {
+                log.info("S4Probe:   {}", combo);
+            }
+        } catch (Exception e) {
+            log.warn("S4Probe: org read failed: {}", e.toString());
         }
     }
 
