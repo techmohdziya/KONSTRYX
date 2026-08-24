@@ -36,8 +36,25 @@ entity ResourceNode : cuid, managed, common.scoped {
    *
    * A reference, never a master: materials are created in S/4 and registered
    * here, which is why this points at the mirror rather than holding a code.
+   *
+   * MATERIAL class only. A material number is source-independent — the same
+   * item bought from any vendor is the same product — which is what makes one
+   * per resource correct. The other classes are not like that; see
+   * s4ServiceProduct below and RateMaster's own routing fields.
    */
   s4Material   : Association to Material;
+  /**
+   * What a requisition orders when the leaf is NOT a material: manpower hired
+   * in, plant rented, a subcontracted service (spec §8 / P10, class -> S/4
+   * routing). Held on the leaf rather than on the rate because a requisition
+   * is raised BEFORE a vendor exists — the vendor arrives with the award — so
+   * the pre-award document needs a generic service product to name.
+   *
+   * RateMaster carries the vendor-specific one for costing and award. The two
+   * are different questions: this one is "what am I asking to buy", that one
+   * is "what did this vendor quote it as".
+   */
+  s4ServiceProduct : Association to Material;
   defaultCBS   : Association to CBSNode;
   linkedRate   : Association to RateMaster;
   // Association, not Composition. A self-referencing composition sends CAP's
@@ -109,6 +126,30 @@ entity ConsumptionRate : cuid, managed, common.scoped {
 
 entity RateMaster : cuid, managed, common.scoped {
   resource      : Association to ResourceNode;
+  /**
+   * Where the resource comes from. A rate is not a property of the resource
+   * alone — the wireframe's own master lists MP-CIV-CAR-SK-G1 three times, at
+   * three different rates: once on our payroll and once per labour
+   * subcontractor. Source is what separates those rows.
+   */
+  source        : String enum { IN_HOUSE; HIRED; LSC_HIRED; } default 'IN_HOUSE';
+  /** Who supplies it. Null when IN_HOUSE — we are the supplier. */
+  vendor        : Association to Vendor;
+  /**
+   * The S/4 routing for this row, and the reason source exists (spec §8, P10).
+   * Internal cost is quantity x the S/4 activity price and posts a journal;
+   * external cost is procured and posts through PR -> PO -> invoice. A row
+   * that carried both would be costed twice, so exactly one applies and
+   * source decides which:
+   *
+   *   IN_HOUSE            -> s4ActivityType, no service product, no vendor
+   *   HIRED / LSC_HIRED   -> s4ServiceProduct + vendor, no activity type
+   *
+   * MATERIAL leaves use neither: they route through ResourceNode.s4Material,
+   * because a material is bought the same way whoever supplies it.
+   */
+  s4ActivityType   : String(20);
+  s4ServiceProduct : Association to Material;
   rateValue     : Decimal(15,2);
   basis         : String(10);        // hr / day / unit
   ccy           : Currency;

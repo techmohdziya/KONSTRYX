@@ -193,7 +193,12 @@ PACKS = [
     },
     {
         "packId": "PERSONAS",
-        "version": "1.0.0",
+        # 1.1.0 gives the master-data steward display access to the vendor and
+        # material mirrors. A rate now names the vendor whose contract it
+        # belongs to and the service product it is procured against, and the
+        # persona that maintains rates could see neither. Read only — both are
+        # S/4 mirrors and DM-01 says a mirror is not ours to edit.
+        "version": "1.1.0",
         "sequence": 30,
         "description": (
             "Persona vocabulary and its grants against the delivered "
@@ -213,15 +218,18 @@ PACKS = [
     },
     {
         "packId": "MASTER_DATA",
-        # 1.1.0 adds the mirrored S/4 materials the resource hierarchy now
-        # references. A pack is applied once per version, so an installation
-        # already holding 1.0.0 would never see the new rows under the old
-        # number — the version has to move for an upgrade to carry them.
-        "version": "1.1.0",
+        # 1.1.0 added the mirrored S/4 materials the resource hierarchy
+        # references; 1.2.0 adds the service products the non-material classes
+        # are hired against, and the S/4 routing on the rate rows. A pack is
+        # applied once per version, so an installation already holding an older
+        # number would never see the new rows — the version has to move for an
+        # upgrade to carry them.
+        "version": "1.2.0",
         "sequence": 40,
         "description": (
             "The wireframe's own masters: resource hierarchy, CBS library, "
-            "rates, norms, templates and the mirrored vendors and materials."
+            "rates with their S/4 routing, norms, templates and the mirrored "
+            "vendors, materials and service products."
         ),
         "file": "master-data.json",
         "items": [

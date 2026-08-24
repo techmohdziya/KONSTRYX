@@ -46,7 +46,8 @@ def check(expected, label, status, payload):
 
 
 def assert_(ok, label, detail=""):
-    print(f"  {'ok  ' if ok else 'FAIL'} {label}{(': ' + detail) if detail else ''}")
+    print(f"  {'ok  ' if ok else 'FAIL'} {label}"
+          f"{(': ' + str(detail)) if detail != '' else ''}")
     results.append(bool(ok))
 
 
@@ -176,6 +177,78 @@ d = call("/masterdata/ConsumptionRates", method="POST", body={
     "material_ID": material_id, "consRate": 1.05, "consUoM": "t",
     "wastageAllowancePct": 5, "effectiveFrom": "2027-01-01", "scope": "GROUP"})[1]
 check(200, "a well-formed consumption norm", *activate("ConsumptionRates", d["ID"]))
+
+head("7. Class routes the leaf to S/4 — one route per rate, never two")
+# Spec §8 / principle P10. Internal cost is quantity x the S/4 activity price
+# and posts a journal; external cost is procured and posts through PR -> PO ->
+# invoice. A rate carrying both would be costed twice; one carrying neither
+# cannot be costed at all. Source is what declares which applies.
+s, carp = call("/masterdata/Resources?$filter=IsActiveEntity eq true and "
+               "code eq 'MP-CIV-CAR-SK-G1'&$select=ID,code")
+carpenter = carp["value"][0]["ID"]
+
+s, carpRates = call(f"/masterdata/Rates?$filter=IsActiveEntity eq true and "
+                    f"resource_ID eq {carpenter}&$select=rateValue,source,"
+                    "s4ActivityType,effectiveFrom&$expand=vendor($select=name)"
+                    "&$orderby=rateValue")
+seeded = carpRates["value"]
+assert_(len(seeded) == 2,
+        "the carpenter is rated twice on the same day — our payroll and Alpha "
+        "Civil's — which is the case a resource-only key called a duplicate",
+        len(seeded))
+hired = [r for r in seeded if r.get("source") == "LSC_HIRED"]
+inhouse = [r for r in seeded if r.get("source") == "IN_HOUSE"]
+assert_(len(inhouse) == 1 and inhouse[0].get("s4ActivityType") == "LAB-CAR-SK",
+        "the in-house row posts against activity type LAB-CAR-SK",
+        inhouse[0].get("s4ActivityType") if inhouse else "none")
+assert_(len(inhouse) == 1 and float(inhouse[0]["rateValue"]) == 28.50,
+        "at AED 28.50/hr, the figure the wireframe's own master carries",
+        inhouse[0]["rateValue"] if inhouse else "none")
+assert_(len(hired) == 1 and (hired[0].get("vendor") or {}).get("name") == "Alpha Civil LLC",
+        "the hired row names the vendor whose contract the rate belongs to",
+        (hired[0].get("vendor") or {}).get("name") if hired else "none")
+assert_(len(hired) == 1 and not hired[0].get("s4ActivityType"),
+        "and carries no activity type — the work is not ours to post internally")
+
+
+def rate_draft(**over):
+    body = {"resource_ID": carpenter, "rateValue": 31.00, "basis": "hr",
+            "ccy_code": "AED", "effectiveFrom": "2029-01-01", "scope": "GROUP"}
+    body.update(over)
+    return call("/masterdata/Rates", method="POST", body=body)[1]
+
+
+s, alpha = call("/masterdata/Vendors?$filter=bpNumber eq '0002000044'&$select=ID,name")
+alpha_id = alpha["value"][0]["ID"]
+s, svc = call("/masterdata/Materials?$filter=materialCode eq 'SVC-LAB-STF-G1'&$select=ID")
+svc_id = svc["value"][0]["ID"]
+
+d = rate_draft(source="IN_HOUSE", s4ActivityType="LAB-CAR-SK",
+               s4ServiceProduct_ID=svc_id)
+check(400, "a rate carrying both an activity type and a service product",
+      *activate("Rates", d["ID"]))
+
+d = rate_draft(source="IN_HOUSE", s4ActivityType="LAB-CAR-SK", vendor_ID=alpha_id)
+check(400, "an in-house rate with a vendor — we are the supplier",
+      *activate("Rates", d["ID"]))
+
+d = rate_draft(source="LSC_HIRED", s4ServiceProduct_ID=svc_id)
+check(400, "a hired rate that does not say who supplies it",
+      *activate("Rates", d["ID"]))
+
+d = rate_draft(source="LSC_HIRED", vendor_ID=alpha_id, s4ActivityType="LAB-CAR-SK")
+check(400, "a hired rate costed against an activity type",
+      *activate("Rates", d["ID"]))
+
+d = rate_draft(source="LSC_HIRED", vendor_ID=alpha_id, s4ServiceProduct_ID=svc_id)
+check(200, "the same rate, routed correctly", *activate("Rates", d["ID"]))
+d = rate_draft(source="LSC_HIRED", vendor_ID=alpha_id, s4ServiceProduct_ID=svc_id,
+               rateValue=32.00)
+check(409, "but not twice from the same vendor on the same day",
+      *activate("Rates", d["ID"]))
+d = rate_draft(source="IN_HOUSE", s4ActivityType="LAB-CAR-SK", rateValue=33.00)
+check(200, "while the in-house rate for that same day is a different row",
+      *activate("Rates", d["ID"]))
 
 print()
 print("=" * 78)

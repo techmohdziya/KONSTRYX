@@ -14,13 +14,12 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Pushes a KONSTRYX-raised purchase requisition to S/4 (SAP_COM_0053).
+ * Pushes a KONSTRYX-raised purchase requisition to S/4.
  *
  * This is the outbound half of D-21: KONSTRYX decides WHAT to buy from a
  * resource request's PROCURE lines, S/4 owns the requisition from the moment
@@ -30,26 +29,41 @@ import java.util.Optional;
  * class returns an outcome and writes nothing, exactly as S4ProjectConnector
  * does for projects.
  *
- * API_PURCHASEREQ_PROCESS_SRV is OData V2 and takes the whole document in one
- * deep insert: header, its items, and each item's account assignment. That is
- * not a style choice — an item posted separately would be a requisition of its
- * own, and a requisition posted without its account assignment would commit
- * against nothing, which is the very thing the WBS/CBS on the line exists to
- * prevent.
+ * **API and scenario: `API_PURCHASEREQUISITION_2` under `SAP_COM_0102`**, per
+ * the consolidated requirements §15.2 row 9 and RB-145. An earlier revision of
+ * this class targeted `API_PURCHASEREQ_PROCESS_SRV` under `SAP_COM_0053`; both
+ * halves of that were wrong. SAP_COM_0053 is the PURCHASE ORDER scenario — the
+ * requirements attach it to `API_PURCHASEORDER_PROCESS_SRV` every time it
+ * appears and never to a requisition.
  *
- * Org values (plant, purchasing org and group, requisition type) are tenant
- * configuration, overridable per environment. Unlike the project connector's
- * defaults — which were read off the tenant's own projects — these have NOT
- * been confirmed against a live tenant, because SAP_COM_0053 is not activated
- * yet. They are the S/4 standard-content values and are expected to need
- * setting per tenant.
+ * The whole document goes in one deep insert: header, its items, and each
+ * item's account assignment. That is not a style choice — an item posted
+ * separately would be a requisition of its own, and a requisition posted
+ * without its account assignment would commit against nothing, which is the
+ * very thing the WBS/CBS on the line exists to prevent.
+ *
+ * **Unverified, and deliberately kept easy to correct.** SAP_COM_0102 is not
+ * activated on the tenant, so nothing here has met a live S/4: not the service
+ * path, not the property names, not the org defaults. `API_PURCHASEREQUISITION_2`
+ * is the V4-generation API, so this builds a V4 payload — ISO dates rather than
+ * V2's `/Date(millis)/`, navigation properties rather than `to_` sets, and a
+ * response read from the top level rather than from a `d` wrapper. Every one of
+ * those is an informed assumption. **Read the tenant's own `$metadata` before
+ * trusting this**, and override the path with `S4_PR_SERVICE` rather than
+ * editing source. Contrast the project connector, whose defaults were read off
+ * the tenant's own projects and are therefore known good.
  */
 @Component
 public class S4RequisitionConnector {
 
     private static final Logger log = LoggerFactory.getLogger(S4RequisitionConnector.class);
 
-    private static final String SERVICE = "/sap/opu/odata/sap/API_PURCHASEREQ_PROCESS_SRV";
+    /**
+     * The V4 service root. Overridable because the exact path is the single
+     * most likely thing to be wrong until a Communication Arrangement exists.
+     */
+    private static final String DEFAULT_SERVICE =
+            "/sap/opu/odata4/sap/api_purchaserequisition_2/srvd_a2x/sap/purchaserequisition/0001";
     private static final String E_PR_LINE = "konstryx.mat.PurchaseRequisitionLine";
     private static final String E_WBS = "konstryx.prj.WBSElement";
     private static final String E_MATERIAL = "konstryx.master.Material";
@@ -95,9 +109,10 @@ public class S4RequisitionConnector {
         for (Row line : lines) {
             int no = intOf(line.get("lineNo"));
             if (materialCode(line) == null) {
-                return "Line " + no + " has no S/4 material registered against its "
-                        + "resource, so there is nothing to order. Map the resource "
-                        + "to a material, then raise the requisition again.";
+                return "Line " + no + " has nothing registered in S/4 to order "
+                        + "against. Map its resource — a material if it is bought, "
+                        + "a service product if it is hired or subcontracted — then "
+                        + "raise the requisition again.";
             }
             if (wbsKey(line) == null) {
                 return "Line " + no + "'s WBS element is not in S/4 yet, so the "
@@ -123,7 +138,7 @@ public class S4RequisitionConnector {
             ObjectNode header = mapper.createObjectNode();
             header.put("PurchaseRequisitionType", envOr("S4_PR_TYPE", "NB"));
 
-            ArrayNode items = header.putArray("to_PurchaseReqnItem");
+            ArrayNode items = header.putArray("_PurchaseRequisitionItem");
             for (Row line : lines) {
                 ObjectNode item = mapper.createObjectNode();
                 // S/4 numbers requisition items in tens, and its own UI relies
@@ -146,7 +161,7 @@ public class S4RequisitionConnector {
                     item.put("PurchaseRequisitionPrice", price.toPlainString());
                 }
 
-                ArrayNode accounts = item.putArray("to_PurchaseReqnAcctAssgmt");
+                ArrayNode accounts = item.putArray("_PurReqnAcctAssgmt");
                 ObjectNode account = accounts.addObject();
                 account.put("PurchaseRequisitionItem",
                         item.get("PurchaseRequisitionItem").asText());
@@ -154,9 +169,10 @@ public class S4RequisitionConnector {
                 account.put("WBSElementExternalID", wbsKey(line));
             }
 
+            String service = envOr("S4_PR_SERVICE", DEFAULT_SERVICE);
             S4Connection.S4Response response = connection.post(
-                    SERVICE + "/A_PurchaseRequisitionHeader?%24top=1",
-                    SERVICE + "/A_PurchaseRequisitionHeader",
+                    service + "/PurchaseRequisition?%24top=1",
+                    service + "/PurchaseRequisition",
                     mapper.writeValueAsString(header));
 
             if (response.status != 201) {
@@ -164,7 +180,12 @@ public class S4RequisitionConnector {
                         "S/4 refused the requisition (" + response.status + "): "
                                 + errorText(response.body));
             }
-            JsonNode created = mapper.readTree(response.body).path("d");
+            // V4 returns the created entity at the top level; V2 wrapped it in
+            // "d". Read the top level and fall back, so a tenant that turns out
+            // to expose the V2 service still resolves its number rather than
+            // reporting a successful push it cannot name.
+            JsonNode body = mapper.readTree(response.body);
+            JsonNode created = body.has("PurchaseRequisition") ? body : body.path("d");
             String prNo = created.path("PurchaseRequisition").asText(null);
             if (prNo == null || prNo.isBlank()) {
                 // Accepted but unnumbered is worse than refused: something
@@ -240,7 +261,11 @@ public class S4RequisitionConnector {
         return dot > 0 ? h.substring(0, dot) : h;
     }
 
-    /** V2 JSON dates ride as /Date(epoch-millis)/. */
+    /**
+     * V4 serialises Edm.Date as a plain ISO day. V2's /Date(epoch-millis)/ is
+     * not accepted here — it was the shape the previous, wrongly-targeted
+     * revision of this class sent.
+     */
     private static void putDate(ObjectNode node, String field, Object value) {
         if (value == null) {
             return;
@@ -248,22 +273,26 @@ public class S4RequisitionConnector {
         try {
             LocalDate date = value instanceof LocalDate d
                     ? d : LocalDate.parse(String.valueOf(value).substring(0, 10));
-            node.put(field, "/Date(" + date.atStartOfDay(ZoneOffset.UTC)
-                    .toInstant().toEpochMilli() + ")/");
+            node.put(field, date.toString());
         } catch (RuntimeException ignored) { }
     }
 
+    /** V4 puts the message directly on error.message; V2 nested it under .value. */
     private String errorText(String body) {
         try {
-            JsonNode error = mapper.readTree(body).path("error").path("message").path("value");
-            if (!error.isMissingNode()) {
-                return error.asText();
+            JsonNode message = mapper.readTree(body).path("error").path("message");
+            if (message.isTextual()) {
+                return message.asText();
+            }
+            JsonNode nested = message.path("value");
+            if (!nested.isMissingNode()) {
+                return nested.asText();
             }
         } catch (Exception ignored) { }
         return body == null ? "?" : body.substring(0, Math.min(200, body.length()));
     }
 
-    /** V2 sends Decimals as strings; a bare number loses scale on the wire. */
+    /** S/4 serialises Edm.Decimal as a string; a bare number loses scale. */
     private static String plain(Object value) {
         BigDecimal d = dec(value);
         return d == null ? "0" : d.toPlainString();

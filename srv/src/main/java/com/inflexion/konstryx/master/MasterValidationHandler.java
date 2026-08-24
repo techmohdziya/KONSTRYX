@@ -161,9 +161,15 @@ public class MasterValidationHandler implements EventHandler {
     }
 
     /**
-     * Two rates for the same resource, in the same scope, effective the same
-     * day give the costing engine no way to choose. Later start dates are
-     * fine — that is how a rate revision is expressed.
+     * Two rates for the same resource, from the same source, in the same
+     * scope, effective the same day give the costing engine no way to choose.
+     * Later start dates are fine — that is how a rate revision is expressed.
+     *
+     * Source and vendor are part of the key, not incidental. The wireframe's
+     * own master carries MP-CIV-CAR-SK-G1 three times on the same day — our
+     * payroll, Alpha Civil, Beta Labour — at three different rates. Keying on
+     * resource alone would call two of those a duplicate and refuse the data
+     * the product is specified to hold.
      */
     private void validateRate(CdsData entry) {
         String id = str(entry.get("ID"));
@@ -173,6 +179,12 @@ public class MasterValidationHandler implements EventHandler {
         String resource = merged(entry, stored, "resource_ID");
         String from = merged(entry, stored, "effectiveFrom");
         String owner = merged(entry, stored, "owningCompany_ID");
+        String source = merged(entry, stored, "source");
+        String vendor = merged(entry, stored, "vendor_ID");
+
+        validateRateRouting(source, vendor,
+                merged(entry, stored, "s4ActivityType"),
+                merged(entry, stored, "s4ServiceProduct_ID"));
 
         if (resource == null || from == null) {
             return;   // incomplete rows are caught by the model, not here
@@ -187,12 +199,61 @@ public class MasterValidationHandler implements EventHandler {
             }
             String otherOwner = str(other.get("owningCompany_ID"));
             boolean sameScope = owner == null ? otherOwner == null : owner.equals(otherOwner);
-            if (sameScope) {
+            boolean sameSource = eq(source, str(other.get("source")));
+            boolean sameVendor = eq(vendor, str(other.get("vendor_ID")));
+            if (sameScope && sameSource && sameVendor) {
                 throw new ServiceException(ErrorStatuses.CONFLICT,
-                        "A rate for this resource already takes effect on " + from
-                                + " in the same scope.");
+                        "A rate for this resource from the same source already takes "
+                                + "effect on " + from + " in the same scope.");
             }
         }
+    }
+
+    /**
+     * Exactly one S/4 route per rate row (spec §8, principle P10). Internal
+     * cost is quantity x the activity price and posts a journal; external cost
+     * is procured. A row carrying both would be costed twice, and a row
+     * carrying neither cannot be costed at all — so the route is not optional
+     * and it is not a free choice: source decides it.
+     */
+    private void validateRateRouting(String source, String vendor,
+                                     String activityType, String serviceProduct) {
+        if (source == null) {
+            return;
+        }
+        boolean internal = "IN_HOUSE".equals(source);
+        boolean hasActivity = activityType != null && !activityType.isBlank();
+        boolean hasService = serviceProduct != null && !serviceProduct.isBlank();
+
+        if (hasActivity && hasService) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A rate carries an S/4 activity type or a service product, never "
+                            + "both — the cost would post twice, once as a journal and "
+                            + "once through procurement.");
+        }
+        if (internal && hasService) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "An in-house rate is costed against an S/4 activity type, not a "
+                            + "service product. Nothing is being bought.");
+        }
+        if (!internal && hasActivity) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A hired rate is procured against an S/4 service product, not an "
+                            + "activity type. The work is not ours to post internally.");
+        }
+        if (internal && vendor != null && !vendor.isBlank()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "An in-house rate has no vendor — we are the supplier.");
+        }
+        if (!internal && (vendor == null || vendor.isBlank())) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A hired rate must say who supplies it: the rate belongs to the "
+                            + "vendor's contract, not to the resource.");
+        }
+    }
+
+    private static boolean eq(String a, String b) {
+        return a == null ? b == null : a.equals(b);
     }
 
     // ----------------------------------------------------------------- norms

@@ -65,8 +65,8 @@ Scenarios needed:
 | Scenario | Covers |
 |---|---|
 | `SAP_COM_0308` | Enterprise Project — **outbound project creation from KONSTRYX** |
-| `SAP_COM_0053` | Purchase Requisition |
-| `SAP_COM_0193` | Purchase Order |
+| `SAP_COM_0102` | Purchase Requisition |
+| `SAP_COM_0053` | Purchase Order |
 | `SAP_COM_0107` | Business Partner |
 | `SAP_COM_0009` | Product / material master |
 | `SAP_COM_0060` | Material stock and ATP |
@@ -118,7 +118,7 @@ authentication is acceptable for a development tenant only.
 | Purpose | API |
 |---|---|
 | Project & WBS | `API_ENTERPRISE_PROJECT_SRV_0002` |
-| Purchase Requisition | `API_PURCHASEREQ_PROCESS_SRV` |
+| Purchase Requisition | `API_PURCHASEREQUISITION_2` |
 | Purchase Order | `API_PURCHASEORDER_PROCESS_SRV` |
 | Goods movements | `API_MATERIAL_DOCUMENT_SRV` |
 | Business Partner | `API_BUSINESS_PARTNER` |
@@ -133,12 +133,20 @@ it crash-looped the deployed service on `CdsDefinitionNotFoundException` — CAP
 resolves a declared remote service at startup whether or not anything consumes
 it, and nothing did.
 
-The two live connectors call the APIs as raw OData V2 through `S4Connection`,
-which owns the credentials, the cookie jar and the CSRF handshake that V2
-writes need. Nothing above that class ever sees a password. Adding an API means
-adding a connector next to `S4ProjectConnector` and `S4RequisitionConnector`,
-not generating a projection. `cds import` remains available if a flow ever
-needs typed remote entities rather than a document-shaped POST.
+The live connectors call the APIs as raw OData through `S4Connection`, which
+owns the credentials, the cookie jar and the CSRF handshake a write needs.
+Nothing above that class ever sees a password. Adding an API means adding a
+connector next to `S4ProjectConnector` and `S4RequisitionConnector`, not
+generating a projection. `cds import` remains available if a flow ever needs
+typed remote entities rather than a document-shaped POST.
+
+**The two connectors speak different OData versions, and that is not an
+oversight.** `API_ENTERPRISE_PROJECT_SRV_0002` is V2, so the project connector
+sends `/Date(millis)/` and reads its result from a `d` wrapper.
+`API_PURCHASEREQUISITION_2` is V4, so the requisition connector sends ISO dates
+and navigation properties and reads its result from the top level. Copying one
+connector's serialisation into the other will fail in ways that look like
+authorisation errors.
 
 ### 2.4 Project sync — the outbound case
 
@@ -168,9 +176,11 @@ draws no number range — `prNo` stays empty until S/4 issues one.
 1. A resource request's advisory decision sends some lines to `PROCURE`.
 2. `raisePurchaseRequisition` builds the requisition from those lines, carrying
    each line's quantity, approved value, need-by, **its WBS/CBS account
-   assignment**, and the S/4 material its resource is mapped to.
+   assignment**, and what S/4 is being asked to supply — which depends on the
+   resource's class (see §2.6): a material if the leaf is bought, a service
+   product if it is hired or subcontracted.
 3. `MaterialService.syncToS4` posts the whole document to
-   `API_PURCHASEREQ_PROCESS_SRV` in one deep insert — header, items, and each
+   `API_PURCHASEREQUISITION_2` in one deep insert — header, items, and each
    item's account assignment. Not a style choice: an item posted separately
    would be a requisition of its own, and one posted without its account
    assignment would commit against nothing.
@@ -185,14 +195,55 @@ element has no `s4Key` yet (the project was never synced), and a requisition
 S/4 has already numbered. A refused push leaves the requisition `NOT_SENT` and
 does not count as an attempt.
 
-**Configuration.** `S4_PR_TYPE` (default `NB`), `S4_PLANT`, `S4_PURCH_ORG`,
-`S4_PURCH_GROUP`, and account assignment category `P` for a project. Unlike the
-project connector's defaults — which were read off the tenant's own projects —
-these are S/4 standard-content values and have **not** been confirmed against a
-live tenant: `SAP_COM_0053` is not activated yet, so the live POST has never
-run. Expect to set them per tenant.
+**Configuration.** `S4_PR_SERVICE` (the V4 service root), `S4_PR_TYPE`
+(default `NB`), `S4_PLANT`, `S4_PURCH_ORG`, `S4_PURCH_GROUP`, and account
+assignment category `P` for a project. Unlike the project connector's defaults —
+which were read off the tenant's own projects — these are S/4 standard-content
+values and have **not** been confirmed against a live tenant: `SAP_COM_0102` is
+not activated yet, so the live POST has never run. Neither has the payload
+shape: `API_PURCHASEREQUISITION_2` is the V4-generation API, so the connector
+sends ISO dates and navigation properties rather than V2's `/Date(millis)/` and
+`to_` sets. **Read the tenant's own `$metadata` before trusting any of it.**
 
-### 2.6 Primavera P6
+> **Correction, 24 Aug 2026.** This section previously named
+> `API_PURCHASEREQ_PROCESS_SRV` under `SAP_COM_0053`, and the scenario table
+> above listed `SAP_COM_0193` for the purchase order. All three were wrong.
+> The consolidated requirements §15.2 put the requisition on
+> `API_PURCHASEREQUISITION_2` / `SAP_COM_0102` and the order on
+> `API_PURCHASEORDER_PROCESS_SRV` / `SAP_COM_0053`; `SAP_COM_0193` appears
+> nowhere in them. The connector was repointed to match.
+
+### 2.6 Class routes the leaf to S/4
+
+The consolidated requirements make the resource **class** a fixed top dimension
+of the hierarchy (spec §8, principle P10) for one reason: it decides how the
+leaf is mastered and priced in S/4.
+
+| Class | Internal cost | External cost |
+|---|---|---|
+| MATERIAL | — | S/4 product · `ResourceNode.s4Material` |
+| MANPOWER | activity type × timesheet quantity | service product |
+| EQUIPMENT · VEHICLE | activity type × operating hours | service product |
+| SUBCONTRACT | — | service product |
+
+**A leaf that carries neither cannot be costed; one that carries both without
+declaring which applies will be costed twice.** So the routing lives in two
+places, deliberately:
+
+- **`ResourceNode.s4Material` / `.s4ServiceProduct`** — what a *requisition*
+  orders. A requisition is raised before a vendor exists, so this is the
+  generic entry, not any one vendor's catalogue code.
+- **`RateMaster.s4ActivityType` / `.s4ServiceProduct`, keyed by `source` and
+  `vendor`** — what a *cost* posts against. `IN_HOUSE` carries an activity type
+  and no vendor; `HIRED` / `LSC_HIRED` carry a vendor and that vendor's own
+  service product. Enforced in `MasterValidationHandler` — a row carrying both
+  is refused.
+
+That split is what the wireframe's own masters already show: one trade listed
+three times on the same day, at three rates — our payroll, and two labour
+subcontractors — each routing somewhere different.
+
+### 2.7 Primavera P6
 
 P6 is the alternative source: where a client plans in P6, the project and its
 activity structure come **into** KONSTRYX rather than being created there.

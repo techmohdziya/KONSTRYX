@@ -98,8 +98,10 @@ assert_(proc.returncode == 0,
 # regenerated is exactly what this is here to catch.
 FIXTURE_PACKS = {
     "ORGANISATION": 5,
-    "PERSONAS": 139,
-    "MASTER_DATA": 156,   # 145 + the 11 mirrored S/4 materials (I-35)
+    "PERSONAS": 141,   # +2: steward display access to the vendor/material mirrors
+    # 145 + 11 mirrored S/4 materials (I-35) + 4 service products and the
+    # hired rate row that the class->S/4 routing needs (spec §8 / P10)
+    "MASTER_DATA": 161,
     "DEMO_PROJECT": 116,
     "DEMO_USERS": 8,
 }
@@ -340,7 +342,9 @@ head("5. Masters are seeded, and still scope-isolated")
 # 12 CBS library nodes seeded, 1 of them PMI's.
 for label, path, expected in [
     ("resource nodes visible to an INFC user", "/masterdata/Resources/$count", "75"),
-    ("rate master rows", "/masterdata/Rates/$count", "21"),
+    # 22, not 21: the carpenter is rated twice on the same day — our payroll
+    # and Alpha Civil's — which is the case the old resource-only key refused
+    ("rate master rows", "/masterdata/Rates/$count", "22"),
     ("CBS library nodes minus PMI's", "/masterdata/CBSLibrary/$count", "16"),
     ("vendors incl. the two LSC labour suppliers", "/masterdata/Vendors/$count", "5"),
 ]:

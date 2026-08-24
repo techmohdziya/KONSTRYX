@@ -265,8 +265,9 @@ assert_(line.get("sourceLine_ID"), "the line points back at the request line it 
 assert_(float(line.get("estTotal") or 0) > 0,
         "the approved value travels, not a fresh price", line.get("estTotal"))
 assert_(line.get("material_ID") is None,
-        "no material is claimed for a resource that has none registered — the "
-        "vibrator kits are hired, and an invented number would push a real order",
+        "nothing is claimed for a resource with nothing registered — the "
+        "vibrator kits have no service product mapped, and an invented code "
+        "would push a real order",
         line.get("material_ID"))
 
 s, rrLines = call(f"/workflow/ResourceRequestLines?$filter=parent_ID eq {rid2}"
@@ -390,7 +391,7 @@ assert_(eqr2 and abs(float(eqr2[0].get("committed") or 0) - 231.0) < 0.01,
         "refreshing again leaves it at 231.00 — commitment is derived, not accumulated",
         eqr2[0].get("committed") if eqr2 else "no line")
 
-head("10. A requisition line names the S/4 material its resource buys as")
+head("10. A requisition line names what its resource is bought or hired as")
 # The other half of check 5. A description is enough for the KONSTRYX side of the
 # chain but not for API_PURCHASEREQ_PROCESS_SRV, which orders against a material
 # number — so the resource has to carry one and the line has to pick it up (I-35).
@@ -448,25 +449,70 @@ check(400, "cement is orderable but its WBS is not in S/4 yet", s, msg)
 assert_("WBS" in str(msg) and "commit against nothing" in str(msg),
         "and it says which line and why, not just that the push failed", msg)
 
-# A requisition that names nothing S/4 can order. The crane is hired, not
-# bought, so its resource has no material — the ask is valid, the order is not.
+# A requisition that names nothing S/4 can order. The vibrator kits are hired
+# and nothing is registered against them — the ask is valid, the order is not.
 rid4, docno4 = new_request([
-    {"resource_ID": crane, "description": "Tower crane", "qty": 1, "uom": "inst",
-     "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
+    {"resource_ID": vibro, "description": "Concrete vibrator kits", "qty": 4,
+     "uom": "day", "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
 ])
 check(200, "submitted", *rr_action(rid4, "submit"))
 approve(docno4)
-check(200, "the crane is bought in this time", *rr_action(rid4, "decideLine",
+check(200, "the kits are hired in", *rr_action(rid4, "decideLine",
     {"lineNo": 1, "decision": "PROCURE", "rationale": "No fleet unit free."}))
 check(200, "requisition raised", *rr_action(rid4, "raisePurchaseRequisition"))
 s, prs4 = call(f"/material/PurchaseRequisitions?$filter=sourceRequest_ID eq {rid4}"
                "&$select=ID,syncStatus")
 s, msg4 = call(f"/material/PurchaseRequisitions({prs4['value'][0]['ID']})"
                "/MaterialService.syncToS4", method="POST", body={})
-check(400, "a line with no material is refused before anything is sent", s, msg4)
-assert_("material" in str(msg4).lower(),
-        "and the buyer is told to map the resource, not handed a connection error",
-        msg4)
+check(400, "a line with nothing registered is refused before anything is sent",
+      s, msg4)
+assert_("service product" in str(msg4).lower(),
+        "and the buyer is told what to map, not handed a connection error", msg4)
+
+head("12. A hired resource is ordered as a service, not as a material")
+# Spec §8 / P10: class routes the leaf to S/4. A MATERIAL leaf is bought as a
+# product; plant, labour and subcontract are hired as a service product. Both
+# land in the same field on the requisition line because both are S/4
+# product-master records — only the material type differs, and that is S/4's
+# business. Before this, a crane could be requisitioned but never ordered,
+# because the only thing a line could name was a material number.
+s, craneRes = call("/masterdata/Resources?$filter=IsActiveEntity eq true and "
+                   "code eq 'EQ-TWC-12T'&$select=ID,verticalType,s4Material_ID,"
+                   "s4ServiceProduct_ID")
+craneNode = craneRes["value"][0]
+assert_(craneNode.get("s4ServiceProduct_ID") and not craneNode.get("s4Material_ID"),
+        "the crane is hired as a service product and holds no material number — "
+        "it is not a thing you buy")
+
+s, svc = call("/masterdata/Materials?$filter=materialCode eq 'SVC-EQ-TWC-12T'"
+              "&$select=ID,materialCode")
+assert_(len(svc["value"]) == 1 and
+        svc["value"][0]["ID"] == craneNode.get("s4ServiceProduct_ID"),
+        "and it is the service product the wireframe's equipment master names")
+
+rid5, docno5 = new_request([
+    {"resource_ID": crane, "description": "Tower crane LB280", "qty": 1,
+     "uom": "month", "wbs_ID": wbs_id, "cbs_ID": slab["ID"], "needBy": "2026-09-15"},
+])
+check(200, "submitted", *rr_action(rid5, "submit"))
+approve(docno5)
+check(200, "no fleet unit free, so it is hired", *rr_action(rid5, "decideLine",
+    {"lineNo": 1, "decision": "PROCURE", "rationale": "Fleet fully committed."}))
+check(200, "requisition raised", *rr_action(rid5, "raisePurchaseRequisition"))
+s, prs5 = call(f"/material/PurchaseRequisitions?$filter=sourceRequest_ID eq {rid5}"
+               "&$select=ID")
+s, lines5 = call("/material/PurchaseRequisitionLines?$filter=parent_ID eq "
+                 f"{prs5['value'][0]['ID']}&$select=lineNo,material_ID")
+assert_(lines5["value"][0].get("material_ID") == craneNode.get("s4ServiceProduct_ID"),
+        "the requisition line carries SVC-EQ-TWC-12T — a hired crane is now "
+        "orderable, which it was not before",
+        lines5["value"][0].get("material_ID"))
+
+s, msg5b = call(f"/material/PurchaseRequisitions({prs5['value'][0]['ID']})"
+                "/MaterialService.syncToS4", method="POST", body={})
+check(400, "it still stops at the WBS gate, not at the material gate", s, msg5b)
+assert_("WBS" in str(msg5b),
+        "which is the proof the routing gate passed", msg5b)
 s, pr4 = call(f"/material/PurchaseRequisitions({prs4['value'][0]['ID']})"
               "?$select=syncStatus,syncAttempts")
 assert_(pr4.get("syncStatus") == "NOT_SENT",
