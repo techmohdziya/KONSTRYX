@@ -124,11 +124,19 @@ public class S4Connection {
             this.destinationName = name;
             log.info("S/4 connection uses destination {} -> {}", name, d.getUri());
             return;
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | LinkageError e) {
             // Expected on a developer machine: no destination service bound.
             // Not expected in Cloud Foundry, so say which name failed and why —
             // a silent fall through to an unset local variable would look
             // exactly like "no tenant configured".
+            //
+            // LinkageError is caught deliberately, and it is not defensive
+            // padding. The Cloud SDK's destination loader drags in its own
+            // security artifacts, and a version disagreement there surfaces as
+            // NoSuchMethodError from inside the SDK — an Error, not an
+            // Exception. Reaching S/4 is optional infrastructure: a classpath
+            // problem in it must degrade this connection to unconfigured, not
+            // take the whole service down with it (I-47).
             log.info("Destination {} did not resolve ({}); falling back to the local "
                     + "environment", name, e.getClass().getSimpleName());
         }

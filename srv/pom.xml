@@ -11,6 +11,42 @@
   <packaging>jar</packaging>
   <name>KONSTRYX :: srv</name>
 
+  <!--
+    Hold the SAP security artifacts on the 3.7.4 line CAP is built against.
+
+    connectivity-destination-service (below) depends on java-security /
+    java-api / env at 4.0.7, and Maven's nearest-wins would take them. CAP's
+    own spring-security stays at 3.7.4 and calls
+    JwtValidatorBuilder.withHttpClient(CloseableHttpClient), which 4.0.7
+    removed - so the mixed classpath does not fail at destination lookup, it
+    fails at startup, in Spring Security bean creation, with a message naming
+    neither this dependency nor the destination. It crash-looped the deployed
+    service on 2026-08-24 (I-47).
+
+    Re-check with `mvn -pl srv dependency:tree` after any CAP upgrade: this
+    version must track whatever cds-starter-cloudfoundry pulls for
+    resourceserver-security-spring-boot-starter.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.sap.cloud.security</groupId>
+        <artifactId>java-security</artifactId>
+        <version>3.7.4</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sap.cloud.security</groupId>
+        <artifactId>java-api</artifactId>
+        <version>3.7.4</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sap.cloud.security</groupId>
+        <artifactId>env</artifactId>
+        <version>3.7.4</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <!-- includes cds-adapter-odata-v4; the plain -spring-boot starter has no
          protocol adapter and silently exposes no endpoints -->
@@ -27,6 +63,29 @@
     <dependency>
       <groupId>com.sap.cds</groupId>
       <artifactId>cds-feature-remote-odata</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <!--
+      The loader that actually reads the BTP destination service.
+
+      cloudplatform-connectivity (transitive, above) provides the
+      DestinationAccessor API but registers only EnvVarDestinationLoader, which
+      reads a `destinations` environment variable and nothing else. With just
+      that on the classpath, DestinationAccessor.getDestination("ITS_S4")
+      throws DestinationNotFoundException on a correctly-bound Cloud Foundry
+      app - indistinguishable from "the destination was never created".
+      Verified on the tenant: with this artifact present the same code logs
+      `S/4 connection uses destination ITS_S4`.
+
+      Version pinned because the CAP BOM does not manage the Cloud SDK's own
+      artifacts; it must match the cloudplatform-connectivity version CAP pulls
+      in transitively. See dependencyManagement above for the security-artifact
+      pin this dependency makes necessary.
+    -->
+    <dependency>
+      <groupId>com.sap.cloud.sdk.cloudplatform</groupId>
+      <artifactId>connectivity-destination-service</artifactId>
+      <version>5.32.0</version>
       <scope>runtime</scope>
     </dependency>
     <!-- XSUAA security (active in cloud profile) -->

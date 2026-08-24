@@ -102,6 +102,17 @@ modules:
     path: db
     parameters:
       buildpack: nodejs_buildpack
+    # REGENERATE, always. Without this mbt packages whatever db/src/gen already
+    # contains, and on 2026-08-24 that was a week-old schema: HDI deployed it,
+    # reported SUCCEEDED, and the service then failed every read of
+    # konstryx.master.ResourceNode with "invalid column name: S4MATERIAL_ID" —
+    # a column added five days earlier. A stale generated artifact deploys
+    # perfectly happily; it is the application that breaks, later, somewhere
+    # else. The command runs from the project root because that is where
+    # .cdsrc and the model live.
+    build-parameters:
+      builder: custom
+      commands: [ "npx cds build --production" ]
     requires:
       - name: konstryx-db
 
