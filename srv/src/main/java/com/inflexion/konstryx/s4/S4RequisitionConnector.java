@@ -42,16 +42,29 @@ import java.util.Optional;
  * without its account assignment would commit against nothing, which is the
  * very thing the WBS/CBS on the line exists to prevent.
  *
- * **Unverified, and deliberately kept easy to correct.** SAP_COM_0102 is not
- * activated on the tenant, so nothing here has met a live S/4: not the service
- * path, not the property names, not the org defaults. `API_PURCHASEREQUISITION_2`
- * is the V4-generation API, so this builds a V4 payload — ISO dates rather than
- * V2's `/Date(millis)/`, navigation properties rather than `to_` sets, and a
- * response read from the top level rather than from a `d` wrapper. Every one of
- * those is an informed assumption. **Read the tenant's own `$metadata` before
- * trusting this**, and override the path with `S4_PR_SERVICE` rather than
- * editing source. Contrast the project connector, whose defaults were read off
- * the tenant's own projects and are therefore known good.
+ * **Names verified against the tenant's own `$metadata`** on 2026-08-24, once
+ * SAP_COM_0102 was activated (see `S4Probe`, which is how they were read). The
+ * V4 shape was right — ISO dates rather than V2's `/Date(millis)/`, navigation
+ * properties rather than `to_` sets, a response read from the top level rather
+ * than from a `d` wrapper — and so was the service path. Every header and item
+ * property name was right too. Three names were not, and all three came from
+ * documentation rather than from the tenant:
+ *
+ *   entity set          PurchaseRequisition   ->  PurchaseReqn
+ *   item -> account     _PurReqnAcctAssgmt    ->  _PurchaseReqnAcctAssgmt
+ *   account property    PurReqnAcctAssgmtNumber -> PurchaseReqnAcctAssgmtNumber
+ *
+ * Note that the header-to-item navigation really is `_PurchaseRequisitionItem`,
+ * spelled out, while its sibling is abbreviated. Guessing consistently would
+ * have got one of the two wrong either way.
+ *
+ * **Still unproven: the POST itself.** No requisition has been created in S/4
+ * from here — only `$metadata` has been read. The org defaults (`S4_PR_TYPE`,
+ * `S4_PLANT`, `S4_PURCH_ORG`, `S4_PURCH_GROUP`) remain S/4 standard-content
+ * guesses rather than values read off this tenant, and `PurchaseRequisitionPrice`
+ * is sent without the `PurReqnItemCurrency` the item type also declares, which
+ * S/4 may or may not require. Override the path with `S4_PR_SERVICE` rather
+ * than editing source.
  */
 @Component
 public class S4RequisitionConnector {
@@ -161,18 +174,18 @@ public class S4RequisitionConnector {
                     item.put("PurchaseRequisitionPrice", price.toPlainString());
                 }
 
-                ArrayNode accounts = item.putArray("_PurReqnAcctAssgmt");
+                ArrayNode accounts = item.putArray("_PurchaseReqnAcctAssgmt");
                 ObjectNode account = accounts.addObject();
                 account.put("PurchaseRequisitionItem",
                         item.get("PurchaseRequisitionItem").asText());
-                account.put("PurReqnAcctAssgmtNumber", "01");
+                account.put("PurchaseReqnAcctAssgmtNumber", "01");
                 account.put("WBSElementExternalID", wbsKey(line));
             }
 
             String service = envOr("S4_PR_SERVICE", DEFAULT_SERVICE);
             S4Connection.S4Response response = connection.post(
-                    service + "/PurchaseRequisition?%24top=1",
-                    service + "/PurchaseRequisition",
+                    service + "/PurchaseReqn?%24top=1",
+                    service + "/PurchaseReqn",
                     mapper.writeValueAsString(header));
 
             if (response.status != 201) {

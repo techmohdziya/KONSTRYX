@@ -195,8 +195,19 @@ public class S4Connection {
     }
 
     public S4Response get(String path) throws IOException, InterruptedException {
+        return get(path, "application/json");
+    }
+
+    /**
+     * A GET that states what it will accept. Data comes back as JSON, but
+     * `$metadata` is XML and S/4 answers a JSON-only Accept header with 406
+     * rather than negotiating — which reads like a broken service path when it
+     * is only a broken header.
+     */
+    public S4Response get(String path, String accept)
+            throws IOException, InterruptedException {
         HttpRequest.Builder request = newRequest(path)
-                .header("Accept", "application/json")
+                .header("Accept", accept)
                 .timeout(Duration.ofSeconds(45))
                 .GET();
         HttpResponse<String> response = http.send(request.build(),
