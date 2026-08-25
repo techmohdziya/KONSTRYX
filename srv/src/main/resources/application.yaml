@@ -28,9 +28,17 @@ cds:
   security:
     mock:
       users:
+        # Every role, not just Admin. The two authorization layers are
+        # independent: the Admin scope bypasses the data-driven permission
+        # model, but it does NOT satisfy a service-level @requires - so an
+        # admin holding only [Admin, MasterDataSteward] reads master data
+        # fine and gets a flat 403 from ProjectService, BudgetService and
+        # WorkflowService. Locally that renders as an app with no data in it,
+        # which looks like a seeding failure and is not one.
         - name: admin
           password: admin
-          roles: [ Admin, MasterDataSteward ]
+          roles: [ Admin, MasterDataSteward, ProjectManager, BudgetController,
+                   ResourceCoordinator, SiteEngineer ]
         - name: vikram          # PM — Vikram Rao
           password: vikram
           roles: [ ProjectManager ]
