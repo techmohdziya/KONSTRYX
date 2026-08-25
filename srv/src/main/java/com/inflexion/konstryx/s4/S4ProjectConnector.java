@@ -22,10 +22,16 @@ import java.util.Map;
  * Pushes a KONSTRYX-mastered project to S/4 (D-17, SAP_COM_0308).
  *
  * The project header goes to API_ENTERPRISE_PROJECT_SRV v2, then each WBS
- * element as an EnterpriseProjectElement under it. Profile and org values are
- * tenant configuration — the defaults were read from the tenant's own
- * projects, not guessed — and can be overridden per environment (S4_PROJECT_
- * PROFILE / S4_COST_CENTER / S4_PROFIT_CENTER).
+ * element as an EnterpriseProjectElement under it.
+ *
+ * **Profile, cost centre and profit centre come from the owning company**, not
+ * from constants in this file. They used to be constants read off tenant
+ * my401381, and they meant nothing on my434396, which refused a real push with
+ * "Profit Center 10001000 does not exist" — the values were plausible and
+ * simply belonged to a different system. `S4_PROJECT_PROFILE` /
+ * `S4_COST_CENTER` / `S4_PROFIT_CENTER` still override, because a content pack
+ * never updates an existing row and a tenant seeded with wrong org data would
+ * otherwise have no route to a correction.
  *
  * The outcome is returned, never applied here: recording SENT or FAILED on the
  * project is ProjectHandler's job, so the manual recordSyncResult path and
@@ -38,6 +44,7 @@ public class S4ProjectConnector {
 
     private static final String SERVICE = "/sap/opu/odata/sap/API_ENTERPRISE_PROJECT_SRV;v=0002";
     private static final String E_WBS = "konstryx.prj.WBSElement";
+    private static final String E_COMPANY = "konstryx.admin.Company";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -79,9 +86,18 @@ public class S4ProjectConnector {
             ObjectNode payload = mapper.createObjectNode();
             payload.put("Project", s4Id);
             payload.put("ProjectDescription", str(project.get("name")));
-            payload.put("ProjectProfileCode", envOr("S4_PROJECT_PROFILE", "YP05"));
-            payload.put("ResponsibleCostCenter", envOr("S4_COST_CENTER", "10001000"));
-            payload.put("ProfitCenter", envOr("S4_PROFIT_CENTER", "10001000"));
+            // Org from the company that owns the project, not from constants.
+            // The constants here were read off tenant my401381 and meant
+            // nothing on my434396, which refused a real push with "Profit
+            // Center 10001000 does not exist". Env still overrides, because a
+            // content pack cannot correct a tenant already seeded wrong.
+            Row company = companyOf(project);
+            putIfPresent(payload, "ProjectProfileCode",
+                    orgOf(company, "projectProfile", "S4_PROJECT_PROFILE"));
+            putIfPresent(payload, "ResponsibleCostCenter",
+                    orgOf(company, "costCtr", "S4_COST_CENTER"));
+            putIfPresent(payload, "ProfitCenter",
+                    orgOf(company, "profitCtr", "S4_PROFIT_CENTER"));
             payload.put("EntProjectIsConfidential", false);
             putDate(payload, "ProjectStartDate", project.get("startDate"));
             putDate(payload, "ProjectEndDate", project.get("endDate"));
@@ -154,6 +170,46 @@ public class S4ProjectConnector {
     }
 
     // ----------------------------------------------------------------- helpers
+
+    /** The company that owns this project, or null if it names none. */
+    private Row companyOf(Row project) {
+        Object companyId = project.get("company_ID");
+        if (companyId == null) {
+            return null;
+        }
+        String id = String.valueOf(companyId);
+        return db.run(Select.from(E_COMPANY).where(c -> c.get("ID").eq(id)))
+                .first().orElse(null);
+    }
+
+    /**
+     * One org value: the environment override if set, else the company's, else
+     * null. Env wins for the same reason it does on the requisition side —
+     * content packs never update an existing row, so a tenant seeded with
+     * wrong org data has no other route to a correction.
+     */
+    private static String orgOf(Row company, String field, String envKey) {
+        String override = System.getenv(envKey);
+        if (override != null && !override.isBlank()) {
+            return override;
+        }
+        if (company == null) {
+            return null;
+        }
+        String value = str(company.get(field));
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    /**
+     * Omit rather than send a blank. S/4 rejects an empty profit centre with a
+     * less useful message than it gives for an absent one, and a company whose
+     * org nobody has configured should fail on the field it is missing.
+     */
+    private static void putIfPresent(ObjectNode node, String field, String value) {
+        if (value != null) {
+            node.put(field, value);
+        }
+    }
 
     /** Sync state for one WBS element, written the same way the project's is. */
     private void recordWbs(Row wbs, String status, String s4Key, String message) {

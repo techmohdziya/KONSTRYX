@@ -60,9 +60,14 @@ s, ps = call("/project/Projects?$select=code,name,syncStatus,s4Key"
              "&$filter=IsActiveEntity eq true&$orderby=code")
 for p in ps["value"]:
     print(f"      {p['code']:10} {p['syncStatus']:9} {str(p['s4Key'] or '—'):22} {p['name']}")
-ok = all(p["syncStatus"] == "SENT" for p in ps["value"])
+# The seed used to ship these as SENT, with invented s4Keys and a system
+# (S4HC_100) that exists nowhere — and syncAttempts 0 to prove no connector had
+# ever run. That is a demo asserting something false, and it locked the project
+# out of releaseToS4 forever, because release refuses anything already SENT.
+# A seeded project has not been anywhere: it reads NOT_SENT and holds no key.
+ok = all(p["syncStatus"] == "NOT_SENT" and not p["s4Key"] for p in ps["value"])
 results.append(ok)
-print(f"  {'ok  ' if ok else 'FAIL'} the two seeded projects came from S/4, so they read SENT")
+print(f"  {'ok  ' if ok else 'FAIL'} a seeded project claims no sync it has not had")
 
 head("2. A new project is created here and is NOT in S/4")
 s, co = call("/project/Projects?$filter=IsActiveEntity eq true&$select=company_ID&$top=1")

@@ -78,6 +78,8 @@ public class S4Probe {
             probe(service);
         } else if ("org".equalsIgnoreCase(what)) {
             probeOrg(service);
+        } else if ("project".equalsIgnoreCase(what)) {
+            probeProjectOrg();
         } else if ("data".equalsIgnoreCase(what)) {
             // Braces, not an expression lambda: run() is overloaded for
             // Consumer and Function, and a one-expression body is ambiguous.
@@ -177,6 +179,57 @@ public class S4Probe {
             }
         } catch (Exception e) {
             log.warn("S4Probe: could not list packs: {}", e.toString());
+        }
+    }
+
+    /**
+     * The project org values this tenant uses, read off Enterprise Projects it
+     * already has.
+     *
+     * Same lesson as the requisition, learned the same way: S4ProjectConnector
+     * ships YP05 / 10001000 / 10001000, which were read off a DIFFERENT tenant
+     * (my401381) and are meaningless here — my434396 answered a real push with
+     * "Profit Center 10001000 does not exist". Profile, cost centre and profit
+     * centre are configuration, and only the tenant knows them.
+     */
+    private void probeProjectOrg() {
+        String url = "/sap/opu/odata/sap/API_ENTERPRISE_PROJECT_SRV;v=0002/A_EnterpriseProject"
+                + "?%24top=15&%24select=Project,ProjectDescription,ProjectProfileCode,"
+                + "ResponsibleCostCenter,ProfitCenter,CompanyCode";
+        log.info("S4Probe: GET {} on {}", url, connection.host());
+        try {
+            S4Connection.S4Response response = connection.get(url);
+            if (response.status != 200) {
+                log.warn("S4Probe: project org read returned {} — {}", response.status,
+                        excerpt(response.body));
+                return;
+            }
+            JsonNode root = new ObjectMapper().readTree(response.body);
+            // V2 wraps in d.results; V4 would use value. Read either, because
+            // which one this service speaks is not worth a second deployment.
+            JsonNode rows = root.path("d").path("results");
+            if (rows.isMissingNode() || !rows.isArray()) {
+                rows = root.path("value");
+            }
+            Set<String> combos = new LinkedHashSet<>();
+            for (JsonNode row : rows) {
+                combos.add(String.format("profile=%s  costCentre=%s  profitCentre=%s  coCode=%s",
+                        row.path("ProjectProfileCode").asText("-"),
+                        row.path("ResponsibleCostCenter").asText("-"),
+                        row.path("ProfitCenter").asText("-"),
+                        row.path("CompanyCode").asText("-")));
+            }
+            if (combos.isEmpty()) {
+                log.warn("S4Probe: no enterprise projects to read from. Body: {}",
+                        excerpt(response.body));
+                return;
+            }
+            log.info("S4Probe: project org combinations in use ({}):", combos.size());
+            for (String combo : combos) {
+                log.info("S4Probe:   {}", combo);
+            }
+        } catch (Exception e) {
+            log.warn("S4Probe: project org read failed: {}", e.toString());
         }
     }
 

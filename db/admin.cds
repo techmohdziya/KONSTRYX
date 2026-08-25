@@ -30,6 +30,15 @@ entity Company : cuid, managed {
   purchGroup   : String(3);
   salesOrg     : String(4);
   profitCtr    : String(10);
+  /**
+   * The cost centre a project is made responsible to, and the project profile
+   * it is created under. Both are S/4 configuration that varies per company,
+   * and both used to be build-wide constants in S4ProjectConnector — read off
+   * a different tenant, so my434396 answered a real push with "Profit Center
+   * 10001000 does not exist". They belong beside the rest of the org data.
+   */
+  costCtr      : String(10);
+  projectProfile : String(7);
   ccy          : Currency;
   isDefault    : Boolean default false;
 }

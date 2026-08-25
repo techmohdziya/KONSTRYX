@@ -21,10 +21,7 @@
           "endDate": "2027-06-30",
           "stage": "Execution",
           "executingCompany_ID": "20000000-0000-0000-0000-000000000001",
-          "s4Key": "MHT-CON-2024-014",
-          "s4System": "S4HC_100",
-          "lastSyncedAt": "2026-08-22T06:00:00Z",
-          "syncStatus": "SENT",
+          "syncStatus": "NOT_SENT",
           "syncAttempts": 0
         },
         {
@@ -39,10 +36,7 @@
           "endDate": "2027-12-31",
           "stage": "Execution",
           "executingCompany_ID": "20000000-0000-0000-0000-000000000001",
-          "s4Key": "ARB-CON-2025-041",
-          "s4System": "S4HC_100",
-          "lastSyncedAt": "2026-08-22T06:00:00Z",
-          "syncStatus": "SENT",
+          "syncStatus": "NOT_SENT",
           "syncAttempts": 0
         }
       ]
