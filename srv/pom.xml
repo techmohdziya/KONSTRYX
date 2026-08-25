@@ -44,6 +44,23 @@
         <artifactId>env</artifactId>
         <version>3.7.4</version>
       </dependency>
+      <!--
+        token-client belongs to the same family and MUST move with it.
+
+        Left at 4.0.7 against a 3.7.4 java-security, it throws
+        ClassNotFoundException: com.sap.cloud.security.util.LogSanitizer from
+        inside DefaultOAuth2TokenKeyService while fetching the XSUAA public
+        key. That is JWT SIGNATURE VALIDATION failing, so every token is
+        rejected and every authenticated request answers 401 - the deployed UI
+        loads, calls /odata, gets 401 on all of it and renders empty tables.
+        "No data" and "no authentication" are indistinguishable in the browser,
+        which is how this survived from the first deployment.
+      -->
+      <dependency>
+        <groupId>com.sap.cloud.security.xsuaa</groupId>
+        <artifactId>token-client</artifactId>
+        <version>3.7.4</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
