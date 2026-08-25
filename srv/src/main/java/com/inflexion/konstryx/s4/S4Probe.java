@@ -1,6 +1,10 @@
 package com.inflexion.konstryx.s4;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.sap.cds.Row;
+import com.sap.cds.ql.Select;
+import com.sap.cds.services.persistence.PersistenceService;
+import com.sap.cds.services.runtime.CdsRuntime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +56,12 @@ public class S4Probe {
     @Autowired
     private S4Connection connection;
 
+    @Autowired
+    private PersistenceService db;
+
+    @Autowired
+    private CdsRuntime runtime;
+
     @EventListener(ApplicationReadyEvent.class)
     public void probeIfAsked() {
         String what = System.getenv("S4_PROBE");
@@ -68,6 +78,10 @@ public class S4Probe {
             probe(service);
         } else if ("org".equalsIgnoreCase(what)) {
             probeOrg(service);
+        } else if ("data".equalsIgnoreCase(what)) {
+            // Braces, not an expression lambda: run() is overloaded for
+            // Consumer and Function, and a one-expression body is ambiguous.
+            runtime.requestContext().privilegedUser().run(rc -> { probeData(); });
         } else {
             // Anything else is treated as a literal service path, so a wrong
             // guess above can be corrected without another build.
@@ -123,6 +137,46 @@ public class S4Probe {
             }
         } catch (Exception e) {
             log.warn("S4Probe: org read failed: {}", e.toString());
+        }
+    }
+
+    /**
+     * What the tenant actually holds, by row count.
+     *
+     * A deployed tenant has no other way to answer "is there any data?" — the
+     * UI needs a login, OData needs a token, and the content-deployment log
+     * lines have usually rolled out of the buffer by the time anyone asks.
+     * Counting through the persistence service sidesteps all three, and
+     * distinguishes the two cases that look identical in a browser: no rows,
+     * versus rows the signed-in user has no permission to see.
+     */
+    private void probeData() {
+        for (String entity : new String[] {
+                "konstryx.admin.Company", "konstryx.master.ResourceNode",
+                "konstryx.master.Material", "konstryx.master.RateMaster",
+                "konstryx.prj.Project", "konstryx.prj.WBSElement",
+                "konstryx.prj.BOQItem", "konstryx.bud.Budget",
+                "konstryx.wf.ResourceRequest", "konstryx.wf.ResourceRequestLine",
+                "konstryx.mat.PurchaseRequisition",
+                "konstryx.auth.Persona", "konstryx.auth.PersonaPermission",
+                "konstryx.auth.UserAssignment", "konstryx.sys.ContentPack" }) {
+            try {
+                int n = 0;
+                for (Row ignored : db.run(Select.from(entity))) {
+                    n++;
+                }
+                log.info("S4Probe: {} rows in {}", n, entity);
+            } catch (Exception e) {
+                log.warn("S4Probe: could not count {}: {}", entity, e.toString());
+            }
+        }
+        try {
+            for (Row pack : db.run(Select.from("konstryx.sys.ContentPack"))) {
+                log.info("S4Probe: pack {} {} — {} inserted",
+                        pack.get("packId"), pack.get("version"), pack.get("rowsInserted"));
+            }
+        } catch (Exception e) {
+            log.warn("S4Probe: could not list packs: {}", e.toString());
         }
     }
 

@@ -19,6 +19,8 @@ import com.sap.cds.services.handler.annotations.Before;
 import com.sap.cds.services.handler.annotations.HandlerOrder;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.request.UserInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -58,6 +60,8 @@ public class AuthorizationHandler implements EventHandler {
      * provider, which is the right place for the key to the empty building.
      */
     private static final String BOOTSTRAP_ROLE = "Admin";
+
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationHandler.class);
 
     private static final String ACT_CREATE  = "01";
     private static final String ACT_CHANGE  = "02";
@@ -168,9 +172,20 @@ public class AuthorizationHandler implements EventHandler {
     private List<Grant> require(UserInfo user, PermissionService.ProtectedEntity target, String activity) {
         List<Grant> grants = permissions.grantsFor(user.getName(), target.entityName(), activity);
         if (grants.isEmpty()) {
+            // Name the identity the application actually saw. A refusal renders
+            // in most screens as an empty table, so "there is no data" and "you
+            // may not see the data" look identical from a browser — and the
+            // first thing anyone needs to know is which user id the token
+            // carried, because a persona assignment keyed on a different
+            // spelling refuses exactly like no assignment at all.
+            log.info("Refused {} on {} for user '{}' (roles: {}). No persona of "
+                            + "theirs grants it, and they do not hold {}.",
+                    activity, target.authObjectCode(), user.getName(),
+                    user.getRoles(), BOOTSTRAP_ROLE);
             throw new ServiceException(ErrorStatuses.FORBIDDEN,
                     "Not authorized: activity " + activity + " on " + target.authObjectCode()
-                            + ". Ask an administrator to grant it to one of your personas.");
+                            + ". Signed in as '" + user.getName() + "'. Ask an "
+                            + "administrator to grant it to one of your personas.");
         }
         return grants;
     }
