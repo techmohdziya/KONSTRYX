@@ -64,7 +64,9 @@
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
-        "sap.fe.templates": {}
+        "sap.fe.templates": {},
+        "sap.gantt": {},
+        "sap.ui.table": {}
       }
     },
     "contentDensities": {
@@ -143,7 +145,12 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/Projects"
+              "contextPath": "/Projects",
+              "content": {
+                "body": {
+                  "sections": {}
+                }
+              }
             }
           }
         }

@@ -1,0 +1,83 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+	xmlns:t="sap.ui.table"
+	xmlns:gnt="sap.gantt.simple"
+	xmlns:axistime="sap.gantt.axistime">
+
+	<VBox height="34rem" width="100%" class="sapUiSmallMarginTop">
+		<Toolbar>
+			<Title text="Programme" level="H4"/>
+			<ToolbarSpacer/>
+			<Label text="Critical path in red. Run the critical path from the header to recalculate."/>
+		</Toolbar>
+
+		<gnt:GanttChartContainer id="ganttContainer" height="30rem"
+			showSearchButton="false" showDisplayTypeButton="false" showBirdEyeButton="true">
+			<gnt:toolbar>
+				<gnt:ContainerToolbar showLegendButton="false" showTimeZoomControl="true"/>
+			</gnt:toolbar>
+			<gnt:ganttCharts>
+				<gnt:GanttChartWithTable id="ganttChart" selectionPanelSize="30rem">
+					<gnt:table>
+						<!-- The activity list is the left half of the chart rather than a
+						     table beside it: each row lines up with its own bar. -->
+						<t:TreeTable
+							id="ganttTable"
+							selectionMode="Single"
+							visibleRowCountMode="Auto"
+							rows="{path: 'activities', parameters: {$orderby: 'earlyStart,code'}}">
+
+							<t:rowSettingsTemplate>
+								<!-- Shapes hang off the row, not off the chart. One bar per
+								     activity, drawn from its early start to its early finish;
+								     critical activities take the negative semantic colour so
+								     the driving chain reads without consulting the float
+								     column. -->
+								<gnt:GanttRowSettings rowId="{code}">
+									<gnt:shapes1>
+										<gnt:BaseRectangle
+											shapeId="{code}"
+											time="{earlyStart}"
+											endTime="{earlyFinish}"
+											title="{code}"
+											fill="{= ${isCritical} ? '#BB0000' : '#0070F2' }"
+											height="20"
+											showTitle="true"
+											selectable="true"/>
+									</gnt:shapes1>
+								</gnt:GanttRowSettings>
+							</t:rowSettingsTemplate>
+
+							<t:columns>
+								<t:Column width="8rem">
+									<Label text="Activity"/>
+									<t:template><Text text="{code}" wrapping="false"/></t:template>
+								</t:Column>
+								<t:Column width="13rem">
+									<Label text="Name"/>
+									<t:template><Text text="{name}" wrapping="false"/></t:template>
+								</t:Column>
+								<t:Column width="4rem" hAlign="End">
+									<Label text="Days"/>
+									<t:template><Text text="{durationDays}"/></t:template>
+								</t:Column>
+								<t:Column width="5rem" hAlign="End">
+									<Label text="Float"/>
+									<t:template>
+										<ObjectStatus text="{totalFloat}"
+											state="{= ${isCritical} ? 'Error' : 'None' }"/>
+									</t:template>
+								</t:Column>
+							</t:columns>
+						</t:TreeTable>
+					</gnt:table>
+
+					<gnt:axisTimeStrategy>
+						<axistime:ProportionZoomStrategy/>
+					</gnt:axisTimeStrategy>
+				</gnt:GanttChartWithTable>
+			</gnt:ganttCharts>
+		</gnt:GanttChartContainer>
+	</VBox>
+</core:FragmentDefinition>
