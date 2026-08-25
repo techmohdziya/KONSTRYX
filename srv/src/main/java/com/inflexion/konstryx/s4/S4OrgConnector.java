@@ -185,6 +185,7 @@ public class S4OrgConnector {
         report.append("\nMirror: ").append(written)
                 .append(" organizational value(s) recorded.\n");
 
+        report.append("\n").append(ensureCompanies(values.values()));
         report.append('\n').append(applyToCompanies(values.values()));
         log.info("S4OrgConnector: org sync complete, {} value(s) mirrored", written);
         return report.toString();
@@ -324,6 +325,117 @@ public class S4OrgConnector {
             db.run(Insert.into(E_ORG).entries(rows));
         }
         return rows.size();
+    }
+
+    /**
+     * Every S/4 company code becomes a KONSTRYX company, named by S/4.
+     *
+     * A company is not ours to invent either, and this is the clearest case of
+     * it. The tenant was carrying "Inflexion Contracting LLC" against company
+     * code 1000, "Precision Metal Industries LLC" against 2000, and two more
+     * like them — names and codes alike written by a content pack that had
+     * never seen the customer's books. The connected S/4 holds three company
+     * codes and it holds their real names.
+     *
+     * So the rule that governs a plant governs the company that owns it: read
+     * it, do not ship it. The KONSTRYX code IS the S/4 company code, because
+     * deriving a shorter one would be one more invented identifier to keep in
+     * step with the system of record.
+     *
+     * Nothing is deleted. A company this S/4 does not know may still own
+     * projects, budgets and a year of postings, and quietly removing it would
+     * take those with it — so it is named in the report and left for a person
+     * to judge. That is Q-15's question, and it is not this method's to answer.
+     */
+    private String ensureCompanies(Iterable<OrgValue> values) {
+        StringBuilder report = new StringBuilder("Companies from S/4:\n");
+        String groupId = soleGroupId();
+
+        for (OrgValue value : values) {
+            if (!COMPANY_CODE.equals(value.kind)) {
+                continue;
+            }
+            String coCode = value.code;
+            Row existing = db.run(Select.from(E_COMPANY)
+                    .where(c -> c.get("s4CoCode").eq(coCode))).first().orElse(null);
+            String s4Name = nameOr(value);
+
+            if (existing == null) {
+                Map<String, Object> company = new LinkedHashMap<>();
+                company.put("ID", UUID.randomUUID().toString());
+                company.put("code", coCode);
+                company.put("legalName", s4Name);
+                company.put("s4CoCode", coCode);
+                if (!isBlank(value.ccy)) {
+                    company.put("ccy_code", value.ccy);
+                }
+                if (groupId != null) {
+                    company.put("group_ID", groupId);
+                }
+                company.put("isDefault", false);
+                db.run(Insert.into(E_COMPANY).entry(company));
+                report.append("  ").append(coCode).append(": created as ")
+                        .append(s4Name).append('\n');
+                continue;
+            }
+
+            // Already mapped. The name is S/4's to state, so a local edit that
+            // has drifted from it is corrected rather than preserved.
+            String currentName = str(existing.get("legalName"));
+            if (s4Name.equals(currentName)) {
+                report.append("  ").append(coCode).append(": ")
+                        .append(currentName).append(" matches S/4\n");
+                continue;
+            }
+            String id = str(existing.get("ID"));
+            Map<String, Object> rename = new HashMap<>();
+            rename.put("legalName", s4Name);
+            db.run(Update.entity(E_COMPANY).data(rename)
+                    .where(c -> c.get("ID").eq(id)));
+            report.append("  ").append(coCode).append(": renamed from ")
+                    .append(currentName).append(" to ").append(s4Name).append('\n');
+        }
+
+        // The ones this S/4 has never heard of. Named, not touched.
+        List<String> unknown = new ArrayList<>();
+        for (Row company : db.run(Select.from(E_COMPANY))) {
+            String coCode = str(company.get("s4CoCode"));
+            boolean known = false;
+            for (OrgValue value : values) {
+                if (COMPANY_CODE.equals(value.kind) && value.code.equals(coCode)) {
+                    known = true;
+                    break;
+                }
+            }
+            if (!known) {
+                unknown.add(str(company.get("code"))
+                        + (isBlank(coCode) ? " (no company code)" : " (" + coCode + ")"));
+            }
+        }
+        if (!unknown.isEmpty()) {
+            report.append("  Not company codes in this S/4, and left alone because "
+                    + "they may own data: ").append(String.join(", ", unknown))
+                    .append('\n');
+        }
+        return report.toString();
+    }
+
+    /** S/4's name for a company code, or the code itself if it gave none. */
+    private static String nameOr(OrgValue value) {
+        return isBlank(value.name) ? value.code : value.name;
+    }
+
+    /**
+     * The group a created company joins, when there is exactly one to join.
+     * With none or several the choice is a person's — a company placed in the
+     * wrong group is scoped wrongly for authorization and for reporting both.
+     */
+    private String soleGroupId() {
+        List<Row> groups = new ArrayList<>();
+        for (Row group : db.run(Select.from("konstryx.admin.CompanyGroup"))) {
+            groups.add(group);
+        }
+        return groups.size() == 1 ? str(groups.get(0).get("ID")) : null;
     }
 
     /**
