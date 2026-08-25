@@ -295,7 +295,19 @@ public class ProjectHandler implements EventHandler {
      */
     @On(event = "syncToS4")
     public void onSyncToS4(EventContext context) {
-        Row project = targetOf(context);
+        return_(context, pushToS4(targetOf(context)));
+    }
+
+    /**
+     * The push itself, callable without an OData request.
+     *
+     * Extracted so the action and any programmatic caller run the same gates
+     * and the same writer. The alternative — a second caller reimplementing
+     * "check PENDING, push, record" — is how two paths end up writing subtly
+     * different state, which is the exact failure recordSyncResult exists to
+     * avoid.
+     */
+    public String pushToS4(Row project) {
         if (!"PENDING".equals(str(project.get("syncStatus")))) {
             throw new ServiceException(ErrorStatuses.CONFLICT,
                     project.get("code") + " is " + project.get("syncStatus")
@@ -311,10 +323,10 @@ public class ProjectHandler implements EventHandler {
         applySyncOutcome(project, outcome.success, outcome.s4Key,
                 outcome.s4System, outcome.message);
 
-        return_(context, outcome.success
+        return outcome.success
                 ? project.get("code") + " is now in S/4 as " + outcome.s4Key
                         + ". " + outcome.message
-                : project.get("code") + " was refused by S/4: " + outcome.message);
+                : project.get("code") + " was refused by S/4: " + outcome.message;
     }
 
     /** One writer for sync state, whichever path produced the outcome. */

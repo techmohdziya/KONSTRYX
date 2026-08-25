@@ -87,7 +87,15 @@ public class ProcurementHandler implements EventHandler {
      */
     @On(event = "syncToS4", entity = "MaterialService.PurchaseRequisitions")
     public void onSyncToS4(EventContext context) {
-        Row pr = targetOf(context, "Requisition not found.");
+        result(context, pushToS4(targetOf(context, "Requisition not found.")));
+    }
+
+    /**
+     * The push itself, callable without an OData request — same reason the
+     * project side has one: the gates and the writer must not be reimplemented
+     * by a second caller.
+     */
+    public String pushToS4(Row pr) {
         if (!isBlank(str(pr.get("prNo")))) {
             throw new ServiceException(ErrorStatuses.CONFLICT,
                     "S/4 already numbered this requisition " + pr.get("prNo")
@@ -109,9 +117,9 @@ public class ProcurementHandler implements EventHandler {
                 s4Connector.push(pr);
         applyOutcome(pr, outcome.success, outcome.prNo, outcome.s4System, outcome.message);
 
-        result(context, outcome.success
+        return outcome.success
                 ? "Requisition is now in S/4 as " + outcome.prNo + ". " + outcome.message
-                : "S/4 refused the requisition: " + outcome.message);
+                : "S/4 refused the requisition: " + outcome.message;
     }
 
     /** One writer for requisition sync state, whichever path produced it. */
