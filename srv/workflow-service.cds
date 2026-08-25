@@ -70,7 +70,21 @@ service WorkflowService @(path:'/workflow') {
   // daily log is queried by date across a project far more often than it is
   // read one line at a time.
   entity ManpowerRequestLines as projection on mpr.ManpowerRequestLine;
-  entity Timesheets           as projection on mpr.TimesheetEntry
+  // Draft-enabled because a day is entered and corrected before anyone signs
+  // it. The entry is the foreman's working copy until it is activated; sign
+  // then acts on the active day, so a draft can never be counted as cost.
+  @odata.draft.enabled
+  entity Timesheets           as projection on mpr.TimesheetEntry {
+    *,
+    // Rendered as the status colour. A signed or posted day is settled, a
+    // draft is not yet anything, and a day with hours logged against nobody
+    // present is the one state worth flagging red before it is signed.
+    case
+      when logStatus = 'Posted' or logStatus = 'Signed' then 3
+      when headsPresent = 0 and (regularHrs > 0 or otHrs > 0) then 1
+      else 0
+    end as statusCriticality : Integer
+  }
     actions {
       /**
        * Signs off one day's log.
@@ -102,16 +116,43 @@ service WorkflowService @(path:'/workflow') {
        * timesheets contradicted. Each is now computed from the signed days
        * behind the line:
        *
-       *   consumed   = the hours signed for
+       *   consumed   = the head-days signed for
        *   cost       = the cost of those signed days
        *   burn %     = cost against what was encumbered
-       *   drift      = cost, less what was encumbered for the part consumed
+       *   drift      = cost, less those head-days at the reserved rate
+       *
+       * Consumption is in head-days rather than hours because the line is
+       * quantified in heads and priced per head-day, so head-days is the one
+       * unit the quantity, the rate and the money share. Drift is therefore a
+       * difference of rate — zero whenever the rate paid equals the rate
+       * reserved — and not a measure of progress.
        *
        * Drafts are ignored. A day nobody has signed is not consumption.
        */
       action postConsumption() returns String;
     };
-  entity ReservationLines as projection on wf.ReservationLine;
+  entity ReservationLines as projection on wf.ReservationLine {
+    *,
+    // Burn is the number a coordinator scans a reservation for, so it carries
+    // its own colour. Over the encumbrance is red because the line is spending
+    // money nobody locked for it; the band below it is amber because that is
+    // when there is still time to do something about it.
+    case
+      when burnPct > 100 then 1
+      when burnPct >= 90 then 2
+      when burnPct > 0   then 3
+      else 0
+    end as burnCriticality : Integer,
+    // Drift only ever moves off zero when the rate paid differs from the rate
+    // reserved, so any drift at all is worth a colour rather than a threshold.
+    // It is cost less the reserved value of the same head-days: above zero the
+    // line is paying more than it reserved, below zero it is paying less.
+    case
+      when drift > 0 then 1
+      when drift < 0 then 3
+      else 0
+    end as driftCriticality : Integer
+  };
 
   /**
    * The reservation overview a coordinator actually needs: per reservation,
