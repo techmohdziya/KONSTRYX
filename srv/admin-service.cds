@@ -5,6 +5,7 @@
  */
 using { konstryx.admin } from '../db/admin';
 using { konstryx.int } from '../db/int';
+using { konstryx.fin } from '../db/fin';
 
 @requires: 'Admin'
 service AdminService @(path:'/admin') {
@@ -13,6 +14,36 @@ service AdminService @(path:'/admin') {
   entity RoleCollections    as projection on admin.RoleCollectionMap;
   entity UserAccess         as projection on admin.UserCompanyAccess;
   entity SyncConfigs        as projection on admin.S4SyncConfig;
+
+  /**
+   * Exchange rates, maintained here because they are group financial
+   * configuration rather than project data — one table serves every company,
+   * every project and every report.
+   */
+  entity ExchangeRates      as projection on fin.ExchangeRate;
+
+  /**
+   * Converts an amount, and says which rate it used.
+   *
+   * Exposed as an action rather than left as an internal helper because every
+   * screen that shows a converted figure has to be able to state its rate, and
+   * a number whose rate nobody can name cannot be reconciled against anyone
+   * else's. asOf defaults to today; rateType defaults to SPOT.
+   */
+  action convert(
+    amount    : Decimal(15,2),
+    fromCcy   : String(3),
+    toCcy     : String(3),
+    rateType  : String(10),
+    asOf      : Date
+  ) returns {
+    amount    : Decimal(15,2);
+    ccy       : String(3);
+    rate      : Decimal(15,6);
+    rateType  : String(10);
+    validFrom : Date;
+    source    : String(60);
+  };
 
   /**
    * Visible here for platform oversight, but the decision lives on

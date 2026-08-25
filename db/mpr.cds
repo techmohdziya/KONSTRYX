@@ -77,6 +77,16 @@ entity TimesheetEntry : cuid, managed {
   wbs           : Association to prj.WBSElement;
   cbs           : Association to prj.CBSInstance;
   activity      : String(40);                  // PRJ-001.02.30.STR-RBR
+  /**
+   * Where on the site the crew actually worked.
+   *
+   * The WBS says which package the hours belong to and the CBS says what kind
+   * of cost they are; neither says where. Productivity — installed quantity
+   * over logged hours — is only actionable per floor or per zone, so without
+   * this the headline metric of site execution can be computed for a whole
+   * project and for nothing smaller.
+   */
+  location      : Association to prj.SiteLocation;
 
   costAmount    : Decimal(15,2);
   /** Draft -> Signed -> Posted. Only a signed day may reach S/4. */
@@ -87,4 +97,47 @@ entity TimesheetEntry : cuid, managed {
 // Back-association so a line and its manpower detail come back in one $expand.
 extend wf.ResourceRequestLine with {
   manpower : Association to ManpowerRequestLine on manpower.line = $self;
+}
+
+/**
+ * One measurement of productivity at one location, at one moment.
+ *
+ * Kept rather than computed on demand for two reasons. A trend is the whole
+ * point — "output per man-hour on Level 3" answers far less than "output per
+ * man-hour on Level 3, falling for three weeks" — and a figure computed live
+ * can never be compared with what was reported last month, because the hours
+ * and quantities behind it have moved since.
+ *
+ * It also makes the screen a Fiori Elements list rather than a freestyle table
+ * over an action result: an action returning an array cannot be templated, and
+ * a stored row can.
+ */
+entity ProductivitySnapshot : cuid, managed {
+  project       : Association to prj.Project;
+  location      : Association to prj.SiteLocation;
+  /** Denormalised so a list needs no join to be readable. */
+  locationCode  : String(40);
+  locationName  : String(150);
+  locationType  : String(20);
+  takenAt       : Timestamp;
+
+  signedDays    : Integer;
+  headDays      : Decimal(15,3);
+  labourHours   : Decimal(15,2);
+  labourCost    : Decimal(15,2);
+  installedQty  : Decimal(15,3);
+  uom           : String(10);
+
+  /** Installed quantity per signed labour hour. Null when either side is absent. */
+  outputPerHour : Decimal(15,4);
+  /** Labour cost per unit installed. Null for the same reason. */
+  costPerUnit   : Decimal(15,2);
+
+  /**
+   * Why a rate is missing, or why one should be read with care — hours with
+   * nothing measured, work with no signed hours, quantities spanning more than
+   * one unit of measure. Carried on the row because a blank cell that does not
+   * say why is read as a bug.
+   */
+  note          : String(120);
 }

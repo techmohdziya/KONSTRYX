@@ -17,6 +17,7 @@ annotate service.Timesheets with @(
     { $Type : 'UI.DataField', Value : workDate,                Label : 'Date' },
     { $Type : 'UI.DataField', Value : manpowerLine.crewId,     Label : 'Crew' },
     { $Type : 'UI.DataField', Value : manpowerLine.tradeGrade, Label : 'Trade / grade' },
+    { $Type : 'UI.DataField', Value : location_ID,             Label : 'Location' },
     { $Type : 'UI.DataField', Value : headsPresent,            Label : 'Heads present' },
     { $Type : 'UI.DataField', Value : regularHrs,              Label : 'Regular hrs' },
     { $Type : 'UI.DataField', Value : otHrs,                   Label : 'Overtime hrs' },
@@ -28,7 +29,7 @@ annotate service.Timesheets with @(
       Action : 'WorkflowService.sign' },
   ],
 
-  UI.SelectionFields : [ workDate, logStatus, manpowerLine_ID, headsPresent ],
+  UI.SelectionFields : [ workDate, logStatus, manpowerLine_ID, location_ID, headsPresent ],
 
   UI.FieldGroup #Day : {
     $Type : 'UI.FieldGroupType',
@@ -49,6 +50,7 @@ annotate service.Timesheets with @(
       { $Type : 'UI.DataField', Value : manpowerLine_ID, Label : 'Manpower line' },
       { $Type : 'UI.DataField', Value : wbs_ID,          Label : 'WBS element' },
       { $Type : 'UI.DataField', Value : cbs_ID,          Label : 'CBS instance' },
+      { $Type : 'UI.DataField', Value : location_ID,     Label : 'Site location' },
       { $Type : 'UI.DataField', Value : activity,        Label : 'Activity' },
     ],
   },

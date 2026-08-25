@@ -219,7 +219,27 @@ service ProjectService @(path:'/project') {
   entity Activities         as projection on prj.Activity;
   entity ActivityRelations  as projection on prj.ActivityRelation;
 
-  entity CBS              as projection on prj.CBSInstance;
+  entity CBS              as projection on prj.CBSInstance
+    actions {
+      /**
+       * Recomputes every CBS node's budget on this project from the budget
+       * lines beneath it, then rolls the tree upward so a parent equals the
+       * sum of its own lines and its children.
+       *
+       * budgetAmount was a stored number that nothing recomputed, so a node
+       * could report a figure its own lines contradicted and neither was
+       * obviously wrong. Bound to any node on the project; it recomputes the
+       * whole tree, because rolling up one branch of a hierarchy is how the
+       * parent and its siblings end up disagreeing.
+       */
+      action rollUpBudget() returns String;
+    };
+  /**
+   * The site's own geography — building, floor, zone, grid. Maintained with
+   * the project because that is what owns it.
+   */
+  entity SiteLocations    as projection on prj.SiteLocation;
+
   entity Allocations      as projection on prj.Allocation;
   entity ProjectResources as projection on prj.ProjectResource;
 

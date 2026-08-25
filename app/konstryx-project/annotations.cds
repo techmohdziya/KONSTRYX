@@ -55,6 +55,8 @@ annotate service.Projects with @(
       Target : 'cbs/@UI.LineItem' },
     { $Type : 'UI.ReferenceFacet', ID : 'Schedule', Label : 'Schedule',
       Target : 'activities/@UI.LineItem' },
+    { $Type : 'UI.ReferenceFacet', ID : 'Locations', Label : 'Site Locations',
+      Target : 'locations/@UI.LineItem' },
   ],
 );
 
@@ -79,11 +81,40 @@ annotate service.BOQs with @(
 );
 
 annotate service.CBS with @(
+  // Own budget beside the rolled-up figure, because a parent that carries real
+  // cost of its own reads identically to a heading when only the total shows.
   UI.LineItem : [
     { $Type : 'UI.DataField', Value : code,         Label : 'CBS' },
     { $Type : 'UI.DataField', Value : level,        Label : 'Level' },
-    { $Type : 'UI.DataField', Value : budgetAmount, Label : 'Budget' },
+    { $Type : 'UI.DataField', Value : parent_ID,    Label : 'Under' },
+    { $Type : 'UI.DataField', Value : costNature,   Label : 'Cost nature' },
+    { $Type : 'UI.DataField', Value : ownAmount,    Label : 'Own budget' },
+    { $Type : 'UI.DataField', Value : budgetAmount, Label : 'Rolled up' },
+    { $Type : 'UI.DataFieldForAction', Label : 'Roll up budget',
+      Action : 'ProjectService.rollUpBudget' },
   ],
+
+  UI.HeaderInfo : {
+    $Type          : 'UI.HeaderInfoType',
+    TypeName       : 'CBS Node',
+    TypeNamePlural : 'Cost Breakdown',
+    Title          : { $Type : 'UI.DataField', Value : code },
+    Description    : { $Type : 'UI.DataField', Value : level },
+  },
+
+  UI.Identification : [
+    { $Type : 'UI.DataFieldForAction', Label : 'Roll up budget',
+      Action : 'ProjectService.rollUpBudget' },
+  ],
+);
+
+// Rolling up rewrites every node on the project, not only the one the button
+// was pressed on, so the whole collection has to be re-read.
+annotate service.Projects with @(
+  Common.SideEffects #RolledUp : {
+    SourceEvents   : [ 'ProjectService.rollUpBudget' ],
+    TargetEntities : [ cbs ],
+  }
 );
 
 annotate service.Activities with @(
@@ -100,3 +131,55 @@ annotate service.Activities with @(
     { $Type : 'UI.DataField', Value : percentDone,  Label : 'Done %' },
   ],
 );
+
+/**
+ * The site's own geography. Buildings, floors and zones are what a daily log
+ * charges to and what productivity is reported per — a project without them
+ * can only report output per man-hour for the whole job, which is a figure
+ * nobody can act on.
+ */
+annotate service.SiteLocations with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : code,         Label : 'Location' },
+    { $Type : 'UI.DataField', Value : name,         Label : 'Name' },
+    { $Type : 'UI.DataField', Value : locationType, Label : 'Type' },
+    { $Type : 'UI.DataField', Value : level,        Label : 'Level' },
+    { $Type : 'UI.DataField', Value : parent_ID,    Label : 'Under' },
+    { $Type : 'UI.DataField', Value : gfa,          Label : 'GFA' },
+    { $Type : 'UI.DataField', Value : uom,          Label : 'UoM' },
+  ],
+
+  UI.HeaderInfo : {
+    $Type          : 'UI.HeaderInfoType',
+    TypeName       : 'Site Location',
+    TypeNamePlural : 'Site Locations',
+    Title          : { $Type : 'UI.DataField', Value : code },
+    Description    : { $Type : 'UI.DataField', Value : name },
+  },
+);
+
+annotate service.SiteLocations with {
+  code         @title : 'Location';
+  name         @title : 'Name';
+  locationType @title : 'Type';
+  level        @title : 'Level';
+  gfa          @title : 'Gross floor area';
+  uom          @title : 'UoM';
+
+  parent @Common : {
+    Text : parent.code,
+    TextArrangement : #TextOnly,
+    ValueList : {
+      $Type          : 'Common.ValueListType',
+      CollectionPath : 'SiteLocations',
+      Label          : 'Parent location',
+      Parameters     : [
+        { $Type : 'Common.ValueListParameterInOut',
+          LocalDataProperty : parent_ID, ValueListProperty : 'ID' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'code' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'name' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'locationType' }
+      ]
+    }
+  };
+};

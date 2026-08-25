@@ -8,6 +8,7 @@ import com.sap.cds.services.ErrorStatuses;
 import com.sap.cds.services.ServiceException;
 import com.sap.cds.services.persistence.PersistenceService;
 import com.sap.cds.services.runtime.CdsRuntime;
+import com.inflexion.konstryx.fin.CurrencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -43,12 +44,21 @@ public class ApprovalEngine {
     private static final String E_INSTANCE = "konstryx.apr.ApprovalInstance";
     private static final String E_STEP = "konstryx.apr.ApprovalStepInstance";
     private static final String E_ASSIGNMENT = "konstryx.auth.UserAssignment";
+    private static final String E_COMPANY = "konstryx.admin.Company";
     private static final String E_AUTH_OBJECT = "konstryx.auth.AuthObject";
     private static final String E_ATTACHMENT = "konstryx.sys.Attachment";
     private static final String E_ATTACH_CATEGORY = "konstryx.sys.AttachmentCategory";
 
     @Autowired
     private PersistenceService db;
+
+    /**
+     * Value bands carry a currency, and until this was wired in nothing read
+     * it — an amount was compared against a band as a bare number whatever
+     * either was denominated in.
+     */
+    @Autowired
+    private CurrencyService currency;
 
     @Autowired
     private CdsRuntime runtime;
@@ -79,7 +89,12 @@ public class ApprovalEngine {
         assertMandatoryAttachmentsPresent(entityName, objectID, docNo);
 
         Row scheme = findScheme(entityName, companyId);
-        List<Row> steps = matchingSteps(String.valueOf(scheme.get("ID")), amount);
+        // A document is denominated in its company's currency unless it says
+        // otherwise. Neither a budget nor a resource request carries its own
+        // today, and taking it from the legal entity is right rather than
+        // merely convenient: the entity is what the money belongs to.
+        String amountCcy = companyCurrency(companyId);
+        List<Row> steps = matchingSteps(String.valueOf(scheme.get("ID")), amount, amountCcy);
 
         if (steps.isEmpty()) {
             throw new ServiceException(ErrorStatuses.BAD_REQUEST,
@@ -96,6 +111,7 @@ public class ApprovalEngine {
         instance.put("objectID", objectID);
         instance.put("objectDocNo", docNo);
         instance.put("amount", amount);
+        instance.put("ccy_code", amountCcy);
         instance.put("status", "PENDING");
         instance.put("startedAt", Instant.now());
         db.run(Insert.into(E_INSTANCE).entry(instance));
@@ -210,18 +226,34 @@ public class ApprovalEngine {
                 .orElse(candidates.get(0));
     }
 
-    /** Steps whose value band brackets the amount; an open bound always matches. */
-    private List<Row> matchingSteps(String schemeId, BigDecimal amount) {
+    /**
+     * Steps whose value band brackets the amount; an open bound always matches.
+     *
+     * The amount is converted into each band's own currency before it is
+     * compared. A band carries a ccy and nothing used to read it, so a scheme
+     * banded in dirhams matched a euro-denominated variation on the bare
+     * numbers and routed a decision worth four times the top band to whoever
+     * sat in the bottom one. It was invisible while the group traded in one
+     * currency, which is the worst way for a thing to be wrong: nothing about
+     * the output changes shape when it starts being false.
+     *
+     * Conversion falls back to the raw amount when no rate is on file rather
+     * than refusing the submission. A tenant that has never maintained a rate
+     * table is single-currency, and blocking every approval in it to enforce a
+     * conversion that would be the identity anyway helps nobody.
+     */
+    private List<Row> matchingSteps(String schemeId, BigDecimal amount, String amountCcy) {
         List<Row> steps = new ArrayList<>();
         for (Row def : db.run(Select.from(E_STEP_DEF).where(d -> d.get("scheme_ID").eq(schemeId)))) {
             BigDecimal min = dec(def.get("minAmount"));
             BigDecimal max = dec(def.get("maxAmount"));
             boolean matches = true;
             if (amount != null) {
-                if (min != null && amount.compareTo(min) < 0) {
+                BigDecimal comparable = inBandCurrency(amount, amountCcy, str(def.get("ccy_code")));
+                if (min != null && comparable.compareTo(min) < 0) {
                     matches = false;
                 }
-                if (max != null && amount.compareTo(max) >= 0) {
+                if (max != null && comparable.compareTo(max) >= 0) {
                     matches = false;
                 }
             }
@@ -231,6 +263,37 @@ public class ApprovalEngine {
         }
         steps.sort(Comparator.comparingInt(d -> intOf(d.get("stepNo"))));
         return steps;
+    }
+
+    /**
+     * The amount restated in the band's currency, at the spot rate of today.
+     *
+     * Spot rather than the project's budget or contract rate: an approval
+     * threshold is a governance limit on what someone may commit right now, so
+     * the rate that matters is the one in force at the moment of asking.
+     */
+    private BigDecimal inBandCurrency(BigDecimal amount, String amountCcy, String bandCcy) {
+        if (amount == null || isBlank(bandCcy) || bandCcy.equalsIgnoreCase(amountCcy)) {
+            return amount;
+        }
+        CurrencyService.Conversion converted =
+                currency.convertOrPass(amount, amountCcy, bandCcy, "SPOT", LocalDate.now());
+        return converted == null || converted.amount() == null ? amount : converted.amount();
+    }
+
+    /** The currency of the legal entity a document belongs to. */
+    private String companyCurrency(String companyId) {
+        if (companyId == null) {
+            return null;
+        }
+        return db.run(Select.from(E_COMPANY).where(c -> c.get("ID").eq(companyId)))
+                .first()
+                .map(c -> str(c.get("ccy_code")))
+                .orElse(null);
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     // ---------------------------------------------------------------- decisions

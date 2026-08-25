@@ -15,13 +15,25 @@ export JAVA_HOME
 # outcome regardless of whose machine it runs on.
 export S4_OFFLINE=true
 
-SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_schedule test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement test_certification test_execution"
+SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_schedule test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement test_certification test_execution test_finance test_productivity"
 
 : > "$RESULTS"
 
+# Killing java frees the process but not the socket: Windows leaves 8090 in
+# TIME_WAIT for up to two minutes afterwards. A fixed two-second sleep is well
+# short of that, so the next suite's service raced the old socket and lost -
+# which showed up as suites taking minutes instead of seconds, and once as an
+# outright "Port 8090 was already in use". Wait for the port to actually be
+# free rather than guessing how long that takes.
 stop() {
   taskkill //F //IM java.exe >/dev/null 2>&1
-  sleep 2
+  local n=0
+  while netstat -ano 2>/dev/null | grep -qE ":8090[^0-9].*LISTENING"; do
+    sleep 1
+    n=$((n+1))
+    [ $n -gt 60 ] && break
+  done
+  sleep 1
 }
 
 start() {

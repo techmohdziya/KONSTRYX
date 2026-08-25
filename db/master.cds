@@ -71,6 +71,22 @@ entity CBSNode : cuid, managed, common.scoped {
   parent           : Association to CBSNode;
   constructionType : String(60);
   phase            : String(60);     // L1 phase
+  /**
+   * Whether this node absorbs allocated cost or is a pool that gets spread.
+   *
+   * The allocation engine needs the distinction and nothing carried it, so the
+   * engine would either take a hard-coded list of codes or allocate an overhead
+   * onto an overhead — which compounds silently and is invisible in the result,
+   * because the total still reconciles.
+   */
+  costNature       : String(10) enum { DIRECT; INDIRECT; OVERHEAD; } default 'DIRECT';
+  /**
+   * The driver used when this node IS the pool: LABOUR_HOURS, DIRECT_COST,
+   * HEADCOUNT, GFA. A default rather than a rule — an allocation run may
+   * override it, because the same overhead is fairly spread by hours in one
+   * month and by direct cost in another.
+   */
+  allocBasis       : String(20);
   children         : Association to many CBSNode on children.parent = $self;
 }
 

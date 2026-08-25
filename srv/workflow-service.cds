@@ -6,6 +6,7 @@
 using { konstryx.wf } from '../db/wf';
 using { konstryx.eq } from '../db/eq';
 using { konstryx.mpr } from '../db/mpr';
+using { konstryx.prj } from '../db/prj';
 
 @requires: 'ResourceCoordinator'
 service WorkflowService @(path:'/workflow') {
@@ -179,6 +180,57 @@ service WorkflowService @(path:'/workflow') {
     pendingSteps   : String(255);
     s4Commitment   : String(40);
   };
+
+  /**
+   * Exposed here so a daily log can offer a value help for what it charges to.
+   * A Fiori value list must resolve inside the service it is annotated in, and
+   * a timesheet that asks a foreman to type a WBS UUID is not a screen anyone
+   * can use. Read-only: the structures are maintained on ProjectService, and
+   * this is a lookup, not a second place to edit them.
+   */
+  @readonly entity WBSElements   as projection on prj.WBSElement;
+  @readonly entity ProjectCBS    as projection on prj.CBSInstance;
+  @readonly entity ChargeProjects as projection on prj.Project;
+  @readonly entity SiteLocations  as projection on prj.SiteLocation;
+
+  /**
+   * Output per man-hour, per location.
+   *
+   * The headline number of site execution, and until locations existed it
+   * could be computed for a whole project and for nothing smaller — which is
+   * a figure nobody can act on. Installed quantity comes from the bill lines
+   * allocated to the location; the hours come from the signed daily logs
+   * against it.
+   *
+   * Draft days are excluded, as everywhere else: a day nobody has signed is a
+   * claim, not a fact, and counting it would flatter the rate.
+   *
+   * Returns rows even where one side is missing, with the reason stated. A
+   * location with hours and no measured output is the single most useful row
+   * on the screen — it is work being paid for that nothing has yet claimed.
+   */
+  action productivity(projectID : UUID) returns array of {
+    locationID    : UUID;
+    locationCode  : String(40);
+    locationName  : String(150);
+    locationType  : String(20);
+    signedDays    : Integer;
+    headDays      : Decimal(15,3);
+    labourHours   : Decimal(15,2);
+    labourCost    : Decimal(15,2);
+    installedQty  : Decimal(15,3);
+    uom           : String(10);
+    outputPerHour : Decimal(15,4);
+    costPerUnit   : Decimal(15,2);
+    note          : String(120);
+  };
+
+  /**
+   * Productivity as it was measured, each time it was measured. Written by the
+   * productivity action; read-only here, because a measurement is not
+   * something anyone edits after the fact.
+   */
+  @readonly entity ProductivitySnapshots as projection on mpr.ProductivitySnapshot;
 
   @readonly entity StatusHistory as projection on wf.StatusHistory;
   @readonly entity DocumentLinks as projection on wf.DocumentLink;

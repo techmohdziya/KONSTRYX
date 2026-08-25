@@ -8,6 +8,7 @@ using { cuid, managed, Currency } from '@sap/cds/common';
 using { konstryx.common } from './common';
 using { konstryx.admin } from './admin';
 using { konstryx.master } from './master';
+using { konstryx.fin } from './fin';
 
 // S/4 Enterprise Project mirror + Konstryx-local attributes.
 /**
@@ -24,6 +25,16 @@ entity Project : cuid, managed, common.s4outbound {
   ccy              : Currency;
   startDate        : Date;
   endDate          : Date;
+  /**
+   * The rates this project's money is read at, pinned rather than floating.
+   *
+   * Revenue converts at the rate agreed when the contract was awarded and cost
+   * at the rate the budget was baselined on. Without pinning them, a currency
+   * that moves in March changes the margin reported for February, and two
+   * reports run a week apart on the same closed period disagree.
+   */
+  contractFx       : Association to fin.ExchangeRate;
+  budgetFx         : Association to fin.ExchangeRate;
   /** Configurable lifecycle; a project only leaves DRAFT once it is complete. */
   stage            : String(40) default 'Draft';
   executingCompany : Association to admin.Company;
@@ -44,6 +55,7 @@ entity Project : cuid, managed, common.s4outbound {
   boqs             : Association to many BOQ on boqs.project = $self;
   cbs              : Association to many CBSInstance on cbs.project = $self;
   activities       : Association to many Activity on activities.project = $self;
+  locations        : Association to many SiteLocation on locations.project = $self;
 }
 
 // S/4 WBS mirror.
@@ -200,11 +212,65 @@ entity CBSInstance : cuid, managed {
   project      : Association to Project;
   parent       : Association to CBSInstance;
   libraryNode  : Association to master.CBSNode;
+  /**
+   * DERIVED, never keyed. The sum of the budget lines posted against this node
+   * and every node beneath it.
+   *
+   * It was a stored decimal that nothing recomputed, so the lines under a node
+   * could sum to one figure while the node reported another and neither was
+   * wrong enough to notice. Recomputed by rollUpBudget; an inbound value is
+   * ignored, not trusted — the same treatment ConsumptionRate.netRate gets, and
+   * for the same reason.
+   */
   budgetAmount : Decimal(15,2);
+  /** This node's own lines, before its children are added in. */
+  ownAmount    : Decimal(15,2);
+  /**
+   * Copied from the library node at instantiation and overridable per project:
+   * a cost that is an overhead on a tower is a direct cost on the site
+   * infrastructure package that exists to provide it.
+   */
+  costNature   : String(10) enum { DIRECT; INDIRECT; OVERHEAD; } default 'DIRECT';
+  allocBasis   : String(20);
   level        : String(2);
   // Association for the same reason as the library hierarchies: self-referencing
   // compositions break draft activation and imply cascade-delete of a subtree.
   children     : Association to many CBSInstance on children.parent = $self;
+}
+
+/**
+ * Where on the site the work is.
+ *
+ * Productivity is output per man-hour, and it was not computable — not for
+ * want of arithmetic, but because a daily log could not say where the hours
+ * were worked. Output per man-hour across a whole project is a number nobody
+ * can act on; per level, per zone, per pour it is the number a site is run on.
+ *
+ * Owned by the project rather than held as a global master. A grid reference
+ * means nothing outside the building it is drawn on, and two projects on
+ * neighbouring plots both have a "Level 3".
+ */
+entity SiteLocation : cuid, managed {
+  project      : Association to Project;
+  code         : String(40);                   // T1-L03-ZA
+  name         : String(150);
+  level        : String(2) enum { L1; L2; L3; L4; };
+  locationType : String(20) enum { SITE; BUILDING; FLOOR; ZONE; GRID; AREA; };
+  /**
+   * Association, not Composition — the same reason the WBS, CBS and resource
+   * hierarchies use one. A self-referencing composition overflows the stack on
+   * draft activation, and it would mean deleting a floor silently deletes
+   * every zone on it.
+   */
+  parent       : Association to SiteLocation;
+  children     : Association to many SiteLocation on children.parent = $self;
+  /**
+   * Gross floor area. Carried so an area-weighted allocation can read it
+   * rather than assert it: the split basis "GFA-weighted per floor" was a
+   * sentence in a string field with no floor areas anywhere behind it.
+   */
+  gfa          : Decimal(15,3);
+  uom          : String(10);
 }
 
 // BOQItem <-> WBS <-> CBS mapping.
@@ -220,6 +286,15 @@ entity Allocation : cuid, managed {
   template     : String(20);
   /** The human words behind the split — "GFA-weighted per floor". */
   splitBasis   : String(40);
+  /**
+   * The floor or zone this share of the bill line belongs to.
+   *
+   * TPL-FLOORS and TPL-ZONES were already splitting a bill line across the
+   * building, with the floors named only inside a template string and the
+   * weighting asserted in splitBasis. Pointing at the location makes the same
+   * split computable: a GFA weighting now reads the areas off these rows.
+   */
+  location     : Association to SiteLocation;
 }
 
 entity ProjectResource : cuid, managed {
