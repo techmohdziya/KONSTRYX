@@ -14,9 +14,10 @@ sap.ui.define([
 	"sap/m/VBox",
 	"sap/ui/core/Item",
 	"sap/m/MessageBox",
-	"sap/m/MessageToast"
+	"sap/m/MessageToast",
+	"konstryx/lib/ActionPost"
 ], function (BaseController, ListPersonalization, JSONModel, Filter, FilterOperator, exportLibrary,
-             Dialog, Button, Select, Input, TextArea, Label, VBox, Item, MessageBox, MessageToast) {
+             Dialog, Button, Select, Input, TextArea, Label, VBox, Item, MessageBox, MessageToast, ActionPost) {
 	"use strict";
 
 	/** The six cost-nature verticals a budget line can carry (bud.cds §BudgetLine.category). */
@@ -261,19 +262,8 @@ sap.ui.define([
 				sUrl = oModel.getServiceUrl() + "Budgets(ID=" + this._sBudgetId
 					+ ",IsActiveEntity=true)/BudgetService." + sAction;
 
-			return fetch(sUrl, {
-				method: "POST",
-				credentials: "same-origin",
-				headers: { "Content-Type": "application/json", "Accept": "application/json" },
-				body: JSON.stringify(oParams || {})
-			}).then(function (oResponse) {
-				return oResponse.json().then(function (oBody) {
-					if (!oResponse.ok) {
-						throw new Error((oBody.error && oBody.error.message) || "The action was refused.");
-					}
-					return oBody;
-				});
-			}).then(function (oBody) {
+			return ActionPost.post(sUrl, oParams || {},
+					"The action was refused.").then(function (oBody) {
 				MessageToast.show(String(oBody.value || "Done."));
 				return that._refresh();
 			}).catch(function (oError) {

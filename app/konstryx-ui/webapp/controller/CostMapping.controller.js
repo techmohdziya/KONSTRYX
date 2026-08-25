@@ -11,9 +11,10 @@ sap.ui.define([
 	"sap/m/Text",
 	"sap/ui/core/Item",
 	"sap/m/MessageBox",
-	"sap/m/MessageToast"
+	"sap/m/MessageToast",
+	"konstryx/lib/ActionPost"
 ], function (BaseController, JSONModel, Dialog, Button, Select, Input, Label, VBox, HBox, Text,
-             Item, MessageBox, MessageToast) {
+             Item, MessageBox, MessageToast, ActionPost) {
 	"use strict";
 
 	/**
@@ -283,19 +284,9 @@ sap.ui.define([
 				sUrl = oModel.getServiceUrl() + "BOQs(ID=" + oRow.boqId
 					+ ",IsActiveEntity=true)/ProjectService.distributeToWBS";
 
-			fetch(sUrl, {
-				method: "POST",
-				credentials: "same-origin",
-				headers: { "Content-Type": "application/json", "Accept": "application/json" },
-				body: JSON.stringify({ template: sTemplate, targets: aTargets, itemNos: [oRow.itemNo] })
-			}).then(function (oResponse) {
-				return oResponse.json().then(function (oBody) {
-					if (!oResponse.ok) {
-						throw new Error((oBody.error && oBody.error.message) || "The distribution was refused.");
-					}
-					return oBody;
-				});
-			}).then(function (oBody) {
+			ActionPost.post(sUrl, {
+				template: sTemplate, targets: aTargets, itemNos: [oRow.itemNo]
+			}, "The distribution was refused.").then(function (oBody) {
 				MessageToast.show(String(oBody.value || ""));
 				that._refresh();
 			}).catch(function (oError) {
@@ -331,19 +322,8 @@ sap.ui.define([
 				 */
 				var sUrl = oModel.getServiceUrl() + "BOQs(ID=" + sBoqId
 					+ ",IsActiveEntity=true)/ProjectService.generateBuildUp";
-				fetch(sUrl, {
-					method: "POST",
-					credentials: "same-origin",
-					headers: { "Content-Type": "application/json", "Accept": "application/json" },
-					body: JSON.stringify({ difficultyPct: 110 })
-				}).then(function (oResponse) {
-					return oResponse.json().then(function (oBody) {
-						if (!oResponse.ok) {
-							throw new Error((oBody.error && oBody.error.message) || "Generation failed.");
-						}
-						return oBody;
-					});
-				}).then(function (oBody) {
+				ActionPost.post(sUrl, { difficultyPct: 110 },
+						"Generation failed.").then(function (oBody) {
 					MessageToast.show(String(oBody.value || ""));
 					that._refresh();
 				}).catch(function (oError) {

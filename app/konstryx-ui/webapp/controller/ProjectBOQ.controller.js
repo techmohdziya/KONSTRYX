@@ -4,8 +4,9 @@ sap.ui.define([
 	"sap/ui/model/Filter",
 	"sap/ui/model/FilterOperator",
 	"sap/m/MessageBox",
-	"sap/m/MessageToast"
-], function (BaseController, ObjectLinks, Filter, FilterOperator, MessageBox, MessageToast) {
+	"sap/m/MessageToast",
+	"konstryx/lib/ActionPost"
+], function (BaseController, ObjectLinks, Filter, FilterOperator, MessageBox, MessageToast, ActionPost) {
 	"use strict";
 
 	/**
@@ -99,19 +100,8 @@ sap.ui.define([
 			var oModel = this.getModel("pj"),
 				sUrl = oModel.getServiceUrl() + "BOQs(ID=" + this._sBoqId
 					+ ",IsActiveEntity=true)/ProjectService.generateBuildUp";
-			fetch(sUrl, {
-				method: "POST",
-				credentials: "same-origin",
-				headers: { "Content-Type": "application/json", "Accept": "application/json" },
-				body: JSON.stringify({ difficultyPct: 110 })
-			}).then(function (oResponse) {
-				return oResponse.json().then(function (oBody) {
-					if (!oResponse.ok) {
-						throw new Error((oBody.error && oBody.error.message) || "Generation failed.");
-					}
-					return oBody;
-				});
-			}).then(function (oBody) {
+			ActionPost.post(sUrl, { difficultyPct: 110 },
+					"Generation failed.").then(function (oBody) {
 				MessageBox.information(String(oBody.value || ""), { title: "Build-up coverage" });
 			}).catch(function (oError) {
 				MessageBox.error(oError.message || "Generation failed.");
