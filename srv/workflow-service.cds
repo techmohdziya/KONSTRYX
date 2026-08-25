@@ -70,7 +70,22 @@ service WorkflowService @(path:'/workflow') {
   // daily log is queried by date across a project far more often than it is
   // read one line at a time.
   entity ManpowerRequestLines as projection on mpr.ManpowerRequestLine;
-  entity Timesheets           as projection on mpr.TimesheetEntry;
+  entity Timesheets           as projection on mpr.TimesheetEntry
+    actions {
+      /**
+       * Signs off one day's log.
+       *
+       * Costs the day from the manpower line's all-in head-day rate and moves
+       * it Draft -> Signed. Only a signed day is counted against a
+       * reservation, and only a signed day may reach S/4.
+       *
+       * standardDayHours defaults to 8. Overtime is costed at the same all-in
+       * hourly rate as regular time, because the model carries one rate per
+       * head-day and no premium - an overtime multiplier would be a number
+       * invented here rather than agreed commercially.
+       */
+      action sign(standardDayHours : Decimal(4,2)) returns String;
+    };
   entity AdvisoryDecisions    as projection on wf.AdvisoryDecision;
   entity AvailabilityChecks   as projection on wf.AvailabilityCheck;
 
@@ -78,6 +93,23 @@ service WorkflowService @(path:'/workflow') {
     actions {
       /** Closes every line and the document; the encumbrance record remains. */
       action close() returns String;
+
+      /**
+       * Rolls the signed daily logs into this reservation's lines.
+       *
+       * Consumption, cost to date, burn and drift were stored numbers that
+       * nothing derived, so a reservation could report a burn its own
+       * timesheets contradicted. Each is now computed from the signed days
+       * behind the line:
+       *
+       *   consumed   = the hours signed for
+       *   cost       = the cost of those signed days
+       *   burn %     = cost against what was encumbered
+       *   drift      = cost, less what was encumbered for the part consumed
+       *
+       * Drafts are ignored. A day nobody has signed is not consumption.
+       */
+      action postConsumption() returns String;
     };
   entity ReservationLines as projection on wf.ReservationLine;
 
