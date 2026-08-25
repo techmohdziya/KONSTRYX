@@ -43,6 +43,52 @@ entity Company : cuid, managed {
   isDefault    : Boolean default false;
 }
 
+/**
+ * Organizational values as they exist in the connected S/4 system.
+ *
+ * **Why these are read and never shipped.** Plants, purchasing organizations,
+ * profit centres and project profiles are configuration of the customer's own
+ * S/4 system. In a multi-tenant product there is no value that is right for
+ * every tenant, so a content pack cannot carry them: the pack that seeded
+ * tenant my434396 carried values read off my401381, and S/4 answered a real
+ * project push with "Profit Center 10001000 does not exist". They were
+ * plausible, and they belonged to a different system.
+ *
+ * So this table is filled by reading the tenant's own S/4 through the `ITS_S4`
+ * destination, and `Company` selects from it rather than being told what to
+ * hold. A value nobody can find in here does not exist in the system the
+ * documents are going to.
+ *
+ * Read-only to the client, like every other S/4 mirror (DM-01): correcting a
+ * plant means correcting it in S/4, not here.
+ */
+entity S4OrgValue : cuid, managed {
+  /**
+   * COMPANY_CODE | PLANT | PURCH_ORG | PURCH_GROUP | PROFIT_CENTER |
+   * COST_CENTER | PROJECT_PROFILE
+   */
+  kind        : String(20);
+  code        : String(20);
+  name        : String(120);
+  /**
+   * The S/4 company code this value belongs to, where S/4 scopes it to one.
+   * Blank means the value is global to the system, or that the source that
+   * produced it does not say — a catalogue read of all plants cannot tell you
+   * which company codes use them.
+   */
+  parentCode  : String(20);
+  ccy         : String(5);
+  /**
+   * Which S/4 service answered, and whether the value came from configuration
+   * or from a document that used it. A value observed on a live requisition is
+   * proof it works; a value in a catalogue is only proof it exists.
+   */
+  source      : String(160);
+  inUse       : Boolean default false;
+  s4System    : String(30);
+  readAt      : Timestamp;
+}
+
 // Persona -> XSUAA role collection mapping, with module access matrix.
 entity RoleCollectionMap : cuid, managed {
   persona        : String(60);

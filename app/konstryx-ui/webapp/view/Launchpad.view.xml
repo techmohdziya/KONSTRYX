@@ -9,7 +9,7 @@
 		<content>
 			<VBox class="kxLaunchpadHeader">
 				<Title text="Engineering Construction &amp; Operations" level="H2"/>
-				<Text visible="{/ui/showGuidanceText}" text="{/user/name} · {/user/role} · {/project/id} {/project/name} · data date {/project/dataDate}"/>
+				<Text visible="{/ui/showGuidanceText}" text="{/user/logon} · {/user/role} · {/project/id} {/project/name} · data date {/project/dataDate}"/>
 			</VBox>
 
 			<MessageStrip visible="{/ui/showIntegrationStatus}"

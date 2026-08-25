@@ -118,6 +118,19 @@ public class S4Connection {
 
     private synchronized void resolve() {
         resolved = true;
+
+        // A hard off switch, and it earns its place. Release now posts to S/4
+        // the moment a project is released, so any environment that can reach
+        // a tenant will write to it - including a verification run, which found
+        // live credentials in a developer .env and started creating projects in
+        // a real system. A test must never depend on which tenant someone's
+        // .env happens to name.
+        if (Boolean.parseBoolean(envOr("S4_OFFLINE", "false"))) {
+            log.info("S4_OFFLINE is set - no outbound S/4 connection. Every sync "
+                    + "stays queued.");
+            return;
+        }
+
         String name = envOr("S4_DESTINATION", DEFAULT_DESTINATION);
         try {
             HttpDestination d = DestinationAccessor.getDestination(name).asHttp();

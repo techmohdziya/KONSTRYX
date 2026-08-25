@@ -8,6 +8,13 @@ RESULTS="$SP/results.txt"
 : "${JAVA_HOME:=/c/Program Files/SapMachine/JDK/17}"
 export JAVA_HOME
 
+# No outbound S/4, ever, from a verification run. Release posts to S/4 as soon
+# as a project is released, and S4Connection will happily pick up credentials
+# from a developer's .env - which is how a test run started creating projects in
+# a live tenant. Suites assert the queued outcome; this is what makes that the
+# outcome regardless of whose machine it runs on.
+export S4_OFFLINE=true
+
 SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement"
 
 : > "$RESULTS"

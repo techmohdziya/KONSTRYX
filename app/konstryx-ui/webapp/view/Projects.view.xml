@@ -29,6 +29,16 @@
 					<OverflowToolbar>
 						<Title id="projectCount" text="Projects" level="H4"/>
 						<ToolbarSpacer/>
+						<Button id="newProjectButton" text="New project" icon="sap-icon://add"
+							type="Emphasized" press=".onNewProject"/>
+						<!-- Here rather than in an administration screen because this is
+						     where its absence bites: a release fails on a plant or a
+						     profit centre S/4 has never heard of, and this is the screen
+						     you are standing on when it does. It belongs in the admin
+						     module once that exists. -->
+						<Button id="syncOrgButton" text="S/4 org values"
+							icon="sap-icon://synchronize" type="Transparent"
+							visible="{/user/isAdmin}" press=".onSyncOrg"/>
 						<ObjectStatus text="live · CAP OData V4" state="Success" icon="sap-icon://connected" visible="{/ui/showIntegrationStatus}"/>
 					</OverflowToolbar>
 				</headerToolbar>
@@ -39,6 +49,7 @@
 					<Column width="8rem"><Text text="Stage"/></Column>
 					<Column width="12rem" hAlign="End"><Text text="Contract value"/></Column>
 					<Column width="10rem" visible="{/ui/showIntegrationStatus}"><Text text="S/4 sync"/></Column>
+					<Column width="9rem" hAlign="End"><Text text=""/></Column>
 				</columns>
 
 				<items>
@@ -56,6 +67,15 @@
 								text="{pj>syncStatus}"
 								state="{= ${pj>syncStatus} === 'SENT' ? 'Success' : ${pj>syncStatus} === 'FAILED' ? 'Error' : 'Warning' }"
 								icon="{= ${pj>syncStatus} === 'SENT' ? 'sap-icon://connected' : 'sap-icon://disconnected' }"/>
+							<!-- Hidden once the project is in S/4 rather than disabled:
+							     a greyed button invites a click and then explains why
+							     it was refused, and there is nothing to retry. -->
+							<Button
+								text="Release to S/4"
+								type="Transparent"
+								icon="sap-icon://journey-arrive"
+								visible="{= ${pj>syncStatus} !== 'SENT' }"
+								press=".onReleaseToS4"/>
 						</cells>
 					</ColumnListItem>
 				</items>

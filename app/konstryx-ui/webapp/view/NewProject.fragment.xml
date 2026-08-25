@@ -1,0 +1,80 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core"
+	xmlns:l="sap.ui.layout.form">
+
+	<!--
+		Creating a project takes its WBS elements with it, deliberately.
+
+		A project header alone cannot be released - S/4 has nothing to post
+		against - so a dialog that stopped at the header would produce a project
+		that looks finished and can never leave. The seeded PRJ-002 is exactly
+		that, and it is still stuck. Asking for one WBS element here costs a row
+		of typing; discovering it at release costs the project.
+	-->
+	<Dialog id="newProjectDialog" title="New project" contentWidth="42rem" resizable="true">
+		<content>
+			<l:SimpleForm layout="ResponsiveGridLayout" editable="true"
+				labelSpanL="4" labelSpanM="4" columnsL="1" columnsM="1">
+				<Label text="Project code" required="true"/>
+				<Input id="npCode" value="{new>/code}" maxLength="40"
+					placeholder="e.g. PRJ-003"/>
+
+				<Label text="Name" required="true"/>
+				<Input id="npName" value="{new>/name}" maxLength="150"/>
+
+				<Label text="Company" required="true"/>
+				<Select id="npCompany" selectedKey="{new>/companyCode}"
+					items="{path: 'pj>/Companies', sorter: {path: 'code'}, templateShareable: false}">
+					<core:ListItem key="{pj>code}" text="{pj>code} - {pj>legalName}"/>
+				</Select>
+
+				<Label text="Start date" required="true"/>
+				<DatePicker id="npStart" value="{new>/startDate}"
+					valueFormat="yyyy-MM-dd" displayFormat="long"/>
+
+				<Label text="End date" required="true"/>
+				<DatePicker id="npEnd" value="{new>/endDate}"
+					valueFormat="yyyy-MM-dd" displayFormat="long"/>
+
+				<Label text="Contract value"/>
+				<Input id="npValue" value="{new>/contractValue}" type="Number"
+					description="in the company's own currency"/>
+			</l:SimpleForm>
+
+			<Toolbar>
+				<Title text="WBS elements" level="H5"/>
+				<ToolbarSpacer/>
+				<Button icon="sap-icon://add" text="Add" press=".onAddWbsRow"/>
+			</Toolbar>
+			<Table id="npWbsTable" items="{path: 'new>/wbs', templateShareable: false}"
+				class="sapUiTinyMarginBottom">
+				<columns>
+					<Column width="12rem"><Text text="Element"/></Column>
+					<Column><Text text="Description"/></Column>
+					<Column width="3rem"/>
+				</columns>
+				<items>
+					<ColumnListItem>
+						<cells>
+							<Input value="{new>code}" placeholder="e.g. WBS-1.01"/>
+							<Input value="{new>description}"/>
+							<Button icon="sap-icon://decline" type="Transparent"
+								tooltip="Remove this element" press=".onRemoveWbsRow"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+
+			<MessageStrip
+				text="Creating a project does not put it in S/4. Release it when it is ready, and the connector posts it then."
+				type="Information" showIcon="true" class="sapUiSmallMargin"/>
+		</content>
+		<beginButton>
+			<Button id="npCreate" text="Create" type="Emphasized" press=".onCreateProject"/>
+		</beginButton>
+		<endButton>
+			<Button text="Cancel" press=".onCancelNewProject"/>
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

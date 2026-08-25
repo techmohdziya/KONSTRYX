@@ -133,4 +133,47 @@ service CollaborationService @(path:'/collaboration') {
 
   /** Per-user table personalization. Filtered to the requesting user. */
   entity UserVariants as projection on sys.UserVariant;
+
+  /**
+   * Who the platform says this is.
+   *
+   * The screens read a name out of the UI's own JSON model until now, where it
+   * was a wireframe persona — so every user, on every tenant, was greeted as
+   * the same fictional person. In a multi-tenant product that is worse than
+   * showing nothing: it invites someone to believe they are looking at their
+   * own authorization when they are looking at a mock-up.
+   *
+   * `logon` is the XSUAA logon name, and it is deliberately the field the
+   * screens display. It is the identity everything else in the product keys
+   * on — the approval trail, the import history and the authorization model
+   * all record this exact string — so showing a prettier name in the corner of
+   * the screen would mean the name a person reads is not the name their
+   * actions are filed under. A persona assignment that refuses because it was
+   * keyed on a different spelling looks identical to no assignment at all, and
+   * the only way to see that from a browser is to be shown the raw id.
+   */
+  type SignedInUser {
+    /** XSUAA logon name — the id every audit trail records. */
+    logon    : String(120);
+    /** Display name where the identity provider supplies one, else the logon. */
+    name     : String(150);
+    initials : String(4);
+    /**
+     * True while this session bypasses the data-driven permission model
+     * entirely, which is what the `Admin` scope does. Worth surfacing: an
+     * administrator sees every row on every screen, and cannot tell from the
+     * data alone that the permission model was never consulted.
+     */
+    isAdmin  : Boolean;
+    /** Whether any persona is assigned to this logon on this tenant. */
+    hasPersona : Boolean;
+    tenant   : String(120);
+  }
+
+  /**
+   * Reachable by any authenticated user, and deliberately not behind the
+   * authorization model: a person who cannot yet be identified by it still
+   * needs to be told which id the token carried.
+   */
+  function whoAmI() returns SignedInUser;
 }

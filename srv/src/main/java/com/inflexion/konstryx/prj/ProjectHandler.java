@@ -3,6 +3,7 @@ package com.inflexion.konstryx.prj;
 import com.sap.cds.CdsData;
 import com.sap.cds.Row;
 import com.sap.cds.ql.CQL;
+import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;
 import com.sap.cds.ql.Update;
 import com.sap.cds.ql.cqn.CqnPredicate;
@@ -18,18 +19,25 @@ import com.sap.cds.services.handler.EventHandler;
 import com.sap.cds.services.handler.annotations.Before;
 import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
+import com.sap.cds.services.ServiceCatalog;
+import com.sap.cds.services.cds.ApplicationService;
 import com.sap.cds.services.persistence.PersistenceService;
+import com.sap.cds.services.runtime.CdsRuntime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * The project is mastered in KONSTRYX (D-17), which reverses the rule that held
@@ -58,6 +66,9 @@ public class ProjectHandler implements EventHandler {
 
     @Autowired
     private P6ImportService p6;
+
+    @Autowired
+    private CdsRuntime runtime;
 
     @Autowired
     private com.inflexion.konstryx.s4.S4ProjectConnector s4Connector;
@@ -221,10 +232,27 @@ public class ProjectHandler implements EventHandler {
         String id = str(project.get("ID"));
         db.run(Update.entity(E_PROJECT).data(update).where(p -> p.get("ID").eq(id)));
 
-        return_(context, project.get("code")
-                + " is queued for S/4. It will show as not yet in S/4 until the "
-                + "connector confirms it — nothing downstream should be posted against "
-                + "it before then.");
+        // Push straight away when there is a system to push to. Release used
+        // to only queue, from when there was no connector to call; leaving it
+        // that way now would mean a project a person just created sits PENDING
+        // until someone runs a second action, and "released" would mean two
+        // different things depending on who was watching.
+        //
+        // The queue is not bypassed, it is walked: PENDING is written first and
+        // pushToS4 refuses anything that is not PENDING, so the gate that
+        // release just applied is still the gate the push honours. A failure
+        // records FAILED and says so, rather than leaving the caller to believe
+        // a queued project is a sent one.
+        if (!s4Connector.isConfigured()) {
+            return_(context, project.get("code")
+                    + " is queued for S/4. No S/4 connection is configured, so it "
+                    + "stays queued, and nothing downstream should be posted against "
+                    + "it until the connector confirms it.");
+            return;
+        }
+        Row queued = db.run(Select.from(E_PROJECT).where(p -> p.get("ID").eq(id)))
+                .first().orElse(project);
+        return_(context, pushToS4(queued));
     }
 
     /**
@@ -249,6 +277,124 @@ public class ProjectHandler implements EventHandler {
                     "A project with no WBS has nothing to post against. Add at least one "
                             + "WBS element before releasing.");
         }
+    }
+
+    /**
+     * Creates a project and its WBS elements in one call.
+     *
+     * The WBS elements are not optional, and that is the point. A project
+     * header on its own cannot be released — S/4 has nothing to post against —
+     * so a create that stopped at the header would produce exactly the state
+     * PRJ-002 is stuck in: complete-looking, and permanently unreleasable.
+     * Refusing at create is a corrected form; discovering it at release is a
+     * project that has to be deleted.
+     *
+     * Everything is written through this service rather than through the
+     * database, so a typed project meets the same validation as an imported or
+     * a seeded one — the code-is-free check, the date check, and the sync
+     * fields defaulting to NOT_SENT. Creating a project does not put it in S/4.
+     */
+    @On(event = "createProject")
+    public void onCreateProject(EventContext context) {
+        String code = trimmed(context.get("code"));
+        String name = trimmed(context.get("name"));
+        String companyCode = trimmed(context.get("companyCode"));
+        if (isBlank(code) || isBlank(name)) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "A project needs both a code and a name.");
+        }
+        if (isBlank(companyCode)) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "Say which company the project belongs to.");
+        }
+
+        Row company = db.run(Select.from("konstryx.admin.Company")
+                .where(c -> c.get("code").eq(companyCode))).first()
+                .orElseThrow(() -> new ServiceException(ErrorStatuses.BAD_REQUEST,
+                        "No company with code " + companyCode + "."));
+
+        List<Map<String, Object>> wbsRows = wbsFrom(context.get("wbs"));
+        if (wbsRows.isEmpty()) {
+            throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                    "Add at least one WBS element. A project with none cannot be "
+                            + "released to S/4, and nothing can be costed against it.");
+        }
+
+        ApplicationService projects = serviceFor("ProjectService");
+        String projectId = UUID.randomUUID().toString();
+
+        Map<String, Object> project = new LinkedHashMap<>();
+        project.put("ID", projectId);
+        project.put("code", code);
+        project.put("name", name);
+        project.put("company_ID", company.get("ID"));
+        project.put("startDate", context.get("startDate"));
+        project.put("endDate", context.get("endDate"));
+        project.put("stage", "Draft");
+        if (context.get("contractValue") != null) {
+            project.put("contractValue", new BigDecimal(
+                    String.valueOf(context.get("contractValue"))));
+            // The contract is held in the company's own currency. Taking it
+            // from anywhere else would let a project be valued in one currency
+            // and posted in another.
+            project.put("ccy_code", company.get("ccy_code"));
+        }
+        projects.run(Insert.into(ENTITY).entry(project));
+
+        for (Map<String, Object> wbs : wbsRows) {
+            wbs.put("project_ID", projectId);
+            projects.run(Insert.into("ProjectService.WBS").entry(wbs));
+        }
+
+        return_(context, code + " created with " + wbsRows.size()
+                + " WBS element(s). It is not in S/4 yet - release it when it is ready.");
+    }
+
+    /** The WBS elements off the action payload, validated before anything is written. */
+    private List<Map<String, Object>> wbsFrom(Object payload) {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        if (!(payload instanceof List<?> list)) {
+            return rows;
+        }
+        Set<String> seen = new HashSet<>();
+        for (Object item : list) {
+            if (!(item instanceof Map<?, ?> map)) {
+                continue;
+            }
+            String wbsCode = trimmed(map.get("code"));
+            if (isBlank(wbsCode)) {
+                continue;
+            }
+            if (!seen.add(wbsCode.toUpperCase())) {
+                throw new ServiceException(ErrorStatuses.BAD_REQUEST,
+                        "WBS element " + wbsCode + " is listed twice.");
+            }
+            Map<String, Object> wbs = new LinkedHashMap<>();
+            wbs.put("ID", UUID.randomUUID().toString());
+            wbs.put("code", wbsCode);
+            String description = trimmed(map.get("description"));
+            wbs.put("description", isBlank(description) ? wbsCode : description);
+            rows.add(wbs);
+        }
+        return rows;
+    }
+
+    /**
+     * Writes go through the application service, not the database, so every
+     * handler registered on it runs. Same helper P6ImportService uses, and for
+     * the same reason.
+     */
+    private ApplicationService serviceFor(String name) {
+        ServiceCatalog catalog = runtime.getServiceCatalog();
+        return catalog.getServices(ApplicationService.class)
+                .filter(service -> service.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new ServiceException(ErrorStatuses.BAD_REQUEST,
+                        "No such service: " + name));
+    }
+
+    private static String trimmed(Object value) {
+        return value == null ? null : String.valueOf(value).trim();
     }
 
     @On(event = "importP6")

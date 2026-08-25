@@ -5,6 +5,7 @@
  */
 using { konstryx.prj } from '../db/prj';
 using { konstryx.master } from '../db/master';
+using { konstryx.admin } from '../db/admin';
 
 /** One target of a WBS distribution: the element and its weight share. */
 type WBSTarget {
@@ -24,9 +25,17 @@ service ProjectService @(path:'/project') {
   entity Projects as projection on prj.Project
     actions {
       /**
-       * Marks the project ready to leave KONSTRYX. The S/4 connector is not
-       * built (Q-09), so this queues rather than posts: syncStatus becomes
-       * PENDING and the project is visibly not in S/4 until it is.
+       * Sends the project to S/4.
+       *
+       * It queues first and pushes immediately: syncStatus becomes PENDING,
+       * and the connector then runs against that queued row. Both steps matter
+       * — PENDING is what the gate writes, and the push refuses anything that
+       * is not PENDING, so a project can never reach S/4 without having passed
+       * the release checks.
+       *
+       * Where no S/4 connection is configured it stops at PENDING and says so,
+       * which is what it always did. A push that S/4 refuses records FAILED
+       * with the reason rather than leaving the project looking queued.
        */
       action releaseToS4() returns String;
 
@@ -188,6 +197,16 @@ service ProjectService @(path:'/project') {
     };
 
   entity BOQItemResources as projection on prj.BOQItemResource;
+  /**
+   * The companies a project can belong to, read-only.
+   *
+   * Here rather than only on AdminService because every project must name one,
+   * and a project manager who cannot read the list cannot create a project.
+   * AdminService is where they are maintained; this is where they are chosen
+   * from.
+   */
+  @readonly entity Companies as projection on admin.Company;
+
   entity CBS              as projection on prj.CBSInstance;
   entity Allocations      as projection on prj.Allocation;
   entity ProjectResources as projection on prj.ProjectResource;
@@ -212,4 +231,34 @@ service ProjectService @(path:'/project') {
     exceptionCount : Integer;
     budgetReady    : Boolean;
   };
+
+  /**
+   * Creates a project and its WBS elements together, in one call.
+   *
+   * Together rather than separately, deliberately. A project with no WBS
+   * element cannot be released — there is nothing for S/4 to post against —
+   * and a create that stops at the header leaves exactly that: a project that
+   * looks finished and can never leave. The seeded PRJ-002 is the standing
+   * example, and it is still stuck.
+   *
+   * The company is named by its code rather than its key, because a person
+   * typing a new project knows INFC and does not know a UUID.
+   *
+   * Everything is written through this service, so a project typed here gets
+   * the same validation as one imported from P6 or seeded from a content pack
+   * — including NOT_SENT. Creating a project never puts it in S/4; releasing
+   * it does.
+   */
+  action createProject(
+    code          : String(40),
+    name          : String(150),
+    companyCode   : String(10),
+    startDate     : Date,
+    endDate       : Date,
+    contractValue : Decimal(15,2),
+    wbs           : array of {
+      code        : String(40);
+      description : String(150);
+    }
+  ) returns String;
 }

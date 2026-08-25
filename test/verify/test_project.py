@@ -160,7 +160,65 @@ results.append(ok)
 print(f"  {'ok  ' if ok else 'FAIL'} {p['code']} is {p['syncStatus']} as {p['s4Key']}"
       f" after {p['syncAttempts']} attempts")
 
-head("7. Which projects are not in S/4 — the list that matters")
+head("7. A project a person defines, header and WBS together")
+# The header alone is refused. A project with no WBS element cannot be
+# released - S/4 has nothing to post against - so a create that accepted one
+# would manufacture the state PRJ-002 is stuck in: complete-looking and
+# permanently unreleasable.
+check(400, "header with no WBS is refused", *call(
+    "/project/createProject", method="POST",
+    body={"code": "PRJ-T90", "name": "Typed project", "companyCode": "INFC",
+          "startDate": "2026-09-01", "endDate": "2027-03-31", "wbs": []}))
+
+check(400, "an unknown company is refused", *call(
+    "/project/createProject", method="POST",
+    body={"code": "PRJ-T91", "name": "Typed project", "companyCode": "NOPE",
+          "startDate": "2026-09-01", "endDate": "2027-03-31",
+          "wbs": [{"code": "T91-1", "description": "Enabling"}]}))
+
+check(200, "created with its WBS", *call(
+    "/project/createProject", method="POST",
+    body={"code": "PRJ-T90", "name": "Typed project", "companyCode": "INFC",
+          "startDate": "2026-09-01", "endDate": "2027-03-31",
+          "contractValue": 1250000,
+          "wbs": [{"code": "T90-1", "description": "Enabling works"},
+                  {"code": "T90-2", "description": "Structure"}]}))
+
+s_, typed = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'PRJ-T90'"
+                 "&$select=ID,code,syncStatus,s4Key,contractValue")
+row = typed["value"][0] if typed.get("value") else {}
+ok = row.get("syncStatus") == "NOT_SENT" and not row.get("s4Key")
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} {row.get('code')} is {row.get('syncStatus')} "
+      f"with no S/4 key - creating a project does not put it in S/4")
+
+tid = row.get("ID")
+s_, wbs = call(f"/project/WBS?$filter=project_ID eq {tid}&$select=code,description")
+ok = len(wbs.get("value", [])) == 2
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} {len(wbs.get('value', []))} WBS element(s) came with it")
+
+check(409, "the same code twice is refused", *call(
+    "/project/createProject", method="POST",
+    body={"code": "PRJ-T90", "name": "Duplicate", "companyCode": "INFC",
+          "startDate": "2026-09-01", "endDate": "2027-03-31",
+          "wbs": [{"code": "T90-9", "description": "Dup"}]}))
+
+# Release stops at PENDING because run_all.sh sets S4_OFFLINE. That is
+# deliberate and not incidental: release posts to S/4 the moment it is called,
+# so without the off switch a verification run writes real documents into
+# whatever tenant a developer's .env happens to name - which is exactly what
+# happened the first time this suite ran against the new behaviour.
+check(200, "release queues it", *call(
+    f"/project/Projects(ID={tid},IsActiveEntity=true)/ProjectService.releaseToS4",
+    method="POST", body={}))
+s_, after = call(f"/project/Projects(ID={tid},IsActiveEntity=true)?$select=syncStatus")
+ok = after.get("syncStatus") == "PENDING"
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} {after.get('syncStatus')} - queued, and with no "
+      f"connection configured that is where it stops")
+
+head("8. Which projects are not in S/4 — the list that matters")
 s, unsynced = call("/project/Projects?$filter=IsActiveEntity eq true and syncStatus ne 'SENT'"
                    "&$select=code,name,syncStatus")
 for p in unsynced["value"]:
