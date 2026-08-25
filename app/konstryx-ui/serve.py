@@ -25,6 +25,9 @@ import webbrowser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEBAPP = os.path.join(HERE, "webapp")
+# Every UI5 application lives under app/. Sibling apps are served from this
+# same origin so they share the OData proxy and the local UI5 runtime.
+APPS_ROOT = os.path.dirname(HERE)
 
 DEFAULT_RUNTIME = r"C:\Users\Ziya\Documents\Claude\sapui5-rt-1.150.0"
 
@@ -115,7 +118,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self._is_service():
             return self._proxy("GET")
+        if self.path.split("?", 1)[0].rstrip("/") == "/apps":
+            return self._app_index()
         return super().do_GET()
+
+    def _app_index(self):
+        """A list of the applications served from this origin."""
+        apps = sorted(
+            name for name in os.listdir(APPS_ROOT)
+            if os.path.isdir(os.path.join(APPS_ROOT, name, "webapp"))
+        )
+        items = "".join(
+            '<li><a href="/%s/index.html">%s</a></li>' % (name, name)
+            for name in apps
+        )
+        page = (
+            "<!doctype html><meta charset='utf-8'><title>KONSTRYX applications</title>"
+            "<style>body{font:16px/1.6 system-ui;margin:3rem auto;max-width:44rem}"
+            "li{margin:.35rem 0}</style>"
+            "<h1>KONSTRYX applications</h1><ul>%s</ul>" % items
+        ).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(page)))
+        self.end_headers()
+        self.wfile.write(page)
 
     def do_HEAD(self):
         if self._is_service():
@@ -139,6 +166,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         if parts and parts[0] == "resources":
             return os.path.join(RUNTIME, "resources", *parts[1:])
+
+        # A sibling application, e.g. /konstryx-resource-request/index.html.
+        # Every UI5 app in app/ is reachable from this one origin, so they all
+        # share the OData proxy and the local runtime rather than needing a
+        # dev server and a set of credentials each.
+        if parts and os.path.isdir(os.path.join(APPS_ROOT, parts[0], "webapp")):
+            rest = parts[1:] or ["index.html"]
+            return os.path.join(APPS_ROOT, parts[0], "webapp", *rest)
 
         if not parts:
             parts = ["index.html"]

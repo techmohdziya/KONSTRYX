@@ -40,6 +40,14 @@ service ProjectService @(path:'/project') {
       action releaseToS4() returns String;
 
       /**
+       * Runs the critical path over this project's activities and writes back
+       * early and late dates, total and free float, and which activities are
+       * critical. Safe to repeat: every derived field is recalculated from the
+       * network each time rather than adjusted.
+       */
+      action schedule() returns String;
+
+      /**
        * Copies the CBS library into this project. A project costs against its
        * own copy, not the library, so that a later library change cannot
        * silently reshape a project already being costed — the same rule the
@@ -206,6 +214,10 @@ service ProjectService @(path:'/project') {
    * from.
    */
   @readonly entity Companies as projection on admin.Company;
+
+  /** Schedulable tasks under a WBS element, and what links them. */
+  entity Activities         as projection on prj.Activity;
+  entity ActivityRelations  as projection on prj.ActivityRelation;
 
   entity CBS              as projection on prj.CBSInstance;
   entity Allocations      as projection on prj.Allocation;

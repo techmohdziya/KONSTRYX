@@ -71,6 +71,9 @@ public class ProjectHandler implements EventHandler {
     private CdsRuntime runtime;
 
     @Autowired
+    private ScheduleService scheduler;
+
+    @Autowired
     private com.inflexion.konstryx.s4.S4ProjectConnector s4Connector;
 
     // ------------------------------------------------------------- validation
@@ -395,6 +398,11 @@ public class ProjectHandler implements EventHandler {
 
     private static String trimmed(Object value) {
         return value == null ? null : String.valueOf(value).trim();
+    }
+
+    @On(event = "schedule")
+    public void onSchedule(EventContext context) {
+        return_(context, scheduler.schedule(str(targetOf(context).get("ID"))));
     }
 
     @On(event = "importP6")

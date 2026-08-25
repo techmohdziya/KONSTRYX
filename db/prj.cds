@@ -36,6 +36,14 @@ entity Project : cuid, managed, common.s4outbound {
   childProjects    : Association to many Project on childProjects.parentProject = $self;
   parentProject    : Association to Project;
   wbsElements      : Composition of many WBSElement on wbsElements.project = $self;
+  /**
+   * The bills and the cost breakdown belong to the project and are read from
+   * it, but each is a document in its own right rather than part of the
+   * project's own edit.
+   */
+  boqs             : Association to many BOQ on boqs.project = $self;
+  cbs              : Association to many CBSInstance on cbs.project = $self;
+  activities       : Association to many Activity on activities.project = $self;
 }
 
 // S/4 WBS mirror.
@@ -46,6 +54,74 @@ entity WBSElement : cuid, managed, common.s4outbound {
   parent       : Association to WBSElement;
   activityType : String(20);          // S/4 activity type
   description  : String(255);
+  /**
+   * Associated rather than composed. An activity is a document in its own
+   * right - it is scheduled, progressed and reported on independently - and a
+   * composition would put it inside the project's draft tree, where it could
+   * only be created by editing the project.
+   */
+  activities   : Association to many Activity on activities.wbs = $self;
+}
+
+/**
+ * A schedulable task under a WBS element.
+ *
+ * The WBS says what the work is; an activity says how long it takes and what
+ * has to finish before it can start. Dates are split into planned, early,
+ * late and actual because they answer different questions: the early and late
+ * sets are derived by scheduling, the planned set is what was agreed, and the
+ * actual set is what happened.
+ */
+entity Activity : cuid, managed {
+  code          : String(40);
+  name          : String(255);
+  project       : Association to Project;
+  wbs           : Association to WBSElement;
+
+  durationDays  : Integer default 0;
+  plannedStart  : Date;
+  plannedFinish : Date;
+
+  /**
+   * Derived by the critical path calculation, never keyed. Early dates come
+   * from the forward pass, late dates from the backward pass, and total float
+   * is the difference — an activity with none of it cannot slip without moving
+   * the project's finish, which is what makes it critical.
+   */
+  earlyStart    : Date;
+  earlyFinish   : Date;
+  lateStart     : Date;
+  lateFinish    : Date;
+  totalFloat    : Integer;
+  freeFloat     : Integer;
+  isCritical    : Boolean default false;
+
+  actualStart   : Date;
+  actualFinish  : Date;
+  percentDone   : Decimal(5,2) default 0;
+  status        : String(20) default 'Planned';
+
+  /** What must happen before this activity. */
+  predecessors  : Composition of many ActivityRelation
+                    on predecessors.successor = $self;
+  successors    : Association to many ActivityRelation
+                    on successors.predecessor = $self;
+}
+
+/**
+ * One dependency between two activities.
+ *
+ * The four standard types are carried rather than assuming finish-to-start:
+ * a site programme routinely overlaps trades with start-to-start and a lag,
+ * and collapsing that to FS would push every downstream date out.
+ */
+entity ActivityRelation : cuid, managed {
+  predecessor : Association to Activity;
+  successor   : Association to Activity;
+  /** FS finish-to-start, SS start-to-start, FF finish-to-finish, SF start-to-finish. */
+  linkType    : String(2) default 'FS';
+  /** Days added after the predecessor's driving date. Negative is a lead. */
+  lagDays     : Integer default 0;
 }
 
 entity BOQ : cuid, managed {

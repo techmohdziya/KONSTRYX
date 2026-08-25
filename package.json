@@ -18,18 +18,43 @@
       "db": {
         "kind": "sql",
         "//": "KONSTRYX is a product shipped to multiple clients. db/data holds only content every tenant legitimately receives (code lists). Everything client- or demo-specific lives in test/data and must never reach a tenant database.",
-        "[development]": { "data": [ "db/data", "test/data" ] },
-        "[production]": { "data": [ "db/data" ] }
+        "[development]": {
+          "data": [
+            "db/data",
+            "test/data"
+          ]
+        },
+        "[production]": {
+          "data": [
+            "db/data"
+          ]
+        }
       },
       "auth": {
         "kind": "mocked",
-        "[production]": { "kind": "xsuaa" }
+        "[production]": {
+          "kind": "xsuaa"
+        }
       }
     },
     "[production]": {
       "requires": {
-        "db": { "kind": "hana-cloud" }
+        "db": {
+          "kind": "hana-cloud"
+        }
       }
     }
-  }
+  },
+  "sapux": [
+    "app/konstryx-resource-request",
+    "app/konstryx-project",
+    "app/konstryx-budget",
+    "app/konstryx-material",
+    "app/konstryx-vendor",
+    "app/konstryx-resource",
+    "app/konstryx-requisition",
+    "app/konstryx-reservation",
+    "app/konstryx-payment-certificate",
+    "app/konstryx-boq"
+  ]
 }

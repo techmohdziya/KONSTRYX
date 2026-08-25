@@ -148,6 +148,39 @@ public class P6ImportService {
                 node.name = text(wbs, "Name");
                 project.wbs.add(node);
             }
+
+            // Activities and the links between them. A P6 export carries the
+            // programme, not just its outline, and dropping the network would
+            // leave a schedule that cannot be scheduled.
+            for (Element activity : childElements(element, "Activity")) {
+                P6Activity task = new P6Activity();
+                task.objectId = text(activity, "ObjectId");
+                task.wbsObjectId = text(activity, "WBSObjectId");
+                task.code = coalesce(text(activity, "Id"), task.objectId);
+                task.name = text(activity, "Name");
+                task.durationDays = days(coalesce(
+                        text(activity, "PlannedDuration"),
+                        text(activity, "RemainingDuration")));
+                task.plannedStart = date(coalesce(text(activity, "PlannedStartDate"),
+                        text(activity, "StartDate")));
+                task.plannedFinish = date(coalesce(text(activity, "PlannedFinishDate"),
+                        text(activity, "FinishDate")));
+                task.actualStart = date(text(activity, "ActualStartDate"));
+                task.actualFinish = date(text(activity, "ActualFinishDate"));
+                task.percentDone = decimal(text(activity, "PercentComplete"));
+                project.activities.add(task);
+            }
+
+            for (Element rel : childElements(element, "Relationship")) {
+                P6Relation link = new P6Relation();
+                link.predecessorObjectId = text(rel, "PredecessorActivityObjectId");
+                link.successorObjectId = text(rel, "SuccessorActivityObjectId");
+                link.type = linkType(text(rel, "Type"));
+                link.lagDays = days(text(rel, "Lag"));
+                if (link.predecessorObjectId != null && link.successorObjectId != null) {
+                    project.relations.add(link);
+                }
+            }
             projects.add(project);
         }
         return projects;
@@ -164,6 +197,7 @@ public class P6ImportService {
         ApplicationService projectService = serviceFor("ProjectService");
 
         String projectId = UUID.randomUUID().toString();
+        Map<String, String> wbsIds = new HashMap<>();
         Map<String, Object> project = new LinkedHashMap<>();
         project.put("ID", projectId);
         project.put("code", p6.code);
@@ -177,7 +211,9 @@ public class P6ImportService {
         // no more in S/4 than a typed one.
         projectService.run(Insert.into("ProjectService.Projects").entry(project));
 
-        return loadWbs(projectService, p6, projectId);
+        int wbsCount = loadWbs(projectService, p6, projectId, wbsIds);
+        loadActivities(projectService, p6, projectId, wbsIds);
+        return wbsCount;
     }
 
     /**
@@ -185,8 +221,8 @@ public class P6ImportService {
      * can appear before its parent. The first pass creates every node, the
      * second links them — the same shape the CBS template instantiation uses.
      */
-    private int loadWbs(ApplicationService service, P6Project p6, String projectId) {
-        Map<String, String> p6ToKonstryx = new HashMap<>();
+    private int loadWbs(ApplicationService service, P6Project p6, String projectId,
+                        Map<String, String> p6ToKonstryx) {
 
         for (P6Wbs node : p6.wbs) {
             if (isBlank(node.code) && isBlank(node.name)) {
@@ -219,6 +255,64 @@ public class P6ImportService {
             linked++;
         }
         return linked;
+    }
+
+    /**
+     * The programme itself: the activities and the links between them.
+     *
+     * Two passes again, for the same reason the WBS needs two — a relationship
+     * can name an activity that appears later in the file. Links are written
+     * only once both ends exist, so a relationship pointing outside this
+     * project is skipped rather than left dangling.
+     *
+     * Dates come across as planned; the early and late dates are left empty
+     * because they are derived, and running the critical path is what fills
+     * them in.
+     */
+    private void loadActivities(ApplicationService service, P6Project p6,
+                                String projectId, Map<String, String> wbsIds) {
+        Map<String, String> activityIds = new HashMap<>();
+
+        for (P6Activity task : p6.activities) {
+            if (isBlank(task.code) && isBlank(task.name)) {
+                continue;
+            }
+            String id = UUID.randomUUID().toString();
+            activityIds.put(task.objectId, id);
+
+            Map<String, Object> activity = new LinkedHashMap<>();
+            activity.put("ID", id);
+            activity.put("project_ID", projectId);
+            activity.put("wbs_ID", wbsIds.get(task.wbsObjectId));
+            activity.put("code", coalesce(task.code, task.name));
+            activity.put("name", task.name);
+            activity.put("durationDays", task.durationDays);
+            activity.put("plannedStart", task.plannedStart);
+            activity.put("plannedFinish", task.plannedFinish);
+            activity.put("actualStart", task.actualStart);
+            activity.put("actualFinish", task.actualFinish);
+            if (task.percentDone != null) {
+                activity.put("percentDone", task.percentDone);
+            }
+            activity.put("status", task.actualFinish != null ? "Complete"
+                    : task.actualStart != null ? "In progress" : "Planned");
+            service.run(Insert.into("ProjectService.Activities").entry(activity));
+        }
+
+        for (P6Relation link : p6.relations) {
+            String from = activityIds.get(link.predecessorObjectId);
+            String to = activityIds.get(link.successorObjectId);
+            if (from == null || to == null) {
+                continue;
+            }
+            Map<String, Object> relation = new LinkedHashMap<>();
+            relation.put("ID", UUID.randomUUID().toString());
+            relation.put("predecessor_ID", from);
+            relation.put("successor_ID", to);
+            relation.put("linkType", link.type);
+            relation.put("lagDays", link.lagDays);
+            service.run(Insert.into("ProjectService.ActivityRelations").entry(relation));
+        }
     }
 
     // ------------------------------------------------------------------ audit
@@ -341,9 +435,13 @@ public class P6ImportService {
         LocalDate startDate;
         LocalDate endDate;
         final List<P6Wbs> wbs = new ArrayList<>();
+        final List<P6Activity> activities = new ArrayList<>();
+        final List<P6Relation> relations = new ArrayList<>();
 
         String describe() {
-            return "Project " + code + " (" + name + "), " + wbs.size() + " WBS element(s)";
+            return "Project " + code + " (" + name + "), " + wbs.size()
+                    + " WBS element(s), " + activities.size() + " activity(ies), "
+                    + relations.size() + " link(s)";
         }
     }
 
@@ -352,5 +450,74 @@ public class P6ImportService {
         String parentObjectId;
         String code;
         String name;
+    }
+
+    private static final class P6Activity {
+        String objectId;
+        String wbsObjectId;
+        String code;
+        String name;
+        int durationDays;
+        LocalDate plannedStart;
+        LocalDate plannedFinish;
+        LocalDate actualStart;
+        LocalDate actualFinish;
+        java.math.BigDecimal percentDone;
+    }
+
+    private static final class P6Relation {
+        String predecessorObjectId;
+        String successorObjectId;
+        String type;
+        int lagDays;
+    }
+
+    /**
+     * P6 states durations and lags in hours. Eight hours is one working day,
+     * and anything shorter still occupies a day on a daily-granularity
+     * programme, so it rounds up rather than to zero.
+     */
+    private static int days(String hours) {
+        if (hours == null || hours.isBlank()) {
+            return 0;
+        }
+        try {
+            double value = Double.parseDouble(hours.trim());
+            return (int) Math.ceil(Math.abs(value) / 8.0) * (value < 0 ? -1 : 1);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static java.math.BigDecimal decimal(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return new java.math.BigDecimal(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * P6 names its link types in full; the schedule stores the two-letter form.
+     * An unrecognised type becomes finish-to-start, which is P6's own default.
+     */
+    private static String linkType(String p6Type) {
+        if (p6Type == null) {
+            return "FS";
+        }
+        String type = p6Type.trim().toUpperCase();
+        if (type.startsWith("START_TO_START") || type.equals("SS")) {
+            return "SS";
+        }
+        if (type.startsWith("FINISH_TO_FINISH") || type.equals("FF")) {
+            return "FF";
+        }
+        if (type.startsWith("START_TO_FINISH") || type.equals("SF")) {
+            return "SF";
+        }
+        return "FS";
     }
 }

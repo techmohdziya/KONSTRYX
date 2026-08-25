@@ -51,4 +51,15 @@ service AdminService @(path:'/admin') {
    * answered, what was set, and what still needs a human choice.
    */
   action syncOrgFromS4() returns LargeString;
+
+  /**
+   * Reads master data from S/4 into the KONSTRYX mirrors: products into
+   * Material, suppliers into Vendor.
+   *
+   * Which feeds run, and against which service, comes from SyncConfigs. With
+   * no inbound configuration the defaults are used and the report says which
+   * were applied. Existing rows are refreshed rather than skipped - S/4 is the
+   * author of a mirror, so there is no local edit to preserve.
+   */
+  action syncMastersFromS4() returns LargeString;
 }
