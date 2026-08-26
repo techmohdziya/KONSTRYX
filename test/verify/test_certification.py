@@ -114,9 +114,16 @@ for description, amount in [("Rectification of blockwork", 8000),
     print(f"  {'ok  ' if st == 201 else 'FAIL'} [{st}] back charge {amount}")
 
 head("4. Recalculate, and check every derived figure")
+# recalculate returns the certificate rather than a sentence, because a
+# message tells the user what happened and does not tell the screen: with a
+# String return the action moved the database and the page went on showing the
+# net it had just replaced. The returned row is asserted here as well as the
+# stored one - they have to agree, or the screen is being handed a figure the
+# database does not hold.
 result = check(200, "recalculated", *call(
     f"/subcontract/PaymentCertificates({cid})/SubcontractService.recalculate",
     method="POST", body={}))
+returned_net = result.get("netCertified") if isinstance(result, dict) else None
 
 s, after = call(f"/subcontract/PaymentCertificates({cid})"
                 "?$select=claimedGross,adjustment,certifiedGross,retentionPct,"
@@ -143,6 +150,7 @@ money("certified gross = claimed + adjustment", after["certifiedGross"], str(gro
 money("retention = certified gross x retention %", after["retentionAmount"], str(retention))
 money("back charges = sum of the lines", after["backChargeTotal"], str(back))
 money("net = gross - retention - LD - back charges", after["netCertified"], str(net))
+money("and the action handed the screen the same net", returned_net, str(net))
 
 head("5. The sign-off chain")
 check(200, "quantity surveyor approves", *call(

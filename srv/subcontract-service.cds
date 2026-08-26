@@ -40,8 +40,18 @@ service SubcontractService @(path:'/subcontract') {
        * shown to a subcontractor in dates and day counts, not a column that
        * can be summed. The adjustment stays an input for the same reason —
        * the adjustment lines carry quantities, not values.
+       *
+       * It returns the certificate rather than a sentence. A message told the
+       * user what had happened; it did not tell the screen. Fiori Elements
+       * merges an action's returned entity into the bound context, so the
+       * header updates - where a Common.SideEffects annotation, in either of
+       * the two forms that look correct, left the page showing the net it had
+       * just replaced. A button that moves the database and not the screen
+       * reads as a button that does nothing. The sentence is not lost: it
+       * goes to the message container, which is where a human-readable
+       * outcome belongs.
        */
-      action recalculate() returns String;
+      action recalculate() returns PaymentCertificates;
 
       /** Records one decision on the certificate's sign-off chain. */
       action signOff(

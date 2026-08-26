@@ -37,11 +37,82 @@ annotate service.PaymentCertificates with @(
     ],
   },
 
+  // Every deduction the net is made of, each on its own tab. Two of the four
+  // were not on the screen at all, which meant a certificate could show a net
+  // reduced by liquidated damages and back charges with nowhere to see either.
   UI.Facets : [
     { $Type : 'UI.ReferenceFacet', ID : 'Details', Label : 'Details',
       Target : '@UI.FieldGroup#Details' },
     { $Type : 'UI.ReferenceFacet', ID : 'Adjustments', Label : 'Adjustments',
       Target : 'adjustments/@UI.LineItem' },
+    { $Type : 'UI.ReferenceFacet', ID : 'LDSteps', Label : 'Liquidated Damages',
+      Target : 'ldSteps/@UI.LineItem' },
+    { $Type : 'UI.ReferenceFacet', ID : 'BackCharges', Label : 'Back Charges',
+      Target : 'backCharges/@UI.LineItem' },
+    { $Type : 'UI.ReferenceFacet', ID : 'SignOffs', Label : 'Sign-offs',
+      Target : 'signOffs/@UI.LineItem' },
+  ],
+
+  /**
+   * Recalculate had no button, so the one action that makes a certificate
+   * agree with its own lines could not be run from the screen it corrects.
+   */
+  UI.Identification : [
+    { $Type : 'UI.DataFieldForAction', Label : 'Recalculate',
+      Action : 'SubcontractService.recalculate' },
+    { $Type : 'UI.DataFieldForAction', Label : 'Sign off',
+      Action : 'SubcontractService.signOff' },
+  ],
+);
+
+// Recalculating rewrites four figures on the certificate itself, so the header
+// has to be re-read or the screen keeps showing the net it just replaced.
+annotate service.PaymentCertificates with @(
+  Common.SideEffects #Recalculated : {
+    SourceEvents     : [ 'SubcontractService.recalculate' ],
+    // The empty navigation path is the record itself. Listing the four
+    // properties alone was not enough - the action ran, the database moved,
+    // and the screen kept showing the net it had just replaced, which is the
+    // worst of the three outcomes because it looks like the button did
+    // nothing.
+    TargetEntities   : [ '' ],
+    TargetProperties : [ 'certifiedGross', 'retentionAmount',
+                         'backChargeTotal', 'netCertified' ],
+  },
+  Common.SideEffects #SignedOff : {
+    SourceEvents     : [ 'SubcontractService.signOff' ],
+    TargetEntities   : [ '', signOffs ],
+    TargetProperties : [ 'status' ],
+  }
+);
+
+annotate service.LDCalculationSteps with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : seq,         Label : 'Step' },
+    { $Type : 'UI.DataField', Value : description, Label : 'Description' },
+    { $Type : 'UI.DataField', Value : days,        Label : 'Days' },
+    { $Type : 'UI.DataField', Value : rate,        Label : 'Rate' },
+    { $Type : 'UI.DataField', Value : amount,      Label : 'Amount' },
+  ],
+);
+
+annotate service.BackChargeLines with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : description,  Label : 'Description' },
+    { $Type : 'UI.DataField', Value : cause,        Label : 'Cause' },
+    { $Type : 'UI.DataField', Value : rechargeType, Label : 'Recharge type' },
+    { $Type : 'UI.DataField', Value : amount,       Label : 'Amount' },
+  ],
+);
+
+// The chain is a record of who decided, so it reads in the order decided.
+annotate service.CertSignOffs with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : seq,       Label : 'Step' },
+    { $Type : 'UI.DataField', Value : role,      Label : 'Role' },
+    { $Type : 'UI.DataField', Value : name,      Label : 'Name' },
+    { $Type : 'UI.DataField', Value : decision,  Label : 'Decision' },
+    { $Type : 'UI.DataField', Value : decidedOn, Label : 'Decided on' },
   ],
 );
 

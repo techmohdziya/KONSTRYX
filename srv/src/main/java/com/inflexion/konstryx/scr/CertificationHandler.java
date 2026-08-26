@@ -12,6 +12,7 @@ import com.sap.cds.services.handler.EventHandler;
 import com.sap.cds.services.handler.annotations.On;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
+import com.sap.cds.services.messages.Messages;
 import com.sap.cds.services.request.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -49,6 +50,13 @@ public class CertificationHandler implements EventHandler {
 
     @Autowired
     private UserInfo userInfo;
+
+    /**
+     * Where the human sentence goes now that recalculate returns the
+     * certificate. The screen needs the row; the person needs the words.
+     */
+    @Autowired
+    private Messages messages;
 
     // ------------------------------------------------------------- certify
 
@@ -155,7 +163,7 @@ public class CertificationHandler implements EventHandler {
                         + "is negative — it is a debit against the subcontractor, not a payment."
                 : "";
 
-        return_(context, String.format(
+        messages.info(String.format(
                 "%s claimed %s%s = %s gross. Less %s retention at %s%%, %s "
                         + "liquidated damages and %s back charges over %d line(s): "
                         + "%s net certified.%s",
@@ -169,6 +177,12 @@ public class CertificationHandler implements EventHandler {
                 retentionPct.toPlainString(), ld.toPlainString(),
                 backCharges.toPlainString(), backChargeLines,
                 net.toPlainString(), warning));
+
+        // The row as it now stands, so the screen shows what the database
+        // holds rather than what it held before the button was pressed.
+        context.put("result", db.run(Select.from(E_CERTIFICATE)
+                .where(c -> c.get("ID").eq(id))).first().orElse(certificate));
+        context.setCompleted();
     }
 
     // -------------------------------------------------------------- signOff
