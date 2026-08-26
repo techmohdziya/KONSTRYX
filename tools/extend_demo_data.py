@@ -271,6 +271,32 @@ def fix_cbs_csv():
         row[index["costNature"]] = CBS_NATURE.get(code, "DIRECT")
         row[index["allocBasis"]] = CBS_BASIS.get(code, "")
 
+    # Seed the roll-up already correct rather than shipping the state it
+    # exists to repair. A parent reading 0.00 while its child holds 1,250,000
+    # is exactly the defect rollUpBudget was built for - but a customer
+    # meeting it on the first screen reads it as a broken total, not as a
+    # demonstration. The button still re-derives; it just starts from truth.
+    own = {}
+    for line_id, cbs_id, category, amount in BUDGET_LINES:
+        own[cbs_id] = own.get(cbs_id, 0.0) + amount
+
+    by_id = {row[index["ID"]]: row for row in rows}
+    total = dict(own)
+    for node_id, row in by_id.items():
+        amount = own.get(node_id, 0.0)
+        if not amount:
+            continue
+        parent = row[index["parent_ID"]]
+        guard = 0
+        while parent and parent in by_id and guard <= len(by_id):
+            total[parent] = total.get(parent, 0.0) + amount
+            parent = by_id[parent][index["parent_ID"]]
+            guard += 1
+
+    for node_id, row in by_id.items():
+        row[index["ownAmount"]] = f"{own.get(node_id, 0.0):.2f}"
+        row[index["budgetAmount"]] = f"{total.get(node_id, 0.0):.2f}"
+
     rows.sort(key=lambda r: r[index["code"]])
     write_csv(entity, header, rows)
     return len(rows)
@@ -322,6 +348,43 @@ def build_rows():
             ["ID", "boqItem_ID", "wbs_ID", "cbs_ID", "location_ID", "allocQty",
              "allocPct", "pctOfItem", "template", "splitBasis"], allocations),
     }, logs
+
+
+def measure_slab():
+    """Records what has actually been poured, so productivity has a numerator."""
+    entity = "konstryx.prj-BOQItem"
+    header, rows = read_csv(entity)
+    header, rows = ensure_columns(header, rows, ["cumDoneQty", "cumDonePct"])
+    index = {name: i for i, name in enumerate(header)}
+    for row in rows:
+        if row[index["ID"]] != SLAB_ITEM:
+            continue
+        contract = float(row[index["qty"]] or 0)
+        row[index["cumDoneQty"]] = f"{SLAB_DONE:.3f}"
+        row[index["cumDonePct"]] = (
+            f"{SLAB_DONE / contract * 100:.2f}" if contract else "0.00")
+    write_csv(entity, header, rows)
+
+
+def append_logs(logs):
+    """Adds the floor logs beside the five canonical EQR-thread rows."""
+    entity = "konstryx.mpr-TimesheetEntry"
+    header, rows = read_csv(entity)
+    header, rows = ensure_columns(header, rows, ["location_ID"])
+    index = {name: i for i, name in enumerate(header)}
+    order = ["ID", "manpowerLine_ID", "workDate", "headsPresent", "regularHrs",
+             "otHrs", "wbs_ID", "cbs_ID", "location_ID", "activity",
+             "costAmount", "logStatus", "signedBy"]
+    existing = {row[index["ID"]] for row in rows}
+    for log in logs:
+        if log[0] in existing:
+            continue
+        row = [""] * len(header)
+        for name, value in zip(order, log):
+            row[index[name]] = value
+        rows.append(row)
+    write_csv(entity, header, rows)
+    return len(rows)
 
 
 def main():

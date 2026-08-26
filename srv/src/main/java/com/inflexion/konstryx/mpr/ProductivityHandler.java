@@ -3,6 +3,7 @@ package com.inflexion.konstryx.mpr;
 import com.sap.cds.Row;
 import com.sap.cds.ql.Insert;
 import com.sap.cds.ql.Select;
+import com.sap.cds.ql.cqn.CqnSelect;
 import com.sap.cds.services.ErrorStatuses;
 import com.sap.cds.services.EventContext;
 import com.sap.cds.services.ServiceException;
@@ -41,7 +42,7 @@ import java.util.UUID;
  * nothing has claimed, and it is the most useful row on the screen.
  */
 @Component
-@ServiceName("WorkflowService")
+@ServiceName({"WorkflowService", "ProjectService"})
 public class ProductivityHandler implements EventHandler {
 
     private static final String E_LOCATION = "konstryx.prj.SiteLocation";
@@ -54,6 +55,32 @@ public class ProductivityHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
+    /**
+     * The same measurement, reached from the project it belongs to.
+     *
+     * Bound, so a project manager presses it where they are already standing
+     * rather than being asked for a project id they do not have. It returns a
+     * sentence instead of the rows: the rows are kept, and the screen they
+     * belong on is the productivity list.
+     */
+    @On(event = "measureProductivity")
+    public void onMeasureBound(EventContext context) {
+        CqnSelect select = context.get("cqn") instanceof CqnSelect s ? s : null;
+        Row project = (select == null ? java.util.Optional.<Row>empty()
+                : db.run(select).first())
+                .orElseThrow(() -> new ServiceException(ErrorStatuses.NOT_FOUND,
+                        "Project not found."));
+        List<Map<String, Object>> rows = measure(str(project.get("ID")));
+
+        long rated = rows.stream().filter(r -> r.get("outputPerHour") != null).count();
+        context.put("result", String.format(
+                "%d location(s) measured, %d with a rate. %s",
+                rows.size(), rated,
+                rated == rows.size() ? "Every location has both hours and measured work."
+                        : "The rest are listed with the reason a rate could not be formed."));
+        context.setCompleted();
+    }
+
     @On(event = "productivity")
     public void onProductivity(EventContext context) {
         String projectId = str(context.get("projectID"));
@@ -61,6 +88,12 @@ public class ProductivityHandler implements EventHandler {
             throw new ServiceException(ErrorStatuses.BAD_REQUEST,
                     "A project is needed — productivity is only meaningful within one.");
         }
+        context.put("result", measure(projectId));
+        context.setCompleted();
+    }
+
+    /** Measures every location on one project, keeps it, and returns the rows. */
+    private List<Map<String, Object>> measure(String projectId) {
 
         Map<String, Row> locations = new LinkedHashMap<>();
         for (Row row : db.run(Select.from(E_LOCATION)
@@ -210,8 +243,7 @@ public class ProductivityHandler implements EventHandler {
             db.run(Insert.into(E_SNAPSHOT).entry(snapshot));
         }
 
-        context.put("result", out);
-        context.setCompleted();
+        return out;
     }
 
     /** What has accumulated against one location. */

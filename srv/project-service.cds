@@ -40,6 +40,18 @@ service ProjectService @(path:'/project') {
       action releaseToS4() returns String;
 
       /**
+       * Measures output per man-hour on every location of this project, and
+       * keeps the measurement.
+       *
+       * Bound to the project because that is where someone stands when they
+       * ask the question, and because productivity is only meaningful within
+       * one project - a rate that averaged two towers would describe neither.
+       * The measurement is stored rather than only returned, so a rate can be
+       * compared with the same rate a month ago.
+       */
+      action measureProductivity() returns String;
+
+      /**
        * Runs the critical path over this project's activities and writes back
        * early and late dates, total and free float, and which activities are
        * critical. Safe to repeat: every derived field is recalculated from the

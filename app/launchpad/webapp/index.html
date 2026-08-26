@@ -30,6 +30,7 @@
     var applications = {};
     var inbounds = {};
     var groups = {};
+    var subtitleOf = {};
 
     apps.forEach(function (a) {
         var so = a[0], path = a[1], component = a[2], title = a[3],
@@ -61,6 +62,8 @@
             subtitle = "count unavailable · " + sub;
         }
 
+        subtitleOf[so] = subtitle;
+
         applications[so + "-display"] = {
             title: title,
             description: subtitle,
@@ -89,23 +92,60 @@
             title: title,
             subTitle: subtitle,
             icon: icon,
-            target: { semanticObject: so, action: "display" }
+            target: { semanticObject: so, action: "display" },
+            properties: {
+                title: title,
+                subtitle: subtitle,
+                icon: icon,
+                targetURL: "#" + so + "-display"
+            }
         });
     });
 
-    var groupList = Object.keys(groups).sort().map(function (name, i) {
+    var PHASE_ORDER = ["① Set up", "② Plan the project",
+                       "③ Source resources", "④ Execute",
+                       "⑥ Commercial & money", "Master data"];
+    var orderedGroups = PHASE_ORDER.filter(function (name) { return groups[name]; })
+        .concat(Object.keys(groups).filter(function (name) {
+            return PHASE_ORDER.indexOf(name) === -1;
+        }).sort());
+
+    var groupList = orderedGroups.map(function (name, i) {
         return { id: "group" + i, title: name, isPreset: true, isVisible: true,
                  isGroupLocked: false, tiles: groups[name] };
     });
 
+    // sandbox2 renders spaces, not the classic home page, and it compiles the
+    // groups above into page sections on the way - one section per group, in
+    // array order. Two things follow from its conversion, and both are easy to
+    // get wrong because neither fails loudly:
+    //
+    //   the subtitle is read from tile.properties.subtitle, not tile.subTitle
+    //   the target is read from tile.properties.targetURL as an intent hash
+    //
+    // A tile missing those still renders, just bare and inert.
+
     window["sap-ushell-config"] = {
         defaultRenderer: "fiori2",
+        // Spaces mode is sandbox2's default, and it ignores the LaunchPage
+        // groups entirely - the phases below were being flattened into one
+        // "Sample Space" alongside the sandbox's own demo tiles. The classic
+        // home page is what renders groups, so it is asked for explicitly.
+        ushell: {
+            spaces: { enabled: false },
+            homeApp: { component: null }
+        },
         renderers: {
             fiori2: {
-                componentData: { config: { enableSearch: false, rootIntent: "Shell-home" } }
+                componentData: { config: {
+                    enableSearch: false,
+                    rootIntent: "Shell-home",
+                    // The sandbox seeds three navigation-demo tiles of its own.
+                    // Harmless in a scratch page, wrong in front of a customer.
+                    applications: {}
+                } }
             }
         },
-        applications: applications,
         services: {
             LaunchPage: { adapter: { config: { groups: groupList } } },
             NavTargetResolution: { config: { enableClientSideTargetResolution: true } },
@@ -131,6 +171,15 @@
     // so the renderer is created once the core is ready. The method was
     // renamed between UI5 versions; both names are tried rather than pinning
     // this page to one runtime.
+    // The sandbox ships three navigation-demo tiles in a "Sample Applications"
+    // section of its own site, and _applyDefaultSiteData replaces whatever site
+    // this page supplies rather than merging with it - so they cannot be
+    // configured away, and deleting the section after bootstrap does not reach
+    // the copy the renderer has already read. They are an artefact of the local
+    // development shell and do not exist in Work Zone, which is where this
+    // launchpad is going; leaving them is the honest trade rather than a hack
+    // that half works.
+
     sap.ui.getCore().attachInit(function () {
         sap.ui.require(["sap/ushell/Container"], function (Container) {
             var create = Container.createRendererInternal || Container.createRenderer;

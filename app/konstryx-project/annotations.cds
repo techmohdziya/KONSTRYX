@@ -42,6 +42,9 @@ annotate service.Projects with @(
     { $Type  : 'UI.DataFieldForAction',
       Action : 'ProjectService.releaseToS4',
       Label  : 'Release to S/4' },
+    { $Type  : 'UI.DataFieldForAction',
+      Action : 'ProjectService.measureProductivity',
+      Label  : 'Measure productivity' },
   ],
 
   UI.Facets : [
