@@ -6,6 +6,7 @@
 namespace konstryx.wf;
 
 using { cuid, managed } from '@sap/cds/common';
+using { konstryx.sys } from './sys';
 using { konstryx.common } from './common';
 using { konstryx.prj } from './prj';
 using { konstryx.master } from './master';
@@ -20,6 +21,12 @@ entity ResourceRequest : cuid, managed, common.documented {
   isSubstitution : Boolean default false;   // MSR flag
   prFlag         : Boolean default false;    // direct-PR indicator
   lines          : Composition of many ResourceRequestLine on lines.parent = $self;
+  /**
+   * What was filed with this request. An association rather than a
+   * composition: an attachment belongs to the upload, not to the document,
+   * and deleting a request should not silently take a signed permit with it.
+   */
+  attachments : Association to many sys.Attachment on attachments.objectID = ID;
 }
 
 entity ResourceRequestLine : cuid {

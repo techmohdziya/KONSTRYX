@@ -71,6 +71,12 @@ annotate service.ResourceRequests with @(
       Label  : 'Line Items',
       Target : 'lines/@UI.LineItem',
     },
+    {
+      $Type  : 'UI.ReferenceFacet',
+      ID     : 'Attachments',
+      Label  : 'Attachments',
+      Target : 'attachments/@UI.LineItem',
+    },
   ],
 
   /**
@@ -130,3 +136,38 @@ annotate service.ResourceRequestLines with @(
       Target : '@UI.FieldGroup#Line' },
   ],
 );
+
+/**
+ * What has been filed against a request: drawings, permits, method statements.
+ *
+ * The content column is what makes the row an upload rather than a record of
+ * one - Core.MediaType on the field is what tells Fiori Elements to render a
+ * file link and accept a file in return, and it is already on the model.
+ */
+annotate service.RequestAttachments with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : fileName, Label : 'File' },
+    { $Type : 'UI.DataField', Value : mimeType, Label : 'Type' },
+    { $Type : 'UI.DataField', Value : fileSize, Label : 'Size' },
+    { $Type : 'UI.DataField', Value : note,     Label : 'Note' },
+    { $Type : 'UI.DataField', Value : version,  Label : 'Version' },
+    { $Type : 'UI.DataField', Value : createdBy, Label : 'Uploaded by' },
+    { $Type : 'UI.DataField', Value : createdAt, Label : 'Uploaded at' },
+  ],
+
+  UI.HeaderInfo : {
+    $Type          : 'UI.HeaderInfoType',
+    TypeName       : 'Attachment',
+    TypeNamePlural : 'Attachments',
+    Title          : { $Type : 'UI.DataField', Value : fileName },
+    Description    : { $Type : 'UI.DataField', Value : note },
+  },
+);
+
+annotate service.RequestAttachments with {
+  entityName  @UI.Hidden;
+  objectID    @UI.Hidden;
+  objectDocNo @UI.Hidden;
+  fileSize    @readonly;
+  version     @readonly;
+};

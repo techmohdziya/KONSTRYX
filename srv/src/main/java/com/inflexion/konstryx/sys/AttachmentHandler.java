@@ -5,8 +5,11 @@ import com.sap.cds.Row;
 import com.sap.cds.ql.Select;
 import com.sap.cds.services.ErrorStatuses;
 import com.sap.cds.services.ServiceException;
+import com.sap.cds.ql.Update;
 import com.sap.cds.services.cds.CdsCreateEventContext;
+import com.sap.cds.services.cds.CdsUpdateEventContext;
 import com.sap.cds.services.handler.EventHandler;
+import com.sap.cds.services.handler.annotations.After;
 import com.sap.cds.services.handler.annotations.Before;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
@@ -14,7 +17,9 @@ import com.sap.cds.services.runtime.CdsRuntime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.InputStream;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,6 +79,67 @@ public class AttachmentHandler implements EventHandler {
      * construction project the drawing that was current when work was approved
      * matters as much as the current one.
      */
+    /**
+     * Records how large the uploaded file actually is.
+     *
+     * fileSize is on the model and nothing filled it, so every upload landed
+     * with a null size and a file list showed a column of blanks.
+     *
+     * The size is measured by reading the stored bytes back, not by counting
+     * the stream the event carries: by the time an After handler sees it the
+     * runtime has already consumed it to persist the content, so counting
+     * there reports zero for every file. It also is not taken from the
+     * Content-Length header, which is the client's own account of what it
+     * sent. Reading back costs one load of the blob and is the only number
+     * that describes what is actually on disk.
+     */
+    @After(event = "UPDATE", entity = "CollaborationService.Attachments")
+    public void afterContentUpload(CdsUpdateEventContext context, List<CdsData> attachments) {
+        for (CdsData attachment : attachments) {
+            if (attachment.get("content") == null) {
+                continue;      // metadata-only change; the file did not move
+            }
+            String id = str(attachment.get("ID"));
+            if (id == null) {
+                continue;
+            }
+            Long size = storedSize(id);
+            if (size == null) {
+                continue;
+            }
+            Map<String, Object> patch = new HashMap<>();
+            patch.put("fileSize", size);
+            db.run(Update.entity(E_ATTACHMENT).data(patch).where(a -> a.get("ID").eq(id)));
+        }
+    }
+
+    /** The length of what was actually stored, or null if it cannot be read. */
+    private Long storedSize(String id) {
+        Optional<Row> row = db.run(Select.from(E_ATTACHMENT)
+                .columns("content").where(a -> a.get("ID").eq(id))).first();
+        if (row.isEmpty()) {
+            return null;
+        }
+        Object content = row.get().get("content");
+        if (content instanceof byte[] bytes) {
+            return (long) bytes.length;
+        }
+        if (content instanceof InputStream stream) {
+            try (InputStream open = stream) {
+                long total = 0;
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = open.read(buffer)) > -1) {
+                    total += read;
+                }
+                return total;
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     private void applyVersioning(CdsData attachment, String entityName, String objectID) {
         String fileName = str(attachment.get("fileName"));
 

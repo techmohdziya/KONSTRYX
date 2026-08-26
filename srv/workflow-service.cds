@@ -7,6 +7,7 @@ using { konstryx.wf } from '../db/wf';
 using { konstryx.eq } from '../db/eq';
 using { konstryx.mpr } from '../db/mpr';
 using { konstryx.prj } from '../db/prj';
+using { konstryx.sys } from '../db/sys';
 
 @requires: 'ResourceCoordinator'
 service WorkflowService @(path:'/workflow') {
@@ -61,6 +62,17 @@ service WorkflowService @(path:'/workflow') {
        */
       action raisePurchaseRequisition() returns String;
     };
+  /**
+   * The drawings, permits and method statements filed against a request.
+   *
+   * Joined on the key alone rather than on entityName as well. The target is
+   * polymorphic - an entity name and a key - and CDS cannot carry a constant
+   * into an association's condition, so the name is not part of the join. It
+   * costs nothing in practice: objectID is a UUID, and a UUID that collides
+   * across two tables has bigger problems than a mislabelled attachment.
+   */
+  entity RequestAttachments as projection on sys.Attachment;
+
   entity ResourceRequestLines as projection on wf.ResourceRequestLine;
 
   // EQR vertical extension — reached from a line via $expand=equipment

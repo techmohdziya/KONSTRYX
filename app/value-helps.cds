@@ -201,3 +201,57 @@ annotate WorkflowService.ReservationLines with {
   burnCriticality  @UI.Hidden;
   driftCriticality @UI.Hidden;
 }
+
+// ------------------------------------------------- what a picker looks like
+
+/**
+ * A value help renders the target's own UI.LineItem when it has one, and falls
+ * back to the raw ValueList parameters when it does not — which puts the key
+ * first and shows a foreman "58000000-0000-0..." as the leading column of the
+ * crew picker. These give each picker the columns someone actually chooses by.
+ */
+annotate WorkflowService.ManpowerRequestLines with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : crewId,         Label : 'Crew' },
+    { $Type : 'UI.DataField', Value : tradeGrade,     Label : 'Trade / grade' },
+    { $Type : 'UI.DataField', Value : heads,          Label : 'Heads' },
+    { $Type : 'UI.DataField', Value : ratePerHeadDay, Label : 'Rate per head-day' },
+    { $Type : 'UI.DataField', Value : crewLead,       Label : 'Crew lead' },
+  ],
+);
+
+annotate WorkflowService.SiteLocations with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : code,         Label : 'Location' },
+    { $Type : 'UI.DataField', Value : name,         Label : 'Name' },
+    { $Type : 'UI.DataField', Value : locationType, Label : 'Type' },
+    { $Type : 'UI.DataField', Value : level,        Label : 'Level' },
+  ],
+);
+
+annotate WorkflowService.WBSElements with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : code,        Label : 'WBS element' },
+    { $Type : 'UI.DataField', Value : description, Label : 'Description' },
+  ],
+);
+
+annotate WorkflowService.ProjectCBS with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : code,         Label : 'CBS code' },
+    { $Type : 'UI.DataField', Value : level,        Label : 'Level' },
+    { $Type : 'UI.DataField', Value : budgetAmount, Label : 'Budget' },
+  ],
+);
+
+/**
+ * The picker builds its columns from the ValueList parameters, not from the
+ * LineItem above, so the key parameter renders as a column of its own — which
+ * is how "58000000-0000-0..." came to lead the crew picker. Hiding the key is
+ * what removes it: a UUID is the mechanism by which a row is identified, and
+ * never information a person chooses by.
+ */
+annotate WorkflowService.ManpowerRequestLines with { ID @UI.Hidden };
+annotate WorkflowService.SiteLocations       with { ID @UI.Hidden };
+annotate WorkflowService.WBSElements         with { ID @UI.Hidden };
+annotate WorkflowService.ProjectCBS          with { ID @UI.Hidden };

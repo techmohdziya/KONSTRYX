@@ -133,6 +133,28 @@ s, all_a = call(f"/collaboration/Attachments?$filter=objectID eq {rr['ID']}"
 for a in all_a["value"]:
     print(f"      v{a['version']}  {a['fileName']:22} {a['note']}")
 
+head("6. A stored file knows how big it is")
+# fileSize sat on the model unpopulated, so every file list showed a column of
+# blanks. Two sizes rather than one: a handler that returned a constant, or
+# that measured a drained stream and reported zero, would pass a single check.
+for expected in (4096, 137):
+    st, made = call("/collaboration/Attachments", method="POST", body={
+        "entityName": "konstryx.wf.ResourceRequest", "objectID": rr["ID"],
+        "objectDocNo": rr["docNo"], "fileName": f"size-{expected}.txt",
+        "mimeType": "text/plain"})
+    results.append(st == 201)
+    aid = made["ID"]
+    st2, _ = call(f"/collaboration/Attachments({aid})/content", method="PUT",
+                  raw_body=b"x" * expected, content_type="text/plain")
+    results.append(st2 in (200, 204))
+    s3, meta = call(f"/collaboration/Attachments({aid})?$select=fileName,fileSize")
+    got = meta.get("fileSize")
+    ok = got == expected
+    results.append(ok)
+    print(f"  {'ok  ' if ok else 'FAIL'} {expected} bytes uploaded, "
+          f"fileSize reads {got}")
+
+
 print()
 print("=" * 74)
 passed = sum(1 for r in results if r)
