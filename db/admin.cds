@@ -11,6 +11,16 @@ entity CompanyGroup : cuid, managed {
   name           : String(120);
   iasGroup       : String(120);     // IAS group id
   reportingCcy   : Currency;
+  /**
+   * Which rate a consolidated figure is converted at.
+   *
+   * Configuration rather than a constant, because it is a commercial
+   * convention and not a fact: a group that reports at the average rate for
+   * the period and one that reports at the closing rate are both right, and
+   * both would call the other wrong. Every report states the type it used
+   * alongside the number (D-4, 2026-08-26).
+   */
+  reportingRateType : String(10) default 'AVERAGE';
   companies      : Composition of many Company on companies.group = $self;
 }
 

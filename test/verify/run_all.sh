@@ -15,7 +15,7 @@ export JAVA_HOME
 # outcome regardless of whose machine it runs on.
 export S4_OFFLINE=true
 
-SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_schedule test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement test_certification test_execution test_finance test_productivity"
+SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_schedule test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement test_certification test_execution test_finance test_productivity test_calendar"
 
 : > "$RESULTS"
 

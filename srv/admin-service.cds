@@ -23,6 +23,45 @@ service AdminService @(path:'/admin') {
   entity ExchangeRates      as projection on fin.ExchangeRate;
 
   /**
+   * The period grid. One per company, or one group-wide.
+   *
+   * Certificate cut-offs follow it too (D-2), so a project's commercial month
+   * and its posting month are the same month and two reports on the same
+   * period cannot disagree about where it ends.
+   */
+  entity FiscalCalendars    as projection on fin.FiscalCalendar
+    actions {
+      /**
+       * Builds a fiscal year's periods from the calendar's variant.
+       *
+       * Generated rather than keyed. Twelve rows entered by hand is how a gap
+       * appears between P06 and P07, and a gap is invisible until something
+       * dated into it vanishes from every report. Refuses to overwrite a year
+       * that already has periods unless replace is set, because regenerating
+       * over a closed year would reopen it.
+       */
+      action generate(fiscalYear : Integer, replace : Boolean) returns String;
+    };
+
+  entity FiscalPeriods      as projection on fin.FiscalPeriod;
+
+  /**
+   * The period a date falls in, on the calendar that governs a company.
+   *
+   * Exposed because every module needs the same answer and each deriving it
+   * separately is how they come to disagree.
+   */
+  action periodFor(companyID : UUID, onDate : Date) returns {
+    periodID   : UUID;
+    name       : String(40);
+    fiscalYear : Integer;
+    periodNo   : Integer;
+    startDate  : Date;
+    endDate    : Date;
+    status     : String(12);
+  };
+
+  /**
    * Converts an amount, and says which rate it used.
    *
    * Exposed as an action rather than left as an internal helper because every
