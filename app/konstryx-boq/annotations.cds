@@ -35,6 +35,17 @@ annotate service.BOQs with @(
     { $Type : 'UI.ReferenceFacet', ID : 'Items', Label : 'Items',
       Target : 'items/@UI.LineItem' },
   ],
+
+  /**
+   * Recalculate had no button. Import has one too, but it is declared in the
+   * manifest rather than here: a bill arrives as a file, and an action's
+   * LargeString parameter renders as a text box - which asks a quantity
+   * surveyor to paste six hundred lines rather than choose a spreadsheet.
+   */
+  UI.Identification : [
+    { $Type : 'UI.DataFieldForAction', Label : 'Recalculate value',
+      Action : 'ProjectService.recalculate' },
+  ],
 );
 
 annotate service.BOQItems with @(

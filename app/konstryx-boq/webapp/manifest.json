@@ -64,7 +64,8 @@
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
-        "sap.fe.templates": {}
+        "sap.fe.templates": {},
+        "sap.ui.unified": {}
       }
     },
     "contentDensities": {
@@ -143,7 +144,19 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/BOQs"
+              "contextPath": "/BOQs",
+              "content": {
+                "header": {
+                  "actions": {
+                    "importItems": {
+                      "press": "konstryxboq.ext.controller.BOQImport.openUpload",
+                      "visible": true,
+                      "enabled": true,
+                      "text": "Import items"
+                    }
+                  }
+                }
+              }
             }
           }
         }

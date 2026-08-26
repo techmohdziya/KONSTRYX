@@ -1,0 +1,9 @@
+itemNo;code;description;qty;uom;rate
+3.E.1.1.01;STR-CNC-C40;RCC Columns C40 incl. shutter and rebar - Level 7;186.500;m3;2760.00
+3.E.1.1.02;STR-CNC-C40;RCC Core wall C40 - Level 7;242.000;m3;2680.00
+3.E.1.2.01;STR-CNC-C35;RCC Slab C35, 250 mm - Level 7;520.000;m3;2180.00
+3.E.2.1.01;STR-RBR-16;Reinforcement bar 16-32 mm BS4449 - Level 7;96.400;t;3420.00
+3.E.3.1.01;STR-FRM-WAL;Wall formwork, twice used - Level 7;1840.000;m2;96.00
+3.E.3.1.02;STR-FRM-SLB;Slab formwork incl. props - Level 7;1150.000;m2;104.00
+4.E.1.1.01;MAS-BLK-200;Blockwork 200 mm solid, internal - Level 7;2260.000;m2;78.50
+4.E.2.1.01;FIN-PLS-INT;Internal cement plaster, two coats - Level 7;4380.000;m2;42.00
