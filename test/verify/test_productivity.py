@@ -99,25 +99,37 @@ def rows_for(project_id):
 
 
 head("1. A project, and a floor to work on")
-s, projects = call("/project/Projects?$select=ID,code&$filter=IsActiveEntity eq true&$top=1")
+s, projects = call("/project/Projects?$select=ID,code&$filter=IsActiveEntity eq true"
+                   "&$orderby=code&$top=5")
 project = projects["value"][0]
 print(f"      {project['code']}")
 
-check(400, "a project with no locations cannot report productivity", *call(
-    "/workflow/productivity", method="POST", body={"projectID": project["ID"]}))
+# A project the demo data has not given floors to. The seeded tower is on the
+# first project, so this has to be a different one rather than an assumption
+# that nothing is seeded anywhere - which is what made the first version of
+# this check pass only on an empty database.
+bare = next((p for p in projects["value"]
+             if not call(f"/project/SiteLocations?$filter=project_ID eq {p['ID']}"
+                         "&$select=ID&$top=1")[1].get("value")), None)
+if bare:
+    print(f"      {bare['code']} has no locations")
+    check(400, "a project with no locations cannot report productivity", *call(
+        "/workflow/productivity", method="POST", body={"projectID": bare["ID"]}))
+else:
+    print("      every project already has locations; the refusal is untestable here")
 
 tower = str(uuid.uuid4())
 floor = str(uuid.uuid4())
 st, _ = call("/project/SiteLocations", method="POST", body={
-    "ID": tower, "code": "T1", "name": "Tower 1", "project_ID": project["ID"],
+    "ID": tower, "code": "VER-T9", "name": "Verification tower", "project_ID": project["ID"],
     "level": "L1", "locationType": "BUILDING"})
 results.append(st == 201)
 st, _ = call("/project/SiteLocations", method="POST", body={
-    "ID": floor, "code": "T1-L03", "name": "Level 3", "project_ID": project["ID"],
+    "ID": floor, "code": "VER-T9-L09", "name": "Verification level 9", "project_ID": project["ID"],
     "parent_ID": tower, "level": "L2", "locationType": "FLOOR",
     "gfa": 1200.0, "uom": "M2"})
 results.append(st == 201)
-print(f"  {'ok  ' if st == 201 else 'FAIL'} Tower 1 and Level 3 created")
+print(f"  {'ok  ' if st == 201 else 'FAIL'} verification tower and level created")
 
 head("2. A crew works the floor, and one day is signed")
 s, lines = call("/workflow/ManpowerRequestLines?$select=ID,heads,ratePerHeadDay"
@@ -142,7 +154,7 @@ check(200, "the first day signed", *call(
 head("3. Hours with nothing measured is a row, not a blank")
 st, rows = rows_for(project["ID"])
 results.append(st == 200)
-level3 = next((r for r in rows if r["locationCode"] == "T1-L03"), None)
+level3 = next((r for r in rows if r["locationCode"] == "VER-T9-L09"), None)
 yes("Level 3 appears", level3 is not None)
 if level3:
     # 5 heads x 8 hours = 40 hours; only the signed day counts.
@@ -155,9 +167,13 @@ if level3:
     print(f"      note: {level3.get('note')}")
 
 head("4. Measure some work on that floor")
+# An item the demo has not already split across floors, so this suite's
+# allocation is the only one pointing at its own level.
 s, items = call("/project/BOQItems?$select=ID,itemNo,uom,cumDoneQty"
-                "&$filter=IsActiveEntity eq true&$top=1")
-item = items["value"][0]
+                "&$filter=IsActiveEntity eq true&$orderby=itemNo&$top=5")
+s, taken = call("/project/Allocations?$select=boqItem_ID")
+used = {a["boqItem_ID"] for a in taken.get("value", [])}
+item = next((i for i in items["value"] if i["ID"] not in used), items["value"][0])
 check(200, f"{item['itemNo']} measured at 240 done", *call(
     f"/project/BOQItems(ID={item['ID']},IsActiveEntity=true)", method="PATCH",
     body={"cumDoneQty": 240.0, "uom": "M2"}))
@@ -171,7 +187,7 @@ print(f"  {'ok  ' if st == 201 else 'FAIL'} [{st}] the item allocated wholly to 
 
 head("5. Now it computes, and the draft day still does not count")
 st, rows = rows_for(project["ID"])
-level3 = next((r for r in rows if r["locationCode"] == "T1-L03"), None)
+level3 = next((r for r in rows if r["locationCode"] == "VER-T9-L09"), None)
 yes("Level 3 still there", level3 is not None)
 if level3:
     hours = Decimal(str(level3["labourHours"]))
@@ -192,20 +208,20 @@ check(200, "second day signed", *call(
     f"/workflow/Timesheets(ID={draft_day},IsActiveEntity=true)/WorkflowService.sign",
     method="POST", body={}))
 st, rows = rows_for(project["ID"])
-level3 = next((r for r in rows if r["locationCode"] == "T1-L03"), None)
+level3 = next((r for r in rows if r["locationCode"] == "VER-T9-L09"), None)
 after = Decimal(str(level3["outputPerHour"]))
 same("hours doubled", level3["labourHours"], "80.00")
 yes(f"the same work over more hours is worse productivity ({before} -> {after})",
     after < before)
 
 head("7. A floor nobody has worked is not reported")
-yes("Tower 1 carries no hours and no work, so it is left out",
-    not any(r["locationCode"] == "T1" for r in rows))
+yes("the verification tower carries no hours and no work, so it is left out",
+    not any(r["locationCode"] == "VER-T9" for r in rows))
 
 head("8. Every measurement is kept, so a trend exists")
 s, snaps = call("/workflow/ProductivitySnapshots?$select=locationCode,takenAt,"
                 "labourHours,installedQty,outputPerHour&$orderby=takenAt")
-rows = [r for r in snaps.get("value", []) if r["locationCode"] == "T1-L03"]
+rows = [r for r in snaps.get("value", []) if r["locationCode"] == "VER-T9-L09"]
 for r in rows:
     print(f"      {r['takenAt'][:19]}  {r['labourHours']:>6} hrs  "
           f"{r['installedQty']:>8} done  rate {r['outputPerHour']}")

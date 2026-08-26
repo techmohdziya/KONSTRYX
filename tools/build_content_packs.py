@@ -140,6 +140,32 @@ TYPES: dict[str, dict[str, str]] = {
         "otHrs": DECIMAL,
         "costAmount": DECIMAL,
     },
+    "konstryx.prj.SiteLocation": {
+        "gfa": DECIMAL,
+    },
+    "konstryx.prj.Allocation": {
+        "allocQty": DECIMAL,
+        "allocPct": DECIMAL,
+        "pctOfItem": DECIMAL,
+        "pctOfCBSRate": DECIMAL,
+    },
+    "konstryx.fin.ExchangeRate": {
+        "rate": DECIMAL,
+    },
+    "konstryx.bud.Budget": {
+        "daysToLock": INTEGER,
+        "totalAmount": DECIMAL,
+    },
+    "konstryx.bud.BudgetLine": {
+        "amount": DECIMAL,
+        "authorised": DECIMAL,
+        "committed": DECIMAL,
+        "encumbered": DECIMAL,
+        "actual": DECIMAL,
+        "available": DECIMAL,
+        "availPct": DECIMAL,
+        "usedPct": DECIMAL,
+    },
 }
 
 
@@ -293,12 +319,12 @@ PACKS = [
     },
     {
         "packId": "DEMO_PROJECT",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "sequence": 50,
         "description": (
-            "Two projects and the canonical EQR thread end to end: RR-2026-0188, "
-            "its five advisory decisions, AVC-2026-0188 and reservation "
-            "RES-2026-0188 encumbering AED 685,080 over three WBS elements. "
+            "Two projects and the canonical EQR thread end to end, plus a "
+            "three-level project CBS with a baselined budget beneath it, the "
+            "Tower 1 floors work is logged against, and exchange rates. "
             "Demo content; a client deployment omits this pack."
         ),
         "file": "demo-project.json",
@@ -367,6 +393,34 @@ PACKS = [
                 "konstryx.mpr.TimesheetEntry",
                 "konstryx.mpr-TimesheetEntry.csv",
                 ["manpowerLine_ID", "workDate"],
+            ),
+            # The site's own geography, and the bill lines split across it.
+            # Locations come before the allocations that point at them, and
+            # both after the BOQ items they measure.
+            item(
+                "konstryx.prj.SiteLocation",
+                "konstryx.prj-SiteLocation.csv",
+                ["project_ID", "code"],
+                selfref="parent_ID",
+            ),
+            item(
+                "konstryx.prj.Allocation",
+                "konstryx.prj-Allocation.csv",
+                ["boqItem_ID", "location_ID"],
+            ),
+            # The budget the CBS rolls up from, after the CBS it charges to.
+            item("konstryx.bud.Budget", "konstryx.bud-Budget.csv", ["docNo"]),
+            item(
+                "konstryx.bud.BudgetLine",
+                "konstryx.bud-BudgetLine.csv",
+                ["budget_ID", "cbs_ID", "category"],
+            ),
+            # Rates are demo configuration: a real tenant maintains its own,
+            # which is why they sit in the pack a client deployment omits.
+            item(
+                "konstryx.fin.ExchangeRate",
+                "konstryx.fin-ExchangeRate.csv",
+                ["fromCcy_code", "toCcy_code", "rateType", "validFrom"],
             ),
         ],
     },

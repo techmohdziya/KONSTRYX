@@ -102,7 +102,9 @@ FIXTURE_PACKS = {
     # 145 + 11 mirrored S/4 materials (I-35) + 4 service products and the
     # hired rate row that the class->S/4 routing needs (spec §8 / P10)
     "MASTER_DATA": 161,
-    "DEMO_PROJECT": 116,
+    # 116 + a three-level project CBS, the Tower 1 floors, the slab
+    # allocations, a baselined budget with its lines, and the rates.
+    "DEMO_PROJECT": 171,
     "DEMO_USERS": 8,
 }
 # These two are authored, not generated, and have no fixture — so they insert.
@@ -208,7 +210,9 @@ assert_(by_code.get("PRJ-001", {}).get("contractValue") == 47300000.0,
 
 for label, path, expected in [
     ("WBS elements", "/project/WBS?$select=code&$top=50", 4),
-    ("project CBS nodes", "/project/CBS?$select=code&$top=50", 11),
+    # 11 L2 nodes under the four L1 phases they were always meant to
+    # hang off; every one of them used to be its own root.
+    ("project CBS nodes", "/project/CBS?$select=code&$top=50", 15),
     ("BOQ items", "/project/BOQItems?$select=itemNo&$top=50", 5),
     ("BOQ build-up lines", "/project/BOQItemResources?$select=category&$top=50", 7),
     ("resource requests", "/workflow/ResourceRequests?$select=docNo&$top=50", 5),
@@ -218,7 +222,8 @@ for label, path, expected in [
     ("reservations", "/workflow/Reservations?$select=docNo&$top=50", 3),
     ("reservation lines", "/workflow/ReservationLines?$select=qty&$top=99", 15),
     ("manpower line detail", "/workflow/ManpowerRequestLines?$select=heads&$top=50", 5),
-    ("timesheet entries", "/workflow/Timesheets?$select=regularHrs&$top=50", 5),
+    # 5 on the canonical EQR thread, 17 on the Tower 1 floors.
+    ("timesheet entries", "/workflow/Timesheets?$select=regularHrs&$top=50", 22),
 ]:
     status, got = rows(path)
     assert_(status == 200 and len(got) == expected, f"{expected} {label}",
@@ -291,8 +296,13 @@ if status == 200:
 else:
     assert_(False, "manpower lines readable", f"status {status}")
 
+# Filtered to the one day this section is about. It used to sum every
+# timesheet in the database while calling the total "the 14 Aug log", which
+# was the same figure only for as long as 14 August was the only day anyone
+# had logged - and stopped being true the moment the demo gained a month of
+# work on the Tower 1 floors.
 status, tsh = rows("/workflow/Timesheets?$select=headsPresent,regularHrs,otHrs,"
-                   "costAmount,logStatus&$top=50")
+                   "costAmount,logStatus&$filter=workDate eq 2026-08-14&$top=50")
 if status == 200:
     assert_(sum(t["headsPresent"] for t in tsh) == 24
             and sum(t["regularHrs"] for t in tsh) == 192.0
@@ -300,10 +310,10 @@ if status == 200:
             "the 14 Aug log is 24 heads, 192 regular hours and 24 overtime",
             f"{sum(t['headsPresent'] for t in tsh)} heads, "
             f"{sum(t['regularHrs'] for t in tsh)} + {sum(t['otHrs'] for t in tsh)} hrs")
-    cost = sum(t["costAmount"] for t in tsh)
+    cost = sum(t["costAmount"] or 0 for t in tsh)
     assert_(abs(cost - 5464.00) < 0.005, "and costs AED 5,464.00", f"AED {cost:,.2f}")
     assert_(all(t["logStatus"] == "Signed" for t in tsh),
-            "every logged day is signed, so it may reach S/4",
+            "every day of it is signed, so it may reach S/4",
             str({t["logStatus"] for t in tsh}))
 else:
     assert_(False, "timesheets readable", f"status {status}")

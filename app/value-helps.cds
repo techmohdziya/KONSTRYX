@@ -183,3 +183,21 @@ annotate MasterDataService.Materials with {
 annotate MasterDataService.Vendors with {
   bpNumber @Common : { SemanticObject : 'KonstryxVendor' };
 }
+
+// ------------------------------------------------------- rendering hints
+
+/**
+ * The criticality fields are instructions to the renderer, not information.
+ * They exist so a status can be coloured, and a user offered "statusCriticality"
+ * in a column list has been handed a number between 0 and 3 that means nothing
+ * to them. Hidden rather than labelled: a good label for these would still be
+ * a column nobody should add.
+ */
+annotate WorkflowService.Timesheets with {
+  statusCriticality @UI.Hidden;
+}
+
+annotate WorkflowService.ReservationLines with {
+  burnCriticality  @UI.Hidden;
+  driftCriticality @UI.Hidden;
+}

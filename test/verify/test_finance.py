@@ -87,44 +87,56 @@ def rate(from_ccy, to_ccy, kind, value, valid_from="2026-01-01"):
 
 
 head("1. Rates go on file")
-for f, t, k, v in [("EUR", "AED", "SPOT", "3.95"),
-                   ("USD", "AED", "SPOT", "3.6725"),
-                   ("USD", "AED", "BUDGET", "3.70")]:
+# Pairs the demo data does not carry. Seeding is insert-if-missing, so a rate
+# this suite creates for a seeded pair is silently shadowed by the seeded one
+# and every assertion after it measures the wrong number.
+for f, t, k, v in [("SGD", "AED", "SPOT", "2.72"),
+                   ("CHF", "AED", "SPOT", "4.11"),
+                   ("CHF", "AED", "BUDGET", "4.25")]:
     st, _ = rate(f, t, k, v)
     results.append(st == 201)
     print(f"  {'ok  ' if st == 201 else 'FAIL'} [{st}] {f}->{t} {k} at {v}")
 
 head("2. Conversion, and it says which rate it used")
 st, conv = call("/admin/convert", method="POST", body={
-    "amount": 1000, "fromCcy": "EUR", "toCcy": "AED", "rateType": "SPOT",
+    "amount": 1000, "fromCcy": "SGD", "toCcy": "AED", "rateType": "SPOT",
     "asOf": "2026-06-01"})
 results.append(st == 200)
-print(f"  {'ok  ' if st == 200 else 'FAIL'} [{st}] 1000 EUR -> {conv}")
+print(f"  {'ok  ' if st == 200 else 'FAIL'} [{st}] 1000 SGD -> {conv}")
 if st == 200:
-    same("1000 EUR at 3.95", conv.get("amount"), "3950.00")
-    same("the rate is reported", conv.get("rate"), "3.950000")
+    same("1000 SGD at 2.72", conv.get("amount"), "2720.00")
+    same("the rate is reported", conv.get("rate"), "2.720000")
     yes("the rate type travels with the money",
         conv.get("rateType") == "SPOT")
 
 head("3. The rate type is not decoration")
 st, budget_rate = call("/admin/convert", method="POST", body={
-    "amount": 1000, "fromCcy": "USD", "toCcy": "AED", "rateType": "BUDGET",
+    "amount": 1000, "fromCcy": "CHF", "toCcy": "AED", "rateType": "BUDGET",
     "asOf": "2026-06-01"})
 st2, spot_rate = call("/admin/convert", method="POST", body={
-    "amount": 1000, "fromCcy": "USD", "toCcy": "AED", "rateType": "SPOT",
+    "amount": 1000, "fromCcy": "CHF", "toCcy": "AED", "rateType": "SPOT",
     "asOf": "2026-06-01"})
-same("1000 USD at the budget rate", budget_rate.get("amount"), "3700.00")
-same("1000 USD at the spot rate", spot_rate.get("amount"), "3672.50")
+same("1000 CHF at the budget rate", budget_rate.get("amount"), "4250.00")
+same("1000 CHF at the spot rate", spot_rate.get("amount"), "4110.00")
 yes("the two rates give different money",
     budget_rate.get("amount") != spot_rate.get("amount"))
+
+# The same separation holds on the demo data, where a euro contract rate, a
+# budget rate and a spot rate all exist for one pair.
+st, eur = call("/admin/ExchangeRates?$filter=fromCcy_code eq 'EUR'"
+               "&$select=rateType,rate&$orderby=rateType")
+kinds = {r["rateType"]: r["rate"] for r in eur.get("value", [])}
+print(f"      seeded EUR rates: {kinds}")
+yes("the demo carries contract, budget and spot for one pair, all different",
+    len(set(kinds.values())) == len(kinds) >= 3)
 
 head("4. The inverse pair, and the identity")
 # Nobody maintains AED->EUR as well as EUR->AED; the table has the answer.
 st, back = call("/admin/convert", method="POST", body={
-    "amount": 3950, "fromCcy": "AED", "toCcy": "EUR", "rateType": "SPOT",
+    "amount": 2720, "fromCcy": "AED", "toCcy": "SGD", "rateType": "SPOT",
     "asOf": "2026-06-01"})
 results.append(st == 200)
-same("3950 AED back to EUR", back.get("amount"), "1000.00")
+same("2720 AED back to SGD", back.get("amount"), "1000.00")
 yes("the inversion is declared in the source",
     "invert" in str(back.get("source", "")).lower())
 
@@ -134,9 +146,9 @@ same("AED to AED is the same money", ident.get("amount"), "500.00")
 same("at rate 1", ident.get("rate"), "1.000000")
 
 head("5. A pair with no rate is refused, not guessed")
-check(400, "GBP has no rate on file", *call(
+check(400, "ZAR has no rate on file", *call(
     "/admin/convert", method="POST", body={
-        "amount": 1000, "fromCcy": "GBP", "toCcy": "AED", "rateType": "SPOT"}))
+        "amount": 1000, "fromCcy": "ZAR", "toCcy": "AED", "rateType": "SPOT"}))
 
 head("6. A CBS tree, built because the seeded one is flat")
 s, projects = call("/project/Projects?$select=ID,code&$filter=IsActiveEntity eq true&$top=1",
