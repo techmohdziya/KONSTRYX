@@ -105,6 +105,32 @@ service CollaborationService @(path:'/collaboration') {
     };
 
   /**
+   * The numbers the launchpad tiles show.
+   *
+   * A dynamic tile is not decoration: a tile that reads "3 over budget" is the
+   * reason someone opens that app rather than another, and one that reads only
+   * its own name makes the launchpad a menu. Returned as one call rather than
+   * a dozen because a launchpad renders every tile at once, and thirteen
+   * round trips on a cold start is what makes a home page feel slow.
+   *
+   * Each row carries the shape a dynamic launcher binds to - a number, the
+   * unit it is counted in, a subtitle, and a state that colours it. The state
+   * is computed from the number rather than fixed, because a tile whose colour
+   * never changes tells you nothing the title did not.
+   */
+  action launchpadKpis() returns array of {
+    tile        : String(40);
+    title       : String(60);
+    number      : Decimal(15,2);
+    numberUnit  : String(20);
+    subtitle    : String(80);
+    /** Neutral | Positive | Critical | Negative — the tile's colour. */
+    state       : String(10);
+    /** Why it is that colour, in words, for the tile's footer. */
+    info        : String(80);
+  };
+
+  /**
    * Starts an approval for any business object. The scheme is chosen by object
    * type and company, and the steps whose value bands cover the amount are
    * frozen onto the instance at submission — a scheme edited later does not

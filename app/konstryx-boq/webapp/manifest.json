@@ -171,5 +171,9 @@
     "app": {
       "enableLazyLoading": true
     }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "konstryx.app"
   }
 }

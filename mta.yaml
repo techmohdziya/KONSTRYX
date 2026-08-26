@@ -49,6 +49,149 @@ modules:
       supported-platforms: []
       build-result: dist
 
+  - name: konstryx-boq
+    type: html5
+    path: app/konstryx-boq
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-budget
+    type: html5
+    path: app/konstryx-budget
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-exchange-rate
+    type: html5
+    path: app/konstryx-exchange-rate
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-material
+    type: html5
+    path: app/konstryx-material
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-payment-certificate
+    type: html5
+    path: app/konstryx-payment-certificate
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-productivity
+    type: html5
+    path: app/konstryx-productivity
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-project
+    type: html5
+    path: app/konstryx-project
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-requisition
+    type: html5
+    path: app/konstryx-requisition
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-reservation
+    type: html5
+    path: app/konstryx-reservation
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-resource
+    type: html5
+    path: app/konstryx-resource
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-resource-request
+    type: html5
+    path: app/konstryx-resource-request
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-timesheet
+    type: html5
+    path: app/konstryx-timesheet
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
+  - name: konstryx-vendor
+    type: html5
+    path: app/konstryx-vendor
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
   # Building the app is not the same as shipping it. A type: html5 module only
   # produces the artifact; this content module is what uploads it into the
   # app-host, and without it the deploy creates both repository services and
@@ -74,6 +217,125 @@ modules:
           artifacts:
             - konstryx-ui.zip
           target-path: resources/
+        - name: konstryx-boq
+          artifacts:
+            - konstryx-boq.zip
+          target-path: resources/
+        - name: konstryx-budget
+          artifacts:
+            - konstryx-budget.zip
+          target-path: resources/
+        - name: konstryx-exchange-rate
+          artifacts:
+            - konstryx-exchange-rate.zip
+          target-path: resources/
+        - name: konstryx-material
+          artifacts:
+            - konstryx-material.zip
+          target-path: resources/
+        - name: konstryx-payment-certificate
+          artifacts:
+            - konstryx-payment-certificate.zip
+          target-path: resources/
+        - name: konstryx-productivity
+          artifacts:
+            - konstryx-productivity.zip
+          target-path: resources/
+        - name: konstryx-project
+          artifacts:
+            - konstryx-project.zip
+          target-path: resources/
+        - name: konstryx-requisition
+          artifacts:
+            - konstryx-requisition.zip
+          target-path: resources/
+        - name: konstryx-reservation
+          artifacts:
+            - konstryx-reservation.zip
+          target-path: resources/
+        - name: konstryx-resource
+          artifacts:
+            - konstryx-resource.zip
+          target-path: resources/
+        - name: konstryx-resource-request
+          artifacts:
+            - konstryx-resource-request.zip
+          target-path: resources/
+        - name: konstryx-timesheet
+          artifacts:
+            - konstryx-timesheet.zip
+          target-path: resources/
+        - name: konstryx-vendor
+          artifacts:
+            - konstryx-vendor.zip
+          target-path: resources/
+
+  # What makes the apps visible to Work Zone.
+  #
+  # An app in the HTML5 repository is not an app Work Zone can find. Its
+  # Content Manager discovers them through two subaccount destinations tagged
+  # with the business service the manifests declare - one pointing at the
+  # repository that holds them, one at the XSUAA that authorises them. Without
+  # this module the deploy succeeds, every app is uploaded, and the Content
+  # Manager shows an empty list with nothing to explain why.
+  #
+  # The names are not free: Work Zone looks for <service>_html_repo_host and
+  # <service>_uaa, and sap.cloud.service must match the manifests exactly or
+  # the destinations are ignored.
+  - name: konstryx-destination-content
+    type: com.sap.application.content
+    requires:
+      - name: konstryx-destination
+        parameters:
+          content-target: true
+      - name: konstryx-html5-repo-host
+        parameters:
+          service-key:
+            name: konstryx-html5-repo-host-key
+      - name: konstryx-auth
+        parameters:
+          service-key:
+            name: konstryx-auth-key
+    parameters:
+      content:
+        instance:
+          destinations:
+            - Name: konstryx_html_repo_host
+              ServiceInstanceName: konstryx-html5-repo-host
+              ServiceKeyName: konstryx-html5-repo-host-key
+              sap.cloud.service: konstryx.app
+            - Name: konstryx_uaa
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: konstryx-auth
+              ServiceKeyName: konstryx-auth-key
+              sap.cloud.service: konstryx.app
+          # Update rather than skip: a redeploy that leaves a stale destination
+          # pointing at a replaced service key is how Work Zone starts
+          # answering 401 for apps that deployed perfectly well.
+          existing_destinations_policy: update
+    build-parameters:
+      no-source: true
+
+  # The Work Zone site itself: four spaces, their pages, and the tiles on them.
+  #
+  # Deployed rather than assembled in the Content Manager. A site built by
+  # clicking exists only in the tenant it was clicked in - it cannot be
+  # reviewed, cannot be diffed, and has to be rebuilt from memory the next time
+  # a subaccount is set up. tools/build_launchpad_site.py generates the model
+  # from the app manifests, so a tile's intent cannot drift away from the app
+  # that answers it.
+  - name: konstryx-launchpad-content
+    type: com.sap.application.content
+    path: launchpad-content
+    requires:
+      - name: konstryx-launchpad
+        parameters:
+          content-target: true
+    # No build-parameters. mbt packages the module's own directory into the
+    # data.zip the content deployer expects; naming a build-result sent it
+    # looking for an archive nothing produces, and it failed with "cannot find
+    # konstryx-launchpad-content/data.zip" rather than with anything about the
+    # site.
 
   # Entry point for the browser. Handles the XSUAA login, serves the UI out of
   # the HTML5 repository, and forwards the token to the service; nothing
@@ -144,6 +406,15 @@ resources:
     parameters:
       service: destination
       service-plan: lite
+
+  # The Launchpad service instance the site content is deployed into. Work
+  # Zone is already subscribed in this subaccount; this is the instance that
+  # accepts deployed content, not a second launchpad.
+  - name: konstryx-launchpad
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: SAPLaunchpad
+      service-plan: standard
 
   # Two halves of the same service: app-host stores the built UI, app-runtime
   # lets the approuter read it back out at request time.
