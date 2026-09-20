@@ -98,13 +98,24 @@ assert_(proc.returncode == 0,
 # regenerated is exactly what this is here to catch.
 FIXTURE_PACKS = {
     "ORGANISATION": 5,
-    "PERSONAS": 141,   # +2: steward display access to the vendor/material mirrors
-    # 145 + 11 mirrored S/4 materials (I-35) + 4 service products and the
-    # hired rate row that the class->S/4 routing needs (spec §8 / P10)
-    "MASTER_DATA": 161,
+    # +2: steward display access to the vendor/material mirrors. +1: the
+    # project manager may read the cost position, whose object had been
+    # pointing at an entity that no longer exists. +4: the site engineer and
+    # the resource coordinator may read the stock draw and the consumption
+    # record — the two screens the site half of execution exists for.
+    "PERSONAS": 156,
+    # 145 + 11 mirrored ERP materials (I-35) + 4 service products and the
+    # hired rate row that the class->ERP routing needs (spec §8 / P10), then
+    # the restructured CBS library, the ready-mix rate, and the norms the
+    # four added jobs price against.
+    "MASTER_DATA": 171,
     # 116 + a three-level project CBS, the Tower 1 floors, the slab
-    # allocations, a baselined budget with its lines, and the rates.
-    "DEMO_PROJECT": 171,
+    # allocations, a baselined budget with its lines, and the rates — then
+    # four more jobs, each with its own structure, bill, programme and
+    # budget, PRJ-001's live stretch of programme with the signed days
+    # against it, and the one material request drawn from our own store
+    # rather than bought.
+    "DEMO_PROJECT": 500,
     "DEMO_USERS": 8,
 }
 # These two are authored, not generated, and have no fixture — so they insert.
@@ -175,13 +186,21 @@ head("3. And the seeded grants are what govern access")
 
 status, seen_all = rows("/workflow/ResourceRequests?$select=docNo,project_ID&$top=50", "demo")
 status2, seen_daud = rows("/workflow/ResourceRequests?$select=docNo,project_ID&$top=50", "daud")
-assert_(status == 200 and len(seen_all) == 5, "demo's persona reaches both projects",
-        f"{len(seen_all)} requests")
-assert_(status2 == 200 and len(seen_daud) == 4
-        and len({r["project_ID"] for r in seen_daud}) == 1,
+# Asserted as a shape rather than a count: what makes this a control is that
+# one reader spans the portfolio and the other is confined to their own job,
+# and that stays true however many requests the fixture grows to. The counts
+# were pinned, so adding a request to the demo read as an authorization
+# regression on a run where authorization had not moved at all.
+all_projects = {r["project_ID"] for r in (seen_all if status == 200 else [])}
+daud_projects = {r["project_ID"] for r in (seen_daud if status2 == 200 else [])}
+assert_(status == 200 and len(all_projects) > 1,
+        "demo's persona reaches every job",
+        f"{len(seen_all)} requests across {len(all_projects)} project(s)")
+assert_(status2 == 200 and len(daud_projects) == 1
+        and len(seen_daud) < len(seen_all),
         "daud's assignment narrows the same read to one project",
-        f"{len(seen_daud)} requests, "
-        f"{len({r['project_ID'] for r in seen_daud})} project(s)")
+        f"{len(seen_daud)} of {len(seen_all)} requests, "
+        f"{len(daud_projects)} project(s)")
 
 check(403, "daud holds no grant on the rate master", *call("/masterdata/Rates?$top=1", "daud"))
 check(200, "the master data steward does", *call("/masterdata/Rates?$top=1", "steward_infc"))
@@ -202,28 +221,37 @@ head("4. The demo thread is complete and reconciles")
 
 status, projects = rows("/project/Projects?$select=code,name,contractValue&$top=10")
 by_code = {p["code"]: p for p in projects}
-assert_(status == 200 and set(by_code) == {"PRJ-001", "PRJ-002"},
-        "both demo projects are present", f"{sorted(by_code)}")
+# Three of the five, because this read runs as demo — assigned to INFC, so
+# the two jobs owned by the other legal entities are filtered out. The gap is
+# the scoping working, not a missing project.
+assert_(status == 200 and set(by_code) == {"PRJ-001", "PRJ-002", "PRJ-003"},
+        "the jobs this persona is entitled to are present", f"{sorted(by_code)}")
 assert_(by_code.get("PRJ-001", {}).get("contractValue") == 47300000.0,
         "Marina Heights carries its contract value",
         str(by_code.get("PRJ-001", {}).get("contractValue")))
 
 for label, path, expected in [
-    ("WBS elements", "/project/WBS?$select=code&$top=50", 4),
+    # Four on the canonical thread, then the structures under the other
+    # jobs and PRJ-001's own tree once it gained roots and sub-levels.
+    ("WBS elements", "/project/WBS?$select=code&$top=99", 35),
     # 11 L2 nodes under the four L1 phases they were always meant to
     # hang off; every one of them used to be its own root.
-    ("project CBS nodes", "/project/CBS?$select=code&$top=50", 15),
-    ("BOQ items", "/project/BOQItems?$select=itemNo&$top=50", 5),
+    # The page has to be big enough to hold the answer: at $top=50 this read
+    # returned exactly 50 for years, which is a page size being asserted on
+    # rather than a count.
+    ("project CBS nodes", "/project/CBS?$select=code&$top=200", 80),
+    ("BOQ items", "/project/BOQItems?$select=itemNo&$top=99", 29),
     ("BOQ build-up lines", "/project/BOQItemResources?$select=category&$top=50", 7),
-    ("resource requests", "/workflow/ResourceRequests?$select=docNo&$top=50", 5),
-    ("request lines", "/workflow/ResourceRequestLines?$select=lineNo&$top=99", 15),
-    ("advisory decisions", "/workflow/AdvisoryDecisions?$select=decision&$top=99", 15),
+    ("resource requests", "/workflow/ResourceRequests?$select=docNo&$top=50", 7),
+    ("request lines", "/workflow/ResourceRequestLines?$select=lineNo&$top=99", 19),
+    ("advisory decisions", "/workflow/AdvisoryDecisions?$select=decision&$top=99", 19),
     ("availability checks", "/workflow/AvailabilityChecks?$select=docNo&$top=50", 3),
     ("reservations", "/workflow/Reservations?$select=docNo&$top=50", 3),
     ("reservation lines", "/workflow/ReservationLines?$select=qty&$top=99", 15),
     ("manpower line detail", "/workflow/ManpowerRequestLines?$select=heads&$top=50", 5),
-    # 5 on the canonical EQR thread, 17 on the Tower 1 floors.
-    ("timesheet entries", "/workflow/Timesheets?$select=regularHrs&$top=50", 22),
+    # 5 on the canonical EQR thread, 17 on the Tower 1 floors, and 23 more
+    # from the fronts PRJ-001 is standing on this week.
+    ("timesheet entries", "/workflow/Timesheets?$select=regularHrs&$top=99", 45),
 ]:
     status, got = rows(path)
     assert_(status == 200 and len(got) == expected, f"{expected} {label}",
@@ -255,10 +283,12 @@ status, adv = rows("/workflow/AdvisoryDecisions?$select=decision&$top=99")
 counts = {}
 for a in (adv if status == 200 else []):
     counts[a["decision"]] = counts.get(a["decision"], 0) + 1
-# Equipment routes 2 in-house / 3 procured, material 3 / 2, manpower 3 / 2 — so
+# Equipment routes 2 in-house / 3 procured, material 5 / 2, manpower 3 / 2 — so
 # every vertical decides both ways rather than rubber-stamping one route, which
-# is the whole point of having an advisory step to demonstrate.
-assert_(counts == {"IN_HOUSE": 8, "PROCURE": 7},
+# is the whole point of having an advisory step to demonstrate. Material leans
+# in-house because one of its requests is concrete out of our own batching
+# plant: without it nothing in the estate is ever drawn from a store.
+assert_(counts == {"IN_HOUSE": 11, "PROCURE": 8},
         "advisory decides both ways in all three verticals", str(counts))
 
 # The AVC lines are a composition, not an entity set of their own, so they are
@@ -352,15 +382,156 @@ head("5. Masters are seeded, and still scope-isolated")
 # 12 CBS library nodes seeded, 1 of them PMI's.
 for label, path, expected in [
     ("resource nodes visible to an INFC user", "/masterdata/Resources/$count", "75"),
-    # 22, not 21: the carpenter is rated twice on the same day — our payroll
-    # and Alpha Civil's — which is the case the old resource-only key refused
-    ("rate master rows", "/masterdata/Rates/$count", "22"),
-    ("CBS library nodes minus PMI's", "/masterdata/CBSLibrary/$count", "16"),
+    # 23, not 21: the carpenter is rated twice on the same day — our payroll
+    # and Alpha Civil's — which is the case the old resource-only key refused,
+    # and the ready-mix carries a rate so the seeded bills price whole.
+    ("rate master rows", "/masterdata/Rates/$count", "23"),
+    # The library begins at preliminaries now, and carries the phases a
+    # building job is actually broken down by.
+    ("CBS library nodes minus PMI's", "/masterdata/CBSLibrary/$count", "25"),
     ("vendors incl. the two LSC labour suppliers", "/masterdata/Vendors/$count", "5"),
 ]:
     status, got = call(path, "demo")
     assert_(status == 200 and str(got).strip() == expected, label,
             f"{str(got).strip()} (expected {expected}, status {status})")
+
+head("6. A tenant that came up half-seeded says so")
+# The symptom of a bad seed row is every request returning 403, which sends
+# somebody to the authorization model rather than to the pack. The rows roll
+# back and the boot log is the only trace -- and by the time anyone doubts the
+# seed the container has restarted and taken the log with it. So the attempt is
+# recorded whether or not it worked.
+s, packs = rows("/authorization/ContentPacks?$select=packId,version,outcome,message",
+                "admin")
+failed = [p for p in packs if p.get("outcome") == "FAILED"]
+assert_(not failed, "every delivered pack applied on this tenant",
+        "; ".join(f"{p['packId']} {p['version']}: {str(p.get('message'))[:90]}"
+                  for p in failed) or f"{len(packs)} pack(s), none failed")
+assert_(all(p.get("outcome") == "APPLIED" for p in packs),
+        "and each one says so rather than leaving it to be inferred",
+        str(sorted({p.get("outcome") for p in packs})))
+
+# Now break one on purpose. The pack goes in ./content, which is where an
+# operator's own corrective pack goes, so this exercises the delivered path
+# rather than a special case. It is removed again whatever happens -- and if
+# that ever fails, the two checks above are what says so on the next run.
+BAD = ROOT / "content" / "zz-verify-bad-pack.json"
+BAD.parent.mkdir(exist_ok=True)
+BAD.write_text(json.dumps({
+    "packId": "VERIFY_BAD_PACK", "version": "1.0.0", "sequence": 9999,
+    "description": "A row with a typo in a column name",
+    "items": [{
+        "entity": "konstryx.auth.Persona", "naturalKey": "code",
+        "rows": [
+            {"code": "VERIFY_GOOD", "name": "Would have applied", "isActive": True},
+            {"code": "VERIFY_BAD", "nmae": "typo", "isActive": True},
+        ],
+    }],
+}), encoding="utf-8")
+
+try:
+    check(200, "the packs are re-applied", *call("/authorization/applyContentPacks",
+                                                 user="admin", method="POST", body={}))
+    s, mine = rows("/authorization/ContentPacks?$filter=packId eq 'VERIFY_BAD_PACK'"
+                   "&$select=version,outcome,message", "admin")
+    assert_(len(mine) == 1 and mine[0]["outcome"] == "FAILED",
+            "the failure is in the registry, not only in a log",
+            str([m.get("outcome") for m in mine]))
+
+    # A message that names the entity is a message that sends you back to a
+    # thousand rows. The row and the column belong in it.
+    msg = mine[0].get("message") if mine else ""
+    assert_("code=VERIFY_BAD" in str(msg) and "nmae" in str(msg),
+            "and it names the row and the column, not just the pack",
+            str(msg)[:150])
+
+    s, seeded = rows("/authorization/Personas?$filter=code eq 'VERIFY_GOOD'", "admin")
+    assert_(not seeded, "nothing from a failed pack is kept, including its good rows",
+            f"{len(seeded)} row(s)")
+
+    # The load-bearing one. Recording failures in the same table the applied
+    # check reads means a pack that failed once could be skipped for the life of
+    # the tenant, turning a transient failure into a permanent one.
+    BAD.write_text(BAD.read_text(encoding="utf-8").replace('"nmae"', '"name"'),
+                   encoding="utf-8")
+    check(200, "the pack is corrected and re-applied", *call(
+        "/authorization/applyContentPacks", user="admin", method="POST", body={}))
+    s, seeded = rows("/authorization/Personas?$filter=startswith(code,'VERIFY_')"
+                     "&$select=code", "admin")
+    assert_(len(seeded) == 2,
+            "a fixed pack applies -- the earlier failure did not lock it out",
+            str(sorted(r["code"] for r in seeded)))
+    s, mine = rows("/authorization/ContentPacks?$filter=packId eq 'VERIFY_BAD_PACK'"
+                   "&$select=outcome", "admin")
+    assert_(sorted(m["outcome"] for m in mine) == ["APPLIED", "FAILED"],
+            "and both attempts are kept, the way an import run is",
+            str(sorted(m["outcome"] for m in mine)))
+finally:
+    BAD.unlink(missing_ok=True)
+    try:
+        BAD.parent.rmdir()
+    except OSError:
+        pass    # an operator's own pack lives here too
+
+head("7. The authorization catalogue still names things that exist")
+# The catalogue is data and the model it points at is code, so the two drift
+# apart the first time an entity or an association is renamed and neither side
+# says anything. A broken object does not enforce badly -- the enforcement
+# handler finds no match and returns early -- it does not enforce at all.
+check(200, "a healthy catalogue reports itself healthy", *call(
+    "/authorization/checkAuthorizationCatalogue", user="admin", method="POST", body={}))
+
+BAD_AUTH = ROOT / "content" / "zz-verify-bad-authobjects.json"
+BAD_AUTH.parent.mkdir(exist_ok=True)
+BAD_AUTH.write_text(json.dumps({
+    "packId": "VERIFY_BAD_AUTH", "version": "1.0.0", "sequence": 9999,
+    "description": "Four ways a catalogue row stops matching the model",
+    "items": [{
+        "entity": "konstryx.auth.AuthObject", "naturalKey": "code",
+        "rows": [
+            {"code": "KX_VERIFY_GONE", "name": "Entity renamed away",
+             "entityName": "konstryx.prj.ProjectThatWasRenamed"},
+            {"code": "KX_VERIFY_PATH", "name": "Path step does not exist",
+             "entityName": "konstryx.prj.SiteLocation", "projectPath": "project.kode"},
+            {"code": "KX_VERIFY_ASSOC", "name": "Path stops on an association",
+             "entityName": "konstryx.prj.Activity", "companyPath": "project.company"},
+            {"code": "KX_VERIFY_DUP", "name": "Second object on a covered entity",
+             "entityName": "konstryx.prj.Project", "projectPath": "code"},
+        ],
+    }],
+}), encoding="utf-8")
+
+try:
+    check(200, "the broken objects are seeded", *call(
+        "/authorization/applyContentPacks", user="admin", method="POST", body={}))
+    s, report = call("/authorization/checkAuthorizationCatalogue", user="admin",
+                     method="POST", body={})
+    for label, needle in [
+        ("an entity that is no longer in the model",
+         "konstryx.prj.ProjectThatWasRenamed"),
+        ("a scope path with a step that does not exist", "has no 'kode'"),
+        ("a scope path that stops on an association", "rather than a value"),
+        # The catalogue is keyed by the entity it protects, so a second object
+        # on one entity does not coexist -- it replaces, and the loser is still
+        # in the table looking delivered while governing nothing.
+        ("two objects competing for one entity", "only one of them can"),
+    ]:
+        ok = needle in str(report)
+        results.append(ok)
+        print(f"  {'ok  ' if ok else 'FAIL'} it catches {label}")
+
+    # Each finding says what it costs, because "does not resolve" is not a
+    # reason for anybody to stop what they are doing and fix it.
+    ok = "no control at all" in str(report) and "not protected by it" in str(report)
+    results.append(ok)
+    print(f"  {'ok  ' if ok else 'FAIL'} and says what each one costs, not just that "
+          f"it is wrong")
+finally:
+    BAD_AUTH.unlink(missing_ok=True)
+    try:
+        BAD_AUTH.parent.rmdir()
+    except OSError:
+        pass
 
 print()
 print(f"  {sum(results)} of {len(results)} checks passed")

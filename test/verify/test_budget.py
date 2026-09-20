@@ -71,6 +71,29 @@ def make_master(entity, body, user="steward_infc"):
                 "/MasterDataService.draftActivate", method="POST", body={}, user=user)
 
 
+def price_every_bill(project_id, except_bill=None):
+    """Resolves the build-up on every bill the project carries.
+
+    The budget gate is a statement about a project, not about one bill: VAL-04
+    asks that every mapped line on the job has a complete, priced build-up.
+    This test builds a bill of its own on PRJ-002 and then expects the gate to
+    pass — which worked while PRJ-002 was a header with nothing under it, and
+    stopped the moment it gained a bill of its own. Pricing the whole job is
+    what a planner does before generating a budget, and it is what the gate is
+    asking for.
+    """
+    _s, bills = call("/project/BOQs?$filter=IsActiveEntity eq true and "
+                     f"project_ID eq {project_id}&$select=ID,boqId")
+    for bill in (bills.get("value", []) if isinstance(bills, dict) else []):
+        # Never the caller's own bill: it is priced at the difficulty this test
+        # is asserting about, and re-resolving it at 100 would restate the very
+        # figure being checked.
+        if except_bill and bill["ID"] == except_bill:
+            continue
+        call(f"/project/BOQs(ID={bill['ID']},IsActiveEntity=true)"
+             "/ProjectService.generateBuildUp", method="POST",
+             body={"difficultyPct": 100})
+
 def bud_action(bid, action, body=None):
     return call(f"/budget/Budgets(ID={bid},IsActiveEntity=true)/BudgetService.{action}",
                 method="POST", body=body or {})
@@ -155,21 +178,31 @@ check(200, "a rate for the concrete is maintained", *make_master("Rates", {
 check(200, "build-up regenerated with the rate in force", *call(
     f"/project/BOQs(ID={boq_id},IsActiveEntity=true)/ProjectService.generateBuildUp",
     method="POST", body={"difficultyPct": 110}))
+price_every_bill(pid, boq_id)
 msg = check(200, "generated — the gate passes", *bud_action(bid, "generateLines"))
 
 s, lines = call(f"/budget/BudgetLines?$filter=budget_ID eq {bid}"
-                "&$select=ID,category,amount,available&$orderby=category")
+                "&$select=ID,category,amount,available,boqItem_ID&$orderby=category")
 for l in lines["value"]:
     print(f"        {l['category']:4} amount {l['amount']:>12}  available {l['available']:>12}")
-by_cat = {l["category"]: l for l in lines["value"]}
+# The project carries a bill of its own as well as this one, so a line is
+# picked by the bill item it was generated from rather than by cost nature
+# alone — two MR lines on one budget is now the ordinary case.
+own_item = items["value"][0]["ID"]
+by_cat = {l["category"]: l for l in lines["value"]
+          if str(l.get("boqItem_ID")) == own_item}
 assert_(abs(float(by_cat["MR"]["amount"]) - 1230 * 285) < 0.01,
         "MR = 1230 m3 x 285", by_cat["MR"]["amount"])
 assert_(abs(float(by_cat["EQR"]["amount"]) - 110 * 55) < 0.5,
         "EQR = 110 hr x 55", by_cat["EQR"]["amount"])
 
 s, led = call(f"/budget/LedgerEntries?$filter=budget_ID eq {bid}&$select=category,amount")
-assert_(len(led["value"]) == 2 and all(e["category"] == "ORIGINAL" for e in led["value"]),
-        "every line opened with exactly one ORIGINAL entry")
+# One entry per line, whatever the line count is. Asserting the count itself
+# would be asserting how big the project's bill happens to be.
+assert_(len(led["value"]) == len(lines["value"])
+        and all(e["category"] == "ORIGINAL" for e in led["value"]),
+        "every line opened with exactly one ORIGINAL entry",
+        f"{len(led['value'])} entries for {len(lines['value'])} lines")
 
 head("2. Approval moves the budget; baseline closes the door")
 check(200, "submitted", *bud_action(bid, "submit"))
@@ -198,6 +231,15 @@ if s == 400:  # non-draft child PATCH may be rejected at protocol level; try fla
     s, patch = call(f"/budget/BudgetLines({mr_line['ID']})", method="PATCH",
                     body={"amount": 999999})
 check(403, "editing a baselined amount by hand", s, patch)
+
+# And the guard above reads the status, so a writable status was worth exactly
+# one call to get around: put the budget back to Draft and the amounts open up.
+check(403, "and putting the budget back to Draft to get at them", *call(
+    f"/budget/Budgets(ID={bid},IsActiveEntity=true)", method="PATCH",
+    body={"status": "Draft"}))
+s_now, budget_now = call(f"/budget/Budgets(ID={bid},IsActiveEntity=true)?$select=status")
+assert_(budget_now.get("status") == "Baselined",
+        "so it is still baselined", str(budget_now.get("status")))
 
 head("3. Movement goes through the ledger, zero-sum and explained")
 check(400, "a shift without a reason", *bud_action(bid, "shift", {
@@ -316,6 +358,84 @@ mr = [l for l in lines["value"] if l["category"] == "MR"][0]
 assert_(float(mr["encumbered"]) == 0, "the MR line is untouched by an EQR reservation")
 assert_(abs(float(eqr["available"]) - (float(eqr["amount"]) - 110.0)) < 0.01,
         "available = amount - encumbered on the control record")
+
+head("5. A lock the budget has no heading for is reported, not lost")
+# Encumbrance is attributed by walking the budget's own lines and asking what
+# is locked against each cost node and cost nature. A lock against a node the
+# budget has no heading for is therefore never asked about: it does not fall
+# out of a total, because it never reaches one. Nothing is wrong on any screen
+# and the headroom above it reads as free.
+#
+# Commitment and actual have said so since they were built. This is the third
+# of the three and it is the one that matters most: an order or an invoice is
+# money somebody will present a demand for, and an unheld lock is a promise the
+# job made itself that only the reservation remembers.
+
+held_before = sum(float(l["encumbered"] or 0) for l in call(
+    f"/budget/BudgetLines?$filter=budget_ID eq {bid}&$select=encumbered")[1]["value"])
+
+s, cbs_all = call(f"/project/CBS?$filter=project_ID eq {pid}&$select=ID,code")
+uncarried = [c for c in cbs_all["value"] if c["ID"] not in set(
+    l.get("cbs_ID") for l in call(
+        f"/budget/BudgetLines?$filter=budget_ID eq {bid}&$select=cbs_ID")[1]["value"])]
+assert_(len(uncarried) > 0, "the project has a cost node the budget carries no line for",
+        f"{len(uncarried)} of {len(cbs_all['value'])} nodes")
+stray = uncarried[0]
+
+s, d = call("/workflow/ResourceRequests", method="POST", body={
+    "verticalType": "EQR", "project_ID": pid, "company_ID": company_id,
+    "wbs_ID": wbs_id, "needBy": "2026-11-01", "raisedBy": "demo",
+    "raisedOn": "2026-08-15"})
+stray_rid = d["ID"]
+call(f"/workflow/ResourceRequests(ID={stray_rid},IsActiveEntity=false)/lines",
+     method="POST", body={"lineNo": 1, "resource_ID": vibro, "qty": 2, "uom": "kit",
+                          "wbs_ID": wbs_id, "cbs_ID": stray["ID"]})
+call(f"/workflow/ResourceRequests(ID={stray_rid},IsActiveEntity=false)"
+     "/WorkflowService.draftActivate", method="POST", body={})
+call(f"/workflow/ResourceRequests(ID={stray_rid},IsActiveEntity=true)"
+     "/WorkflowService.submit", method="POST", body={})
+s, inst = call("/collaboration/ApprovalInstances?$filter=entityName eq"
+               " 'konstryx.wf.ResourceRequest' and status eq 'PENDING'"
+               "&$select=ID,objectDocNo&$expand=steps($select=ID)")
+for step in inst["value"][0]["steps"]:
+    call(f"/collaboration/ApprovalSteps({step['ID']})/CollaborationService.approve",
+         method="POST", body={"comment": "ok"})
+call(f"/workflow/ResourceRequests(ID={stray_rid},IsActiveEntity=true)"
+     "/WorkflowService.decideLine", method="POST",
+     body={"lineNo": 1, "decision": "IN_HOUSE", "rationale": "Fleet."})
+call(f"/workflow/ResourceRequests(ID={stray_rid},IsActiveEntity=true)"
+     "/WorkflowService.runAvailabilityCheck", method="POST", body={})
+stray_msg = call(f"/workflow/ResourceRequests(ID={stray_rid},IsActiveEntity=true)"
+                 "/WorkflowService.createReservation", method="POST", body={})[1]
+print(f"      {str(stray_msg)[:96]}")
+
+stray_lock = sum(
+    float(l["encumberedAmount"] or 0) - float(l["costToDate"] or 0)
+    for r in call("/workflow/Reservations?$filter=rr_ID eq "
+                  f"{stray_rid}&$select=ID")[1]["value"]
+    for l in call(f"/workflow/ReservationLines?$filter=reservation_ID eq {r['ID']}"
+                  "&$select=encumberedAmount,costToDate")[1]["value"])
+assert_(stray_lock > 0, "which locks money against that node",
+        f"{stray_lock:,.2f}")
+
+msg = str(check(200, "control refreshed with the stray lock live",
+                *bud_action(bid, "refreshControl")))
+held_after = sum(float(l["encumbered"] or 0) for l in call(
+    f"/budget/BudgetLines?$filter=budget_ID eq {bid}&$select=encumbered")[1]["value"])
+assert_(abs(held_after - held_before) < 0.01,
+        "no budget line holds it — that is the defect, and it is silent",
+        f"{held_before:,.2f} -> {held_after:,.2f}")
+assert_("held nowhere" in msg,
+        "so the refresh says so instead of reporting a clean run",
+        msg[msg.find("locked by open") - 12:][:150] if "locked by open" in msg
+        else msg[:150])
+assert_(f"{stray_lock:.2f}" in msg or f"{stray_lock:.1f}" in msg,
+        "and names the amount, so it can be reconciled",
+        f"looking for {stray_lock:.2f}")
+assert_(msg.count("held nowhere") == 1
+        and "committed nowhere" not in msg.split("held nowhere")[0],
+        "the three are reported separately, not merged into one figure")
+
 
 print()
 print("=" * 78)

@@ -42,6 +42,25 @@ def call(path, method="GET", body=None, user=USER):
 results = []
 
 
+def price_every_bill(project_id):
+    """Resolves the build-up on every bill the project carries.
+
+    The budget gate is a statement about a project, not about one bill: VAL-04
+    asks that every mapped line on the job has a complete, priced build-up.
+    This test builds a bill of its own on PRJ-002 and then expects the gate to
+    pass — which worked while PRJ-002 was a header with nothing under it, and
+    stopped the moment it gained a bill of its own. Pricing the whole job is
+    what a planner does before generating a budget, and it is what the gate is
+    asking for.
+    """
+    _s, bills = call("/project/BOQs?$filter=IsActiveEntity eq true and "
+                     f"project_ID eq {project_id}&$select=ID,boqId")
+    for bill in (bills.get("value", []) if isinstance(bills, dict) else []):
+        call(f"/project/BOQs(ID={bill['ID']},IsActiveEntity=true)"
+             "/ProjectService.generateBuildUp", method="POST",
+             body={"difficultyPct": 100})
+
+
 def check(expected, label, status, payload):
     if isinstance(payload, dict):
         payload = payload.get("value", payload)
@@ -135,6 +154,8 @@ call(f"/project/BOQItems(ID={items['value'][0]['ID']},IsActiveEntity=true)"
      "/ProjectService.allocate", method="POST",
      body={"wbsCode": "PRJ-002.1", "cbsCode": "02.10", "qty": 1200})
 
+price_every_bill(pid)
+
 s, d = call("/budget/Budgets", method="POST", body={
     "project_ID": pid, "company_ID": project["company_ID"], "version": "V1",
     "raisedBy": "demo", "raisedOn": "2026-08-17"})
@@ -174,6 +195,7 @@ def approve(docno):
     for i, st in enumerate(inst["value"][0]["steps"]):
         call(f"/collaboration/ApprovalSteps({st['ID']})/CollaborationService.approve",
              method="POST", body={"comment": "ok"}, user=users[i])
+
 
 
 head("1. A requisition cannot be raised before the lines are decided")
@@ -304,6 +326,15 @@ assert_(pr2.get("prNo") == "1000004711" and pr2.get("s4Key") == "1000004711",
         "the number S/4 issued is the requisition's identity", pr2.get("prNo"))
 assert_(pr2.get("syncStatus") == "SENT", "it reads SENT once accepted", pr2.get("syncStatus"))
 
+# The requisition entered the flow before it had a number, linked by its own
+# key. Now that ERP has issued one the flow has to follow it, or the chain
+# names a document nobody can look up.
+s, renamed = call(f"/workflow/DocumentLinks?$filter=fromDoc eq '{docno2}' and "
+                  "linkType eq 'REQUISITION'&$select=toDoc")
+assert_(renamed["value"] and renamed["value"][0]["toDoc"] == "1000004711",
+        "the flow names the requisition by the number ERP issued, not by our key",
+        renamed["value"][0]["toDoc"] if renamed["value"] else "no link")
+
 head("8. A purchase order is mirrored, never created here")
 s, prLines2 = call(f"/material/PurchaseRequisitionLines?$filter=parent_ID eq {pr['ID']}"
                    "&$select=lineNo,estTotal&$orderby=lineNo")
@@ -391,7 +422,301 @@ assert_(eqr2 and abs(float(eqr2[0].get("committed") or 0) - 231.0) < 0.01,
         "refreshing again leaves it at 231.00 — commitment is derived, not accumulated",
         eqr2[0].get("committed") if eqr2 else "no line")
 
-head("10. A requisition line names what its resource is bought or hired as")
+head("10. A receipt turns commitment into delivery")
+# The order was for 4 kits at 231.00. Taking one in has to move three numbers
+# together: the line's open quantity, the order's open value, and the budget's
+# commitment. If the commitment does not follow, the budget holds money against
+# goods that are already on site — and it will hold it a second time when the
+# invoice posts.
+s, poLineNow = call(f"/material/PurchaseOrderLines?$filter=parent_ID eq {po['ID']}"
+                    "&$select=lineNo,qty,openQty,receivedQty,netValue&$orderby=lineNo")
+first = poLineNow["value"][0]
+assert_(float(first.get("openQty") or 0) == float(first.get("qty") or 0),
+        "an order that has delivered nothing is fully open", first.get("openQty"))
+
+gr_body = {"poNo": "4500001234", "grDoc": "5000004711", "s4System": "S4H",
+           "datePosted": "2026-09-21",
+           "lines": [{"poLineNo": first["lineNo"], "grQty": 1}]}
+check(400, "a receipt with no ERP document number",
+      *call("/material/recordGoodsReceipt", method="POST", body=dict(gr_body, grDoc="")))
+check(404, "a receipt against an order we do not hold",
+      *call("/material/recordGoodsReceipt", method="POST",
+            body=dict(gr_body, poNo="4599999999")))
+check(400, "a receipt naming an order line that does not exist",
+      *call("/material/recordGoodsReceipt", method="POST",
+            body=dict(gr_body, lines=[{"poLineNo": 99, "grQty": 1}])))
+check(409, "a receipt for more than the line has open",
+      *call("/material/recordGoodsReceipt", method="POST",
+            body=dict(gr_body, lines=[{"poLineNo": first["lineNo"], "grQty": 99}])))
+
+s, stillOpen = call(f"/material/PurchaseOrderLines?$filter=parent_ID eq {po['ID']}"
+                    "&$select=openQty,receivedQty&$orderby=lineNo")
+assert_(float(stillOpen["value"][0].get("openQty") or 0) == float(first["qty"]),
+        "a refused receipt left the line exactly as it was",
+        stillOpen["value"][0].get("openQty"))
+
+check(200, "5000004711 received, one of four",
+      *call("/material/recordGoodsReceipt", method="POST", body=gr_body))
+check(409, "mirroring the same receipt twice",
+      *call("/material/recordGoodsReceipt", method="POST", body=gr_body))
+
+s, grs = call("/material/GoodsReceipts?$filter=grDoc eq '5000004711'"
+              "&$select=grQty,grValue,poLineNo,poLine_ID,po_ID")
+gr = grs["value"][0]
+assert_(gr.get("po_ID") == po["ID"] and gr.get("poLine_ID"),
+        "the receipt names the order and the line it landed on")
+assert_(abs(float(gr.get("grValue") or 0) - 57.75) < 0.01,
+        "it is priced at the order line's own rate: 231.00 / 4",
+        gr.get("grValue"))
+
+s, after = call(f"/material/PurchaseOrderLines?$filter=parent_ID eq {po['ID']}"
+                "&$select=openQty,receivedQty,status&$orderby=lineNo")
+line_after = after["value"][0]
+assert_(float(line_after.get("receivedQty") or 0) == 1
+        and float(line_after.get("openQty") or 0) == 3,
+        "one taken in, three still to come",
+        (line_after.get("receivedQty"), line_after.get("openQty")))
+assert_(line_after.get("status") == "Partly received",
+        "the line says so", line_after.get("status"))
+
+s, poAfter = call(f"/material/PurchaseOrders({po['ID']})"
+                  "?$select=status,netValue,openValue")
+assert_(abs(float(poAfter.get("netValue") or 0) - 231.0) < 0.01,
+        "the order still cost what it cost", poAfter.get("netValue"))
+assert_(abs(float(poAfter.get("openValue") or 0) - 173.25) < 0.01,
+        "and owes three quarters of it", poAfter.get("openValue"))
+assert_(poAfter.get("status") == "Partly received",
+        "the order reads Partly received", poAfter.get("status"))
+
+check(200, "control refreshed after the delivery", *call(
+    f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)/BudgetService.refreshControl",
+    method="POST", body={}))
+s, committed = call(f"/budget/BudgetLines?$filter=budget_ID eq {budget_id}"
+                    "&$select=category,cbs_ID,committed")
+eqr3 = [l for l in committed["value"]
+        if l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"]]
+assert_(eqr3 and abs(float(eqr3[0].get("committed") or 0) - 173.25) < 0.01,
+        "commitment fell to what is still to be delivered, not what was ordered",
+        eqr3[0].get("committed") if eqr3 else "no line")
+
+check(200, "the rest delivered",
+      *call("/material/recordGoodsReceipt", method="POST",
+            body={"poNo": "4500001234", "grDoc": "5000004712", "s4System": "S4H",
+                  "datePosted": "2026-10-05",
+                  "lines": [{"poLineNo": first["lineNo"], "grQty": 3}]}))
+s, settled = call(f"/material/PurchaseOrders({po['ID']})?$select=status,openValue")
+assert_(settled.get("status") == "Received"
+        and float(settled.get("openValue") or 0) == 0,
+        "a fully delivered order is Received and owes nothing",
+        (settled.get("status"), settled.get("openValue")))
+
+call(f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)/BudgetService.refreshControl",
+     method="POST", body={})
+s, none = call(f"/budget/BudgetLines?$filter=budget_ID eq {budget_id}"
+               "&$select=category,cbs_ID,committed")
+eqr4 = [l for l in none["value"]
+        if l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"]]
+assert_(eqr4 and float(eqr4[0].get("committed") or 0) == 0,
+        "nothing is committed once everything has arrived — the cost is ERP FI's now",
+        eqr4[0].get("committed") if eqr4 else "no line")
+
+head("11. The invoice is matched three ways, and it decides what was spent")
+# The last document, and the only source BudgetLine.actual has ever had. The
+# order is fully received by now: 4 kits, 231.00, nothing open. So a clean bill
+# for all four is the case that must match, and the two ways it can fail have
+# to be recorded rather than refused — ERP FI posted the invoice either way,
+# and an invoice we would not mirror is one nobody can see is wrong.
+inv_body = {"poNo": "4500001234", "invoiceNo": "5100004711", "s4System": "S4H",
+            "postingDate": "2026-10-08",
+            "lines": [{"poLineNo": first["lineNo"], "qty": 4, "netAmount": 231.00}]}
+check(400, "an invoice with no ERP number",
+      *call("/material/recordSupplierInvoice", method="POST",
+            body=dict(inv_body, invoiceNo="")))
+check(404, "an invoice against an order we do not hold",
+      *call("/material/recordSupplierInvoice", method="POST",
+            body=dict(inv_body, poNo="4599999999")))
+check(400, "an invoice billing a line that is not on the order",
+      *call("/material/recordSupplierInvoice", method="POST",
+            body=dict(inv_body, lines=[{"poLineNo": 99, "qty": 1, "netAmount": 10}])))
+
+check(200, "5100004711 posted and matched",
+      *call("/material/recordSupplierInvoice", method="POST", body=inv_body))
+check(409, "mirroring the same invoice twice",
+      *call("/material/recordSupplierInvoice", method="POST", body=inv_body))
+
+s, invs = call("/material/SupplierInvoices?$filter=invoiceNo eq '5100004711'"
+               "&$select=ID,matched,netAmount,orderNo,vendorName")
+inv = invs["value"][0]
+assert_(inv.get("matched") is True,
+        "order, receipt and invoice agree, so the header says matched",
+        inv.get("matched"))
+assert_(abs(float(inv.get("netAmount") or 0) - 231.0) < 0.01,
+        "and it is worth what the order was", inv.get("netAmount"))
+assert_(inv.get("orderNo") == "4500001234",
+        "the invoice names the order it bills", inv.get("orderNo"))
+
+s, invLines = call(f"/material/SupplierInvoiceLines?$filter=parent_ID eq {inv['ID']}"
+                   "&$select=matched,variance,goodsReceipt_ID,poLineNo")
+assert_(invLines["value"][0].get("goodsReceipt_ID"),
+        "and the line points at the receipt it bills against")
+
+s, receipts = call(f"/material/GoodsReceipts?$filter=po_ID eq {po['ID']}"
+                   "&$select=grDoc,threeWayMatch,matchVariance&$orderby=grDoc")
+assert_(len(receipts["value"]) == 2
+        and all(r.get("threeWayMatch") is True for r in receipts["value"]),
+        "BOTH deliveries can finally answer the question their own column asks — "
+        "one bill settles every load it covers, not just the last",
+        [(r["grDoc"], r["threeWayMatch"]) for r in receipts["value"]])
+
+head("11a. A bill that disagrees is recorded as disagreeing, not refused")
+# Overbilling first: the line is fully received AND fully invoiced now, so any
+# further quantity is billed against goods that never arrived.
+check(200, "a second bill for the same four kits is accepted",
+      *call("/material/recordSupplierInvoice", method="POST",
+            body=dict(inv_body, invoiceNo="5100004712",
+                      lines=[{"poLineNo": first["lineNo"], "qty": 4,
+                              "netAmount": 231.00}])))
+s, over = call("/material/SupplierInvoices?$filter=invoiceNo eq '5100004712'"
+               "&$select=ID,matched")
+assert_(over["value"][0].get("matched") is False,
+        "and it is recorded as not matching", over["value"][0].get("matched"))
+s, overLines = call("/material/SupplierInvoiceLines"
+                    f"?$filter=parent_ID eq {over['value'][0]['ID']}"
+                    "&$select=matched,variance")
+variance = overLines["value"][0].get("variance") or ""
+assert_("received" in variance,
+        "naming the quantity billed against the quantity received", variance)
+
+s, poNow = call(f"/material/PurchaseOrders({po['ID']})?$select=invoicedValue")
+assert_(abs(float(poNow.get("invoicedValue") or 0) - 462.0) < 0.01,
+        "the order has been billed twice over, and says so",
+        poNow.get("invoicedValue"))
+
+head("11b. Actual is what was billed, and it is derived like the rest")
+check(200, "control refreshed after the invoices", *call(
+    f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)/BudgetService.refreshControl",
+    method="POST", body={}))
+s, spent = call(f"/budget/BudgetLines?$filter=budget_ID eq {budget_id}"
+                "&$select=category,cbs_ID,amount,committed,encumbered,actual,available")
+eqr5 = [l for l in spent["value"]
+        if l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"]]
+assert_(eqr5 and abs(float(eqr5[0].get("actual") or 0) - 462.0) < 0.01,
+        "both bills land on the line the order charged — actual has a source at last",
+        eqr5[0].get("actual") if eqr5 else "no line")
+if eqr5:
+    l = eqr5[0]
+    expected = (float(l["amount"]) - float(l["committed"])
+                - float(l["encumbered"]) - float(l["actual"]))
+    assert_(abs(float(l["available"]) - expected) < 0.01,
+            "and available still reads amount less all three",
+            f"{l['available']} vs {expected:.2f}")
+
+call(f"/budget/Budgets(ID={budget_id},IsActiveEntity=true)/BudgetService.refreshControl",
+     method="POST", body={})
+s, twice = call(f"/budget/BudgetLines?$filter=budget_ID eq {budget_id}"
+                "&$select=category,cbs_ID,actual")
+eqr6 = [l for l in twice["value"]
+        if l.get("category") == "EQR" and l.get("cbs_ID") == slab["ID"]]
+assert_(eqr6 and abs(float(eqr6[0].get("actual") or 0) - 462.0) < 0.01,
+        "refreshing again leaves it at 462.00 — actual is derived, not accumulated",
+        eqr6[0].get("actual") if eqr6 else "no line")
+
+head("11e. One branch each, so nothing is counted twice")
+# The report adds signed labour, stock issued, what was billed and what was
+# certified, on the understanding that a scope goes down exactly one branch.
+# It now measures whether that held rather than asserting it, and the measure
+# has to be quiet here: every line on this request was decided PROCURE and
+# travelled the purchase branch alone, so there is nothing on both.
+check(200, "the project reconciles", *call(
+    f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.reconcile",
+    method="POST", body={}))
+s, reports = call(f"/project/PeriodReports?$filter=project_ID eq {pid}"
+                  "&$select=note,actualCost&$orderby=createdAt desc&$top=1")
+report = reports["value"][0] if reports.get("value") else {}
+note = " ".join((report.get("note") or "").split())
+assert_("carries cost on both" not in note,
+        "a line that went one way is not reported as having gone both",
+        note[:110] or "(no note)")
+
+# A caveat cut in half reads as a complete sentence that happens to end early,
+# which is the one failure a reader cannot see. Every note the report writes is
+# a sentence, so the last character settles it.
+assert_(note.endswith("."),
+        "and the note ends where a sentence ends, not mid-word",
+        f"...{note[-60:]}" if note else "(no note)")
+assert_("not shown here" not in note,
+        "with nothing dropped for want of room",
+        f"{len(note)} chars")
+
+head("11d. The flow reads from the request to the bill")
+# Four documents produced by four different actions. If any of them fails to
+# join the chain, the flow stops there and the reader has no way to tell a
+# document that was never raised from one that was raised and never linked.
+s, flow = call("/workflow/DocumentLinks?$select=fromDoc,toDoc,linkType&$top=200")
+edges = {}
+for l in flow["value"]:
+    edges.setdefault((l["fromDoc"], l["linkType"]), set()).add(l["toDoc"])
+for frm, kind, to in [(docno2, "REQUISITION", "1000004711"),
+                      ("1000004711", "ORDER", "4500001234"),
+                      ("4500001234", "RECEIPT", "5000004711"),
+                      ("4500001234", "RECEIPT", "5000004712"),
+                      ("4500001234", "INVOICE", "5100004711")]:
+    found = edges.get((frm, kind), set())
+    assert_(to in found, f"{frm} -{kind}-> {to}", sorted(found) or "missing")
+
+head("11c. Two lines of one invoice on one order line add up")
+# Two lines of one invoice against one order line have to add up. The order
+# rows are read before the loop, so without care the second line measures
+# itself against what was billed before either of them landed, and the order
+# ends up recording one of them rather than both.
+s, before = call(f"/material/PurchaseOrderLines?$filter=parent_ID eq {po['ID']}"
+                 "&$select=lineNo,invoicedQty&$orderby=lineNo")
+was = float(before["value"][0].get("invoicedQty") or 0)
+check(200, "one invoice, two lines, same order line",
+      *call("/material/recordSupplierInvoice", method="POST",
+            body={"poNo": "4500001234", "invoiceNo": "5100004713",
+                  "s4System": "S4H", "postingDate": "2026-10-12",
+                  "lines": [{"poLineNo": first["lineNo"], "qty": 1,
+                             "netAmount": 57.75},
+                            {"poLineNo": first["lineNo"], "qty": 1,
+                             "netAmount": 57.75}]}))
+s, after2 = call(f"/material/PurchaseOrderLines?$filter=parent_ID eq {po['ID']}"
+                 "&$select=lineNo,invoicedQty&$orderby=lineNo")
+assert_(abs(float(after2["value"][0].get("invoicedQty") or 0) - (was + 2)) < 0.001,
+        "the order line records both lines, not the last one",
+        f"{after2['value'][0].get('invoicedQty')} from {was}")
+
+head("12. Nothing is procured until the line says where it charges")
+# The account assignment is what the returning commitment lands on. A line
+# without it raises an order that buys real scope and appears on no budget:
+# the money is spent, the control record still reads fully available, and
+# nothing anywhere says otherwise. Caught at the raise rather than at the push,
+# because by the push the buyer has already been sent out to buy it.
+rid_nc, docno_nc = new_request([
+    {"resource_ID": vibro, "description": "Vibrator kits", "qty": 4, "uom": "kit",
+     "wbs_ID": wbs_id, "needBy": "2026-09-15"},
+])
+print(f"      created {docno_nc}")
+rr_action(rid_nc, "submit")
+approve(docno_nc)
+check(200, "the line goes to procurement", *rr_action(rid_nc, "decideLine",
+    {"lineNo": 1, "decision": "PROCURE", "rationale": "Yard has none free."}))
+
+s, refused = rr_action(rid_nc, "raisePurchaseRequisition")
+check(400, "a line naming no cost node is refused", s, refused)
+detail = (refused.get("error", {}).get("message", "")
+          if isinstance(refused, dict) else str(refused))
+assert_("cost node" in detail and "line 1" in detail,
+        "and it names the line and what is missing, not just that it failed",
+        detail[:120])
+
+s, none = call(f"/material/PurchaseRequisitions?$filter=sourceRequest_ID eq {rid_nc}"
+               "&$select=ID")
+assert_(not none.get("value"),
+        "nothing was written — a refused raise leaves no half-built requisition",
+        len(none.get("value", [])))
+
+head("13. A requisition line names what its resource is bought or hired as")
 # The other half of check 5. A description is enough for the KONSTRYX side of the
 # chain but not for API_PURCHASEREQ_PROCESS_SRV, which orders against a material
 # number — so the resource has to carry one and the line has to pick it up (I-35).
@@ -436,7 +761,7 @@ assert_(cementLine.get("material_ID") == cement.get("s4Material_ID"),
         "the push now has something to order",
         cementLine.get("material_ID"))
 
-head("11. The push refuses what it cannot honestly order")
+head("14. The push refuses what it cannot honestly order")
 # Every case here stops at a gate BEFORE any connection is opened. That is
 # deliberate and must stay that way: .env points at the live tenant, so a
 # requisition that cleared every gate would post a real purchase requisition
@@ -469,7 +794,7 @@ check(400, "a line with nothing registered is refused before anything is sent",
 assert_("service product" in str(msg4).lower(),
         "and the buyer is told what to map, not handed a connection error", msg4)
 
-head("12. A hired resource is ordered as a service, not as a material")
+head("15. A hired resource is ordered as a service, not as a material")
 # Spec §8 / P10: class routes the leaf to S/4. A MATERIAL leaf is bought as a
 # product; plant, labour and subcontract are hired as a service product. Both
 # land in the same field on the requisition line because both are S/4
@@ -529,7 +854,7 @@ check(409, "an already-numbered requisition will not be sent a second time",
 assert_("1000004711" in str(msg5),
         "and the message names the number S/4 already gave it", msg5)
 
-head("13. Org data is a precondition, and it is not guessed")
+head("16. Org data is a precondition, and it is not guessed")
 # Plant, purchasing organisation and purchasing group come from the company
 # that raised the requisition, never from a constant: they differ per legal
 # entity, so one build-wide value would be wrong for every company but one.
@@ -574,6 +899,72 @@ if s == 200:
             f"{len(blank)} of {len(others['value'])} empty")
 else:
     assert_(False, "other companies readable", f"status {s}")
+
+head("A document that changes state says so, and keeps saying it under one name")
+# One class in the whole service used to write status history -- the one that
+# drives the request chain. Everything else moved in silence: a requisition
+# went to Ordered, an order went to Received, a budget went to Baselined, and
+# nothing anywhere said when or on whose word. The status field answers "where
+# is it now"; there was no answer at all to "how did it get there", which is
+# the question asked when something is wrong.
+
+s, hist = call("/workflow/StatusHistory?$select=docType,docId,fromState,toState,"
+               "comment,changedBy&$top=500")
+entries = hist.get("value", []) if s == 200 and isinstance(hist, dict) else []
+kinds = sorted(set(e["docType"] for e in entries))
+print(f"      {len(entries)} entries under {', '.join(kinds)}")
+
+
+def trail(doc_no):
+    return [(e.get("fromState"), e.get("toState"), e.get("comment"))
+            for e in entries if e.get("docId") == doc_no]
+
+
+assert_("PR" in kinds and "PO" in kinds,
+        "the requisition and the order both keep a history now", ", ".join(kinds))
+
+# Every kind is a kind, not a number. An ERP order numbered 4500001234 has no
+# prefix to read, so deriving the kind from the number filed every order under
+# a heading only it had -- which is the opposite of what a heading is for.
+numeric = [k for k in kinds if k.isdigit() or k.startswith("PR:")]
+assert_(not numeric, "and each is filed under its kind, not under its own number",
+        ", ".join(numeric) if numeric else "none")
+
+pr_no = "1000004711"
+po_no = "4500001234"
+pr_id = pr["ID"]
+pr_moves = trail(pr_no)
+assert_(any(t == "Requisitioned" for _, t, _ in pr_moves),
+        f"{pr_no} records reaching ERP",
+        " | ".join(f"{f}->{t}" for f, t, _ in pr_moves))
+assert_(any(t in ("Ordered", "Partly ordered") for _, t, _ in pr_moves),
+        "and records being ordered against",
+        " | ".join(f"{f}->{t}" for f, t, _ in pr_moves))
+
+# The requisition entered the flow identified by its own key, because that was
+# the only identity it had. The chain moves its links across when ERP issues a
+# number; without the same move here, everything that happened before it was
+# requisitioned stays filed under a key nobody can look up, and the findable
+# half of its history begins in the middle.
+assert_(any(t == "Draft" for _, t, _ in pr_moves),
+        "including what happened to it before ERP had ever heard of it",
+        f"{len(pr_moves)} entries under {pr_no}")
+orphan = [e for e in entries if str(e.get("docId", "")).startswith("PR:")
+          and e.get("docId") == "PR:" + pr_id]
+assert_(not orphan, "and nothing of its is left behind under the old key",
+        f"{len(orphan)} left")
+
+po_moves = trail(po_no)
+assert_(any(t in ("Received", "Partly received") for _, t, _ in po_moves),
+        f"{po_no} records what arrived against it",
+        " | ".join(f"{f}->{t}" for f, t, _ in po_moves))
+assert_(all(f is not None for f, _, _ in po_moves),
+        "each entry naming the state it left, not just the one it reached",
+        " | ".join(f"{f}->{t}" for f, t, _ in po_moves))
+assert_(all(c for _, _, c in po_moves),
+        "and why, so the entry is worth reading",
+        " | ".join(str(c)[:40] for _, _, c in po_moves))
+
 
 print()
 print("=" * 78)

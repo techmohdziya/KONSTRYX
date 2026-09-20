@@ -71,15 +71,33 @@ def head(t):
 
 
 head("1. A project to schedule")
-s, projects = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'PRJ-001'"
-                   "&$select=ID,code,startDate")
-project = projects["value"][0]
-pid = project["ID"]
+# A project of its own, with nothing in it but the four activities below.
+#
+# It used to borrow PRJ-001, which is the demo job and carries a programme of
+# its own. Every float here was then measured against that programme's finish
+# rather than against this network's, so "SCH-A has no float" was a statement
+# about a job this test never mentions. The assertions were right about the
+# network and wrong about which network they were reading.
+s, companies = call("/admin/Companies?$select=ID,code&$top=1")
+company_id = companies["value"][0]["ID"]
+
+s, made_project = call("/project/Projects", method="POST", body={
+    "code": "SCH-NET", "name": "Scheduling network", "company_ID": company_id,
+    "startDate": "2024-11-01", "endDate": "2024-12-31", "stage": "Draft"})
+pid = made_project["ID"]
+call(f"/project/Projects(ID={pid},IsActiveEntity=false)/wbsElements",
+     method="POST", body={"code": "SCH-NET.1", "description": "The network"})
+call(f"/project/Projects(ID={pid},IsActiveEntity=false)/ProjectService.draftActivate",
+     method="POST", body={})
+
+s, project = call(f"/project/Projects(ID={pid},IsActiveEntity=true)"
+                  "?$select=ID,code,startDate")
 start = date.fromisoformat(project["startDate"])
 day = lambda n: (start + timedelta(days=n - 1)).isoformat()
 print(f"      {project['code']} starts {project['startDate']}")
 
-s, wbs = call(f"/project/WBS?$filter=project_ID eq {pid}&$select=ID,code&$top=1")
+s, wbs = call(f"/project/WBS?$filter=IsActiveEntity eq true and project_ID eq {pid}"
+              "&$select=ID,code&$top=1")
 wid = wbs["value"][0]["ID"]
 print(f"      under WBS {wbs['value'][0]['code']}")
 
@@ -90,22 +108,41 @@ for code, duration in [("SCH-A", 3), ("SCH-B", 2), ("SCH-C", 5), ("SCH-D", 4)]:
         "code": code, "name": f"Activity {code}", "project_ID": pid,
         "wbs_ID": wid, "durationDays": duration})
     made[code] = row.get("ID") if isinstance(row, dict) else None
-    results.append(st == 201)
-    print(f"  {'ok  ' if st == 201 else 'FAIL'} [{st}] {code} ({duration}d)")
+    # Activated, not just created. Activities are draft-enabled, and the
+    # critical path runs over the active table — a draft activity is one
+    # somebody is still typing, and scheduling around it would put dates on
+    # the programme that nobody has committed to.
+    if made[code]:
+        st, _ = call(f"/project/Activities(ID={made[code]},IsActiveEntity=false)"
+                     "/ProjectService.draftActivate", method="POST", body={})
+    results.append(st == 200 or st == 201)
+    print(f"  {'ok  ' if st in (200, 201) else 'FAIL'} [{st}] {code} ({duration}d)")
 
+# A link is a child of the activity it constrains, so it is written through
+# that activity's draft rather than posted on its own. Posting to
+# /ActivityRelations is refused with "couldn't find parent entity" — correctly:
+# a relationship with no owning activity is a dependency between two things
+# that nothing on either side can see.
 for a, b in [("SCH-A", "SCH-B"), ("SCH-A", "SCH-C"), ("SCH-B", "SCH-D"), ("SCH-C", "SCH-D")]:
-    st, _ = call("/project/ActivityRelations", method="POST", body={
-        "predecessor_ID": made[a], "successor_ID": made[b],
-        "linkType": "FS", "lagDays": 0})
-    results.append(st == 201)
-    print(f"  {'ok  ' if st == 201 else 'FAIL'} [{st}] {a} -> {b}")
+    successor = made[b]
+    call(f"/project/Activities(ID={successor},IsActiveEntity=true)"
+         "/ProjectService.draftEdit", method="POST", body={"PreserveChanges": True})
+    st, _ = call(f"/project/Activities(ID={successor},IsActiveEntity=false)/predecessors",
+                 method="POST", body={"predecessor_ID": made[a],
+                                      "linkType": "FS", "lagDays": 0})
+    if st == 201:
+        st, _ = call(f"/project/Activities(ID={successor},IsActiveEntity=false)"
+                     "/ProjectService.draftActivate", method="POST", body={})
+    ok = st in (200, 201)
+    results.append(ok)
+    print(f"  {'ok  ' if ok else 'FAIL'} [{st}] {a} -> {b}")
 
 head("3. Run the critical path")
 check(200, "scheduled", *call(
     f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.schedule",
     method="POST", body={}))
 
-s, acts = call(f"/project/Activities?$filter=project_ID eq {pid}"
+s, acts = call(f"/project/Activities?$filter=IsActiveEntity eq true and project_ID eq {pid}"
                "&$select=code,durationDays,earlyStart,earlyFinish,lateStart,lateFinish,"
                "totalFloat,freeFloat,isCritical&$orderby=code")
 by_code = {a["code"]: a for a in acts["value"] if a["code"].startswith("SCH-")}
@@ -132,10 +169,16 @@ for code, (es, ef, tf, critical) in expected.items():
                 bool(a.get("isCritical")) == critical)
 
 head("5. A loop is refused, not scheduled around")
-st, _ = call("/project/ActivityRelations", method="POST", body={
-    "predecessor_ID": made["SCH-D"], "successor_ID": made["SCH-A"],
-    "linkType": "FS", "lagDays": 0})
-results.append(st == 201)
+# Closed through SCH-A's own draft, the same way every other link was written.
+call(f"/project/Activities(ID={made['SCH-A']},IsActiveEntity=true)"
+     "/ProjectService.draftEdit", method="POST", body={"PreserveChanges": True})
+st, _ = call(f"/project/Activities(ID={made['SCH-A']},IsActiveEntity=false)/predecessors",
+             method="POST", body={"predecessor_ID": made["SCH-D"],
+                                  "linkType": "FS", "lagDays": 0})
+if st == 201:
+    st, _ = call(f"/project/Activities(ID={made['SCH-A']},IsActiveEntity=false)"
+                 "/ProjectService.draftActivate", method="POST", body={})
+results.append(st in (200, 201))
 status, message = call(
     f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.schedule",
     method="POST", body={})

@@ -38,6 +38,23 @@ python test/verify/test_foundations.py
 | `test_variants` | Per-user isolation of saved layouts, one default per table per person, administrator-published variants |
 | `test_project` | Project mastered in KONSTRYX, validation, sync state protected on both the active record and the draft, release gating, connector callback |
 | `test_p6` | Primavera XML import, WBS parenting despite file ordering, all-or-nothing on re-import, XXE refusal |
+| `test_content` | The starter data a tenant receives: pack versions, insert-if-missing, and a client edit surviving an upgrade |
+| `test_schedule` | Critical path over a network with a known answer, forward and backward pass, float |
+| `test_rates` | Effective dating that something resolves: the rate in force on a date, company over group |
+| `test_boq` | The bill of quantities, the project's own CBS, and the allocation between them |
+| `test_chain` | The spine: request, approval, advisory, availability, reservation — and what each refuses |
+| `test_planning` | The planning slice against its own specification |
+| `test_budget` | The budget engine end to end: control, commitment, encumbrance, attribution, baseline |
+| `test_distribution` | Distribution by WBS template: one decision covering many lines, and the split adding up |
+| `test_procurement` | The PROCURE half of the advisory split — requisition, order, receipt, invoice, three-way match |
+| `test_issue` | The IN_HOUSE half — stock drawn from a store, issued, counted on site, and measured against its norm |
+| `test_overview` | How far a reservation has come, against the chain its vertical actually has — and what is waiting on somebody versus on a module that does not exist |
+| `test_variation` | Varying a reservation that is already running — what it may move, what it may not, and what the move is written down as |
+| `test_certification` | A payment application certified, checked against the arithmetic rather than against a stored total |
+| `test_execution` | Signing a day's work and posting it against the reservation that paid for it |
+| `test_finance` | Exchange rates and the CBS roll-up |
+| `test_productivity` | Output per man-hour, per site location |
+| `test_calendar` | The fiscal period grid, and which period a date falls in |
 
 ## Why these exist as files
 

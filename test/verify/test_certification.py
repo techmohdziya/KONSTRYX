@@ -187,6 +187,73 @@ mine = [so for so in signoffs["value"]
 results.append(len(mine) == 3)
 print(f"  {'ok  ' if len(mine) == 3 else 'FAIL'} three sign-offs recorded")
 
+head("6. Certified work is project cost, and the report says so")
+# The reconciliation used to state in its own notes that subcontract
+# contributes nothing and the margin therefore flatters. It was right, and it
+# stayed right for as long as nothing carried a certificate into project cost.
+s, certs_all = call("/subcontract/PaymentCertificates"
+                    "?$select=project_ID,status,netCertified,retentionAmount&$top=200")
+by_project = {}
+for c in certs_all["value"]:
+    if c.get("status") != "Certified" or not c.get("project_ID"):
+        continue
+    # Cost is the certified gross less what is recovered from the
+    # subcontractor, and NOT less retention: retention is money withheld, not
+    # money saved, and the work behind it was still done.
+    by_project[c["project_ID"]] = by_project.get(c["project_ID"], Decimal("0")) \
+        + Decimal(str(c.get("netCertified") or 0)) \
+        + Decimal(str(c.get("retentionAmount") or 0))
+
+assert_ok = [p for p in by_project if by_project[p] > 0]
+results.append(bool(assert_ok))
+print(f"  {'ok  ' if assert_ok else 'FAIL'} at least one project carries "
+      f"certified subcontract cost: {len(assert_ok)} project(s)")
+
+for project_id in assert_ok[:1]:
+    check(200, "reconciled", *call(
+        f"/project/Projects(ID={project_id},IsActiveEntity=true)"
+        "/ProjectService.reconcile", user="admin", method="POST", body={}))
+    s, report = call(f"/project/PeriodReports?$filter=project_ID eq {project_id}"
+                     "&$select=actualCost,note&$orderby=createdAt desc&$top=1",
+                     user="admin")
+    row = report["value"][0]
+    spent = Decimal(str(row.get("actualCost") or 0))
+    expected = by_project[project_id]
+    covered = spent >= expected
+    results.append(covered)
+    print(f"  {'ok  ' if covered else 'FAIL'} the certified {expected} is inside "
+          f"the {spent} the report calls spent")
+
+    # The note names what is captured before the semicolon and what is not
+    # after it. Matching on the whole sentence found "subcontract" in the
+    # captured half and read it as the complaint it had replaced.
+    note = " ".join((row.get("note") or "").split())
+    uncaptured = note.split(";", 1)[1] if ";" in note else ""
+    counted = bool(note) and "subcontract" not in uncaptured
+    results.append(counted)
+    print(f"  {'ok  ' if counted else 'FAIL'} and the report no longer lists "
+          f"subcontract among what contributes nothing: {note[:90] or '(no note)'}")
+
+head("7. Certified is a state the certificate reached, not a word on it")
+# The status is what makes this certificate's value count as cost on the
+# project, in the period report and in everything drawn from it. A status
+# anybody can write is a cost figure anybody can write.
+s, certs = call("/subcontract/PaymentCertificates?$filter=status eq 'Certified'"
+                "&$select=ID,docNo,status&$top=1")
+if certs.get("value"):
+    cert = certs["value"][0]
+    check(403, "writing a certified certificate back to Draft", *call(
+        f"/subcontract/PaymentCertificates({cert['ID']})", method="PATCH",
+        body={"status": "Draft"}))
+    s, after = call(f"/subcontract/PaymentCertificates({cert['ID']})?$select=status")
+    held = after.get("status") == "Certified"
+    results.append(held)
+    print(f"  {'ok  ' if held else 'FAIL'} and it is still certified: "
+          f"{after.get('status')}")
+else:
+    results.append(False)
+    print("  FAIL no certified certificate to test with")
+
 head("6. A certificate is refused what it cannot mean")
 check(400, "retention above 100% is refused", *call(
     f"/subcontract/PaymentApplications({aid})/SubcontractService.certify",

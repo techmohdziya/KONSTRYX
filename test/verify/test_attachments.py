@@ -1,5 +1,5 @@
 """Attachments on any object, and the mandatory-category gate on submission."""
-import json, urllib.request, base64, sys
+import json, urllib.request, base64, sys, os
 
 BASE = "http://localhost:8090/odata/v4"
 ADMIN = ("admin", "admin")
@@ -153,6 +153,143 @@ for expected in (4096, 137):
     results.append(ok)
     print(f"  {'ok  ' if ok else 'FAIL'} {expected} bytes uploaded, "
           f"fileSize reads {got}")
+
+
+head("7. What an attachment may not take with it when it goes")
+# The drawing attached in section 4 is why that request could be submitted at
+# all, and an approver is looking at it now. Deleting it would leave a decision
+# recorded against a file nobody can produce.
+s, evidence = call(f"/collaboration/Attachments?$filter=objectID eq {target['ID']}"
+                   " and fileName eq 'GA-101-rev-C.pdf'&$select=ID,fileName")
+drawing = evidence["value"][0]
+status, refusal = call(f"/collaboration/Attachments({drawing['ID']})", method="DELETE")
+ok = status == 409 and "in front of an approver" in str(refusal)
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} [{status}] the evidence under a live approval "
+      f"stays: {str(refusal)[:120]}")
+
+# A refusal with no way through is a rule people work around, so there is one.
+check(200, "but a wrong upload can be withdrawn without being destroyed", *call(
+    f"/collaboration/Attachments({drawing['ID']})", method="PATCH",
+    body={"isObsolete": True}))
+s, now = call(f"/collaboration/Attachments({drawing['ID']})?$select=fileName,isObsolete")
+assert_ok = now.get("isObsolete") is True
+results.append(assert_ok)
+print(f"  {'ok  ' if assert_ok else 'FAIL'} and it is still there to produce, marked "
+      f"obsolete: {now.get('fileName')}")
+
+# Versions, on an object nobody has decided anything about.
+made = []
+for revision in ("first", "second", "third"):
+    s, a = call("/collaboration/Attachments", method="POST", body={
+        "entityName": "konstryx.wf.ResourceRequest", "objectID": rr["ID"],
+        "fileName": "chain-test.pdf", "mimeType": "application/pdf",
+        "note": revision})
+    if s < 300:
+        made.append(a)
+results.append(len(made) == 3 and [a["version"] for a in made] == [1, 2, 3])
+print(f"  {'ok  ' if len(made) == 3 else 'FAIL'} three uploads of one file are three "
+      f"versions: {[a.get('version') for a in made]}")
+
+# Deleting the middle one leaves its successor pointing at a row that is not
+# there. Nothing reports that: the successor still reads fine and the history
+# simply has a hole in it.
+status, refusal = call(f"/collaboration/Attachments({made[1]['ID']})", method="DELETE")
+ok = status == 409 and "pointing at nothing" in str(refusal)
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} [{status}] a superseded version cannot be deleted "
+      f"out of the middle")
+
+# The head is a different case and is allowed: nothing points at it, so nothing
+# is left dangling. The rule is about what breaks, not about age.
+check(204, "the latest version can go, because nothing points at it", *call(
+    f"/collaboration/Attachments({made[2]['ID']})", method="DELETE"))
+status, _ = call(f"/collaboration/Attachments({made[1]['ID']})", method="DELETE")
+results.append(status == 204)
+print(f"  {'ok  ' if status == 204 else 'FAIL'} [{status}] and then the one beneath it, "
+      f"in order")
+call(f"/collaboration/Attachments({made[0]['ID']})", method="DELETE")
+
+
+head("8. The same rules through the other door")
+# Attachments are exposed twice. Only one projection was handled, so uploading
+# through the workflow service skipped the versioning entirely -- a second
+# upload of the same file came out as version 1 again -- and skipped the check
+# that the object exists at all. A polymorphic target has no foreign key to
+# catch that; the handler is the foreign key, and one bound to one projection
+# of two is half a constraint.
+door = []
+for revision in ("first", "second"):
+    s, a = call("/workflow/RequestAttachments", method="POST", body={
+        "entityName": "konstryx.wf.ResourceRequest", "objectID": rr["ID"],
+        "fileName": "other-door.pdf", "mimeType": "application/pdf"})
+    if s < 300:
+        door.append(a)
+ok = len(door) == 2 and [a["version"] for a in door] == [1, 2] \
+    and door[1].get("supersedes_ID") == door[0]["ID"]
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} the workflow door versions too: "
+      f"{[a.get('version') for a in door]}")
+
+check(404, "and refuses a target that does not exist", *call(
+    "/workflow/RequestAttachments", method="POST", body={
+        "entityName": "konstryx.wf.ResourceRequest",
+        "objectID": "00000000-0000-0000-0000-000000000000",
+        "fileName": "orphan.pdf", "mimeType": "application/pdf"}))
+
+status, refusal = call(f"/workflow/RequestAttachments({door[0]['ID']})", method="DELETE")
+ok = status == 409
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} [{status}] and holds the chain on delete")
+for a in reversed(door):
+    call(f"/collaboration/Attachments({a['ID']})", method="DELETE")
+
+
+head("9. A file has a size it may not exceed")
+# There was no ceiling: any authenticated user could put a file of any size on
+# any object, and the content lives in the database, so the cost is paid by
+# every backup and restore of the tenant rather than by whoever uploaded it.
+MAX_MB = int(os.environ.get("KX_ATTACHMENT_MAX_MB", "25"))
+print(f"      ceiling is {MAX_MB} MB")
+
+s, holder = call("/collaboration/Attachments", method="POST", body={
+    "entityName": "konstryx.wf.ResourceRequest", "objectID": rr["ID"],
+    "fileName": "GA-204-rev-B.pdf", "mimeType": "application/pdf"})
+holder_id = holder["ID"]
+
+under = b"x" * (256 * 1024)
+check(204, "a file under the ceiling goes up", *call(
+    f"/collaboration/Attachments({holder_id})/content", method="PUT",
+    raw_body=under, content_type="application/pdf"))
+s, sized = call(f"/collaboration/Attachments({holder_id})?$select=fileSize")
+results.append(int(sized.get("fileSize") or 0) == len(under))
+print(f"  {'ok  ' if int(sized.get('fileSize') or 0) == len(under) else 'FAIL'} and is "
+      f"measured, not taken on trust: {sized.get('fileSize')} bytes")
+
+over = b"x" * (MAX_MB * 1024 * 1024 + 64 * 1024)
+status, refusal = call(f"/collaboration/Attachments({holder_id})/content", method="PUT",
+                       raw_body=over, content_type="application/pdf")
+ok = status == 400 and "GA-204-rev-B.pdf" in str(refusal) and "limit" in str(refusal)
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} [{status}] one over it is refused, by name: "
+      f"{str(refusal)[:110]}")
+
+# The check runs after the runtime has stored the bytes -- Content-Length is
+# the client's own account of what it sent, and a cap that trusts it can be
+# told any number. So the refusal has to unwind the write, not just report it.
+s, after = call(f"/collaboration/Attachments({holder_id})?$select=fileSize")
+kept = int(after.get("fileSize") or 0) == len(under)
+results.append(kept)
+print(f"  {'ok  ' if kept else 'FAIL'} and the refusal unwound it -- the file is still "
+      f"the one that fitted: {after.get('fileSize')} bytes")
+
+s, body = call(f"/collaboration/Attachments({holder_id})/content")
+served = len(body) if isinstance(body, str) else -1
+results.append(served == len(under))
+print(f"  {'ok  ' if served == len(under) else 'FAIL'} including what it serves back: "
+      f"{served} bytes")
+
+call(f"/collaboration/Attachments({holder_id})", method="DELETE")
 
 
 print()

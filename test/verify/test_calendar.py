@@ -122,6 +122,14 @@ check(409, "the year now refuses to regenerate, even with replace", *call(
 head("5. A date resolves to its period")
 s, co = call("/admin/Companies?$select=ID,code&$top=1")
 company = co["value"][0]
+# A date resolves against the calendar that governs the company — its own, or
+# the group default — and this test's calendar is neither. So the year has to
+# exist on the default before the question can be asked: otherwise this checks
+# that some earlier suite happened to generate it, which is what it was doing.
+s, defaults = call("/admin/FiscalCalendars?$filter=isDefault eq true&$select=ID&$top=1")
+for row in defaults.get("value", []):
+    call(f"/admin/FiscalCalendars({row['ID']})/AdminService.generate",
+         method="POST", body={"fiscalYear": 2026, "replace": False})
 st, july = call("/admin/periodFor", method="POST", body={
     "companyID": company["ID"], "onDate": "2026-07-06"})
 results.append(st == 200)

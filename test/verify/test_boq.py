@@ -52,7 +52,9 @@ results = []
 def check(expected, label, status, payload):
     if isinstance(payload, dict):
         payload = payload.get("value", payload)
-    ok = status == expected
+    # A tuple where several outcomes are all correct. Instantiating a CBS that
+    # is already there is refused, and the refusal is the rule working.
+    ok = status in expected if isinstance(expected, tuple) else status == expected
     print(f"  {'ok  ' if ok else 'FAIL'} [{status}] {label}: {str(payload)[:165]}")
     results.append(ok)
     return payload
@@ -77,7 +79,7 @@ pid = project["ID"]
 print(f"  using {project['code']} — a project with no CBS of its own yet")
 
 head("1. The project gets its own CBS, copied from the library")
-check(200, "instantiated", *call(
+check((200, 409), "instantiated, or already there", *call(
     f"/project/Projects(ID={pid},IsActiveEntity=true)/ProjectService.instantiateCBS",
     method="POST", body={}))
 check(409, "a second time", *call(

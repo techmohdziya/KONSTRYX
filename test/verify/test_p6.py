@@ -196,6 +196,98 @@ if rejected:
             print(f"          line {x['lineNo']}: {x['error']}")
             print(f"              {x['payload'][:70]}")
 
+head("7. The planner moved on, and the tree has to move with it")
+# syncWBSFromP6 reconciles an existing project against a later export. Four
+# things it promises and none of them had ever been called by a test: it
+# matches by code rather than creating a second project, it leaves elements the
+# export has dropped in place because they can carry money and signed work, it
+# refuses an export that names somebody else's project, and it does not touch
+# the programme.
+
+# The same file three months on: a branch renamed, a branch added under
+# Substructure, and Superstructure no longer exported.
+MOVED_XML = (P6_XML
+             .replace("<Name>Piling</Name>", "<Name>Piling and shoring</Name>")
+             .replace("""    <WBS>
+      <ObjectId>1004</ObjectId>
+      <Code>DHV-P3.2</Code>
+      <Name>Superstructure</Name>
+    </WBS>
+""", """    <WBS>
+      <ObjectId>1005</ObjectId>
+      <ParentObjectId>1001</ParentObjectId>
+      <Code>DHV-P3.1.3</Code>
+      <Name>Ground beams</Name>
+    </WBS>
+"""))
+STRANGER_XML = P6_XML.replace("<Id>DHV-P3</Id>", "<Id>SOMEONE-ELSE</Id>")
+
+s, live = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'DHV-P3'"
+               "&$select=ID")
+target = live["value"][0]["ID"]
+SYNC = f"/project/Projects(ID={target},IsActiveEntity=true)/ProjectService.syncWBSFromP6"
+
+
+def tree():
+    s_, w_ = call(f"/project/WBS?$filter=project_ID eq {target}"
+                  "&$select=code,description&$orderby=code")
+    return {row["code"]: row["description"] for row in w_.get("value", [])}
+
+
+before = tree()
+dry = check(200, "a dry run reports what it would do", *call(
+    SYNC, method="POST", body={"fileName": "dhv-p3-rev2.xml", "content": MOVED_XML,
+                               "validateOnly": True}))
+ok = tree() == before
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} and does none of it: {len(before)} elements before "
+      f"and after")
+
+check(200, "the sync runs", *call(
+    SYNC, method="POST", body={"fileName": "dhv-p3-rev2.xml", "content": MOVED_XML,
+                               "validateOnly": False}))
+after = tree()
+ok = after.get("DHV-P3.1.1") == "Piling and shoring"
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} a renamed branch is renamed here too: "
+      f"{after.get('DHV-P3.1.1')}")
+ok = "DHV-P3.1.3" in after
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} a branch the planner added arrives: "
+      f"{after.get('DHV-P3.1.3', 'missing')}")
+
+# The one that matters. A planner filtering a layout is not an instruction to
+# delete a branch with budget and signed work against it.
+ok = "DHV-P3.2" in after
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} and a branch the export no longer carries is left "
+      f"standing: {after.get('DHV-P3.2', 'DELETED')}")
+message = str(dry)
+ok = "DHV-P3.2" in message
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} named in the message, so the decision to remove it "
+      f"is somebody's rather than the file's")
+
+s, still = call("/project/Projects?$filter=IsActiveEntity eq true and code eq 'DHV-P3'"
+                "&$select=code")
+ok = len(still.get("value", [])) == 1
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} matched by code rather than imported again: "
+      f"{len(still.get('value', []))} project called DHV-P3")
+
+# Taking the only project in a file because it is the only one there would
+# graft a stranger's tree onto a live job, and nothing on screen would say so.
+s, refused = call(SYNC, method="POST", body={
+    "fileName": "not-ours.xml", "content": STRANGER_XML, "validateOnly": False})
+ok = s == 400
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} [{s}] an export naming a different project is "
+      f"refused: {str(refused)[:100]}")
+ok = tree() == after
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} and the refusal left the tree alone: "
+      f"{len(tree())} elements")
+
 print()
 print("=" * 78)
 passed = sum(1 for r in results if r)

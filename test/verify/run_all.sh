@@ -15,7 +15,7 @@ export JAVA_HOME
 # outcome regardless of whose machine it runs on.
 export S4_OFFLINE=true
 
-SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_schedule test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement test_certification test_execution test_finance test_productivity test_calendar"
+SUITES="test_foundations test_content test_approval test_persona_approver test_attachments test_variants test_project test_templates test_schedule test_p6 test_rates test_boq test_chain test_planning test_budget test_distribution test_procurement test_issue test_overview test_variation test_certification test_execution test_finance test_productivity test_calendar test_workforce"
 
 : > "$RESULTS"
 
@@ -35,6 +35,13 @@ stop() {
   done
   sleep 1
 }
+
+# The attachment ceiling defaults to 25 MB. Asserting it at that size would
+# mean pushing 25 MB through the suite on every run to prove one refusal, so
+# the service runs with a low one and the suite sizes its files from it. The
+# number is read by the service at upload time, so it has to be set here rather
+# than by the test.
+export KX_ATTACHMENT_MAX_MB=1
 
 start() {
   rm -f "$SP/kx.log"

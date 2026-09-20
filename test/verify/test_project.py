@@ -225,6 +225,119 @@ for p in unsynced["value"]:
     print(f"      {p['code']:10} {p['syncStatus']:9} {p['name']}")
 print(f"      ({len(unsynced['value'])} project(s) nothing should be posted against)")
 
+head("9. And now nothing IS posted against them")
+# The line above used to be a hope. A budget is the project's control figure,
+# and until this gate existed one could be submitted, approved by three people
+# and baselined against a project ERP had never heard of -- BUD-2026-0103 was,
+# at 7,525,075.47.
+s, drafts = call("/budget/Budgets?$filter=status eq 'Draft'&$select=ID,docNo,project_ID")
+budget = drafts["value"][0]
+bid, docno, pid = budget["ID"], budget["docNo"], budget["project_ID"]
+
+
+def bud(action):
+    return call(f"/budget/Budgets(ID={bid},IsActiveEntity=true)/BudgetService.{action}",
+                method="POST", body={})
+
+
+def sync(**body):
+    return call(f"/project/Projects(ID={pid},IsActiveEntity=true)"
+                "/ProjectService.recordSyncResult", method="POST", body=body)
+
+
+# A tenant with no ERP is not out of step with anything -- it IS the record.
+# Refusing here would make the product unusable without a live connection, and
+# every suite in this run would fail, which is the point: the gate asks whether
+# there is an ERP, not merely what the status says.
+check(200, f"{docno} submits with no ERP configured at all", *bud("submit"))
+
+# But a refusal is a fact about the project, and switching the connection off
+# does not unsay it.
+check(200, "ERP refuses the project mid-approval", *sync(
+    success=False, s4Key=None, s4System="TEST",
+    message="Profit Center 10001000 does not exist"))
+
+s, inst = call(f"/collaboration/ApprovalInstances?$filter=objectDocNo eq '{docno}'"
+               "&$select=ID&$expand=steps($select=ID,stepNo;$orderby=stepNo)")
+for i, st in enumerate(inst["value"][0]["steps"]):
+    call(f"/collaboration/ApprovalSteps({st['ID']})/CollaborationService.approve",
+         method="POST", body={"comment": "Within the tender allowance."},
+         user=["demo", "daud", "admin"][i])
+
+status, refusal = bud("baseline")
+ok = status == 409 and "refused by ERP" in str(refusal)
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} [{status}] approved by three people and still "
+      f"refused: {str(refusal)[:150]}")
+
+# And the refusal carries what ERP actually said, so the fix is in the message
+# rather than in a log somebody has to go and find.
+ok = "Profit Center 10001000 does not exist" in str(refusal)
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} in ERP's own words, not a generic 'not synced'")
+
+check(200, "ERP accepts the project", *sync(
+    success=True, s4Key="P-000123", s4System="TEST", message="Created"))
+check(200, "and the same budget baselines, unchanged", *bud("baseline"))
+s, done = call(f"/budget/Budgets(ID={bid},IsActiveEntity=true)?$select=docNo,status")
+ok = done.get("status") == "Baselined"
+results.append(ok)
+print(f"  {'ok  ' if ok else 'FAIL'} {done.get('docNo')} is {done.get('status')} - the "
+      f"gate was the project, and it moved")
+
+print()
+print("=" * 76)
+print("The cost mapping workbench, asked twice")
+print("=" * 76)
+
+# costMappingPortfolio and costMappingSummary answer the same question at two
+# scales: which projects need a human, and what that human faces on one of
+# them. Two implementations of one question is exactly the shape that drifts,
+# and neither had ever been called by a test.
+
+s, portfolio = call("/project/costMappingPortfolio", user="admin", method="POST", body={})
+rows = {r["projectCode"]: r for r in portfolio.get("value", [])} if s == 200 else {}
+results.append(s == 200 and bool(rows))
+print(f"  {'ok  ' if rows else 'FAIL'} [{s}] the portfolio answers for every project "
+      f"at once: {len(rows)} projects")
+
+s, listed = call("/project/Projects?$select=ID,code&$orderby=code", user="admin")
+projects = listed.get("value", []) if s == 200 else []
+results.append(len(rows) == len(projects))
+print(f"  {'ok  ' if len(rows) == len(projects) else 'FAIL'} and leaves none out: "
+      f"{len(rows)} of {len(projects)}")
+
+# A workbench that says a project needs attention while the project's own page
+# says it does not is worse than either number alone.
+drifted, compared = [], 0
+for project in projects:
+    s, one = call(f"/project/Projects(ID={project['ID']},IsActiveEntity=true)"
+                  "/ProjectService.costMappingSummary", user="admin", method="POST", body={})
+    if s != 200:
+        drifted.append(f"{project['code']} summary [{s}]")
+        continue
+    summary = {k: v for k, v in one.items() if not k.startswith("@")}
+    row = rows.get(project["code"], {})
+    for field in sorted(set(summary) & set(row)):
+        compared += 1
+        if summary[field] != row[field]:
+            drifted.append(f"{project['code']}.{field} {summary[field]} vs {row[field]}")
+results.append(not drifted)
+print(f"  {'ok  ' if not drifted else 'FAIL'} and agrees with each project's own "
+      f"workbench on every count it shares ({compared} comparisons): "
+      f"{'; '.join(drifted) if drifted else 'no disagreement'}")
+
+# The point of the workbench is that it does not render the 1,127 lines that
+# mapped themselves. A count of exceptions that exceeds the lines there are is
+# the failure that would put every one of them on the screen.
+overshoot = [f"{code}: {r.get('exceptionCount')} of {r.get('totalLines')}"
+             for code, r in rows.items()
+             if r.get("exceptionCount") is not None and r.get("totalLines") is not None
+             and r["exceptionCount"] > r["totalLines"]]
+results.append(not overshoot)
+print(f"  {'ok  ' if not overshoot else 'FAIL'} and never claims more exceptions than "
+      f"there are lines: {'; '.join(overshoot) if overshoot else 'none overshoot'}")
+
 print()
 print("=" * 76)
 passed = sum(1 for r in results if r)
