@@ -22,7 +22,10 @@ service AuthorizationService @(path:'/authorization') {
   entity Personas as projection on auth.Persona
     actions {
       /** Clone an existing persona as the starting point for a new one. */
-      action copyAs(code : String(40), name : String(80)) returns UUID;
+      action copyAs(
+        code : String(40) @title : 'Code',
+        name : String(80) @title : 'Name'
+      ) returns UUID;
     };
 
   entity PersonaPermissions as projection on auth.PersonaPermission;
@@ -82,6 +85,18 @@ service AuthorizationService @(path:'/authorization') {
    * never overwritten.
    */
   action applyContentPacks() returns String;
+
+  /**
+   * Re-runs the check the service makes at boot: does every authorization
+   * object still name an entity that exists, and a scope path that resolves.
+   *
+   * The catalogue is data and the model it points at is code, so the two drift
+   * apart when an entity or an association is renamed and neither side
+   * complains. A broken object does not enforce badly, it does not enforce at
+   * all — and an operator who has just upgraded should be able to ask without
+   * restarting and reading a log.
+   */
+  action checkAuthorizationCatalogue() returns String;
 }
 
 /**
@@ -94,15 +109,58 @@ service CollaborationService @(path:'/collaboration') {
   /** Approvals addressed to the current user, and their history. */
   entity ApprovalInstances as projection on apr.ApprovalInstance
     actions {
-      action withdraw(reason : String(500)) returns String;
+      action withdraw(reason : String(500) @title : 'Reason for withdrawing') returns String;
     };
 
   entity ApprovalSteps as projection on apr.ApprovalStepInstance
     actions {
-      action approve(comment : String(1000)) returns String;
-      action reject(comment : String(1000))  returns String;
-      action delegate(to : String(120), comment : String(1000)) returns String;
+      action approve(comment : String(1000) @title : 'Comment') returns String;
+      action reject(comment : String(1000) @title : 'Reason for rejecting')  returns String;
+      action delegate(
+        to      : String(120) @title : 'Hand to',
+        comment : String(1000) @title : 'Comment'
+      ) returns String;
     };
+
+  /**
+   * The approvals waiting on this person, oldest first.
+   *
+   * Answered by the same three rules the decide path enforces — the step is
+   * the one its document is actually waiting on, the caller holds the persona
+   * it asks for, and they have not already decided an earlier step of the same
+   * document. A worklist built from a looser rule lists work that is refused
+   * when opened, which teaches people that refusals are noise.
+   *
+   * A projection rather than a computed list, narrowed to those steps as it is
+   * read. A worklist is filtered, sorted, paged and counted, and a list built
+   * in memory answers none of those: it returns everything while appearing to
+   * have applied them. Which steps is the engine's question; what they look
+   * like is the model's.
+   */
+  // The step keeps its own entity for the document's own page; this one is the
+  // worklist, so the composition on the instance stays pointed at that.
+  @readonly
+  @cds.redirection.target : false
+  entity MyApprovals as projection on apr.ApprovalStepInstance {
+    key ID                              as stepId,
+        instance.ID                     as instanceId,
+        instance.objectDocNo            as docNo,
+        /** Named from the catalogue, so a mixed inbox groups by what things are. */
+        instance.scheme.authObject.name as docType,
+        instance.entityName             as entityName,
+        instance.objectID               as objectID,
+        instance.amount                 as amount,
+        instance.ccy                    as ccy,
+        instance.startedAt              as waitingSince,
+        stepNo,
+        name                            as stepName,
+        /** Set where the step was handed to somebody by name. */
+        delegatedTo
+  } actions {
+    action approve(comment : String(1000) @title : 'Comment') returns String;
+    action reject(comment : String(1000) @title : 'Reason for rejecting')  returns String;
+  };
+
 
   /**
    * The numbers the launchpad tiles show.

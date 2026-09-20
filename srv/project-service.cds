@@ -5,6 +5,8 @@
  */
 using { konstryx.prj } from '../db/prj';
 using { konstryx.master } from '../db/master';
+using { konstryx.ins } from '../db/ins';
+using { konstryx.vo } from '../db/vo';
 using { konstryx.admin } from '../db/admin';
 
 /** One target of a WBS distribution: the element and its weight share. */
@@ -52,6 +54,25 @@ service ProjectService @(path:'/project') {
       action measureProductivity() returns String;
 
       /**
+       * Reconciles the project for a period: what it is worth, what it has
+       * cost, and what it will cost.
+       *
+       * Earned value is measured work at contract rates; actual cost is what
+       * that work cost; cost to complete is priced at the rate work has
+       * actually cost rather than the rate it was budgeted at, because the
+       * difference between those two is the finding rather than a rounding.
+       *
+       * Planned value is deliberately not computed. Nothing time-phases the
+       * budget across the programme - a budget line knows its amount and its
+       * CBS and not which month it was meant to be spent in - so the schedule
+       * index would be an index of a guess. It comes back null with the reason
+       * on the row.
+       *
+       * onDate picks the period; today's if omitted.
+       */
+      action reconcile(onDate : Date) returns String;
+
+      /**
        * Runs the critical path over this project's activities and writes back
        * early and late dates, total and free float, and which activities are
        * critical. Safe to repeat: every derived field is recalculated from the
@@ -66,6 +87,38 @@ service ProjectService @(path:'/project') {
        * templates follow.
        */
       action instantiateCBS() returns String;
+      /**
+       * Brings this project's WBS tree back in line with a Primavera P6
+       * export.
+       *
+       * Not the same as importP6, which creates a project. This one already
+       * has a project, a budget hanging off its cost nodes and allocations
+       * hanging off its elements, and the planner has since added three
+       * branches and renamed two. Re-importing would produce a second project;
+       * matching by code and reconciling produces the same one, moved on.
+       *
+       * Elements here that the export no longer carries are left in place and
+       * counted. A planner filtering a layout is not an instruction to delete
+       * a branch that has money and signed work against it — that decision is
+       * a person's, and the message says which branches need it.
+       *
+       * The export has to name this project, either by its own code or by the
+       * P6 code somebody has already linked it to. Taking the only project in
+       * a file because it is the only one there would graft a stranger's tree
+       * onto a live job, and nothing on the screen would say so.
+       *
+       * The programme itself is not touched. Activities and their links carry
+       * progress, actual dates and a critical path computed here, and a WBS
+       * sync that quietly replaced them would discard the site's own record of
+       * what happened.
+       */
+      action syncWBSFromP6(
+        fileName     : String(255)  @title : 'File name',
+        content      : LargeString  @title : 'P6 export',
+        p6ProjectId  : String(60)   @title : 'Project in the file',
+        validateOnly : Boolean      @title : 'Check only, change nothing'
+      ) returns String;
+
       /**
        * The gate (KX-GOV-002). Nothing generates budget lines until every rule
        * passes. Returns each rule with its counts, so the screen shows what is
@@ -103,7 +156,7 @@ service ProjectService @(path:'/project') {
       };
 
       /**
-       * Pushes a queued (PENDING) project to S/4 through SAP_COM_0308 and
+       * Pushes a queued (PENDING) project to ERP through SAP_COM_0308 and
        * records the outcome — the live counterpart of recordSyncResult. On an
        * unconfigured system it refuses rather than pretending.
        */
@@ -113,9 +166,31 @@ service ProjectService @(path:'/project') {
       action recordSyncResult(success : Boolean, s4Key : String(60),
                               s4System : String(20), message : String(1000)) returns String;
     };
-  /** Maintained through the project draft — a WBS element only means something
-   *  inside the project that owns it. Mastered here (D-17), so writable. */
-  entity WBS as projection on prj.WBSElement;
+  /**
+   * Read as a tree, not a list.
+   *
+   * Maintained through the project draft — a WBS element only means something
+   * inside the project that owns it. Mastered here (D-17), so writable.
+   *
+   * A WBS is a hierarchy in every system that has one, and it was being served
+   * flat: level 3 sat beside level 1 in alphabetical order and nothing on the
+   * row said which was under which. The five transient elements below are what
+   * OData V4 hierarchy expansion fills in per request — how deep a node sits,
+   * whether it can be expanded, how many descendants a filter matched — and
+   * the annotations after the service name which element carries which.
+   *
+   * They are `null as` rather than stored: they are answers about one query's
+   * result set, and persisting them would make them wrong the moment anything
+   * moved.
+   */
+  entity WBS as projection on prj.WBSElement {
+    *,
+    null as DistanceFromRoot       : Int64   @UI.Hidden,
+    null as DrillState             : String  @UI.Hidden,
+    null as LimitedDescendantCount : Int64   @UI.Hidden,
+    null as Matched                : Boolean @UI.Hidden,
+    null as MatchedDescendantCount : Int64   @UI.Hidden,
+  };
 
   /**
    * Imports a project and its WBS tree from a Primavera P6 XML export.
@@ -137,6 +212,10 @@ service ProjectService @(path:'/project') {
   // the field and found out only when they pressed Save would have to unpick a
   // draft to get out of it.
   annotate Projects with {
+    p6ProjectId    @readonly;
+    p6File         @readonly;
+    p6LastSyncedAt @readonly;
+    p6SyncMessage  @readonly;
     syncStatus   @readonly;
     s4Key        @readonly;
     s4System     @readonly;
@@ -181,6 +260,18 @@ service ProjectService @(path:'/project') {
       action recalculate() returns String;
 
       /**
+       * Costs every line from its own resource build-up, and works out the
+       * margin.
+       *
+       * A bill line carried what it sells for and not what it costs, so no
+       * screen could show a line that prices well and builds badly - which is
+       * the line a commercial manager most needs to find. Cost comes from the
+       * build-up rather than a typed figure, so it cannot disagree with the
+       * resources behind it.
+       */
+      action recalculateCost() returns String;
+
+      /**
        * Distributes bill quantities across WBS by template — the three
        * decisions that cover 1,100 of the canonical 1,142 lines. TPL-SINGLE
        * puts a line whole onto one element; TPL-FLOORS and TPL-ZONES split it
@@ -206,6 +297,70 @@ service ProjectService @(path:'/project') {
       action generateBuildUp(difficultyPct : Decimal(5,2)) returns String;
     };
 
+  /**
+   * Variation orders: what changed after the contract was signed.
+   *
+   * Draft-enabled because a variation is priced line by line before anyone
+   * submits it, and a half-priced claim must not be visible to the
+   * reconciliation — which reads approved variations and would otherwise pick
+   * up a number still being argued internally.
+   */
+  @odata.draft.enabled
+  entity Variations as projection on vo.VariationOrder {
+    *,
+    /**
+     * The colours, computed here so no two screens disagree about what counts
+     * as a variation worth looking at.
+     *
+     * A negative margin is red whatever the revenue: a change the client is
+     * paying for and the contractor is losing on is the one to find. Status
+     * follows the decision - approved is settled, rejected is a loss to absorb,
+     * submitted is still an argument.
+     */
+    case
+      when marginPct is null then 0
+      when marginPct <  0    then 1
+      when marginPct <  5    then 2
+      else                        3
+    end as marginCriticality : Integer,
+    case
+      when status = 'Approved'  then 3
+      when status = 'Rejected'  then 1
+      when status = 'Submitted' then 2
+      else                           0
+    end as statusCriticality : Integer,
+  }
+    actions {
+      /**
+       * Recomputes revenue, cost and margin from the lines.
+       *
+       * The header holds all three so a list reads without expanding every
+       * variation, and holding them means they can drift — so they are derived
+       * rather than typed, the same rule the payment certificate follows.
+       */
+      action recalculate() returns Variations;
+
+      /** Sends the priced claim to the client. Refuses an unpriced one. */
+      action submit() returns String;
+
+      /**
+       * The client's answer.
+       *
+       * Approving is what makes a variation count: only approved ones reach
+       * the cost value reconciliation, because a submitted claim is a
+       * negotiating position and a forecast built on one depends on a
+       * conversation nobody has had yet.
+       */
+      action approve(
+        clientRef         : String(40)  @title : 'Client reference',
+        decisionNote      : String(500) @title : 'Decision note',
+        timeExtensionDays : Integer     @title : 'Time extension (days)'
+      ) returns String;
+      action reject(reason : String(500) @title : 'Reason for rejecting') returns String;
+    };
+
+  entity VariationLines as projection on vo.VariationLine;
+
   entity BOQItems as projection on prj.BOQItem
     actions {
       /**
@@ -227,11 +382,33 @@ service ProjectService @(path:'/project') {
    */
   @readonly entity Companies as projection on admin.Company;
 
-  /** Schedulable tasks under a WBS element, and what links them. */
+  /**
+   * Schedulable tasks under a WBS element, and what links them.
+   *
+   * Draft-enabled so the network can be maintained. An activity's predecessors
+   * are a composition, which means they are only editable inside the
+   * activity's own draft — without one, a planner could read that A waits on B
+   * and had no way to say so, and the critical path could only ever run over
+   * links that arrived with a P6 import.
+   */
+  @odata.draft.enabled
   entity Activities         as projection on prj.Activity;
+
+  /**
+   * Exposed for resolution only. A dependency is created and deleted inside
+   * its successor's draft; this entity set is what lets a relation name the
+   * activity it points at.
+   */
   entity ActivityRelations  as projection on prj.ActivityRelation;
 
-  entity CBS              as projection on prj.CBSInstance
+  entity CBS              as projection on prj.CBSInstance {
+    *,
+    null as DistanceFromRoot       : Int64   @UI.Hidden,
+    null as DrillState             : String  @UI.Hidden,
+    null as LimitedDescendantCount : Int64   @UI.Hidden,
+    null as Matched                : Boolean @UI.Hidden,
+    null as MatchedDescendantCount : Int64   @UI.Hidden,
+  }
     actions {
       /**
        * Recomputes every CBS node's budget on this project from the budget
@@ -247,11 +424,144 @@ service ProjectService @(path:'/project') {
       action rollUpBudget() returns String;
     };
   /**
+   * One project on one page.
+   *
+   * Recomputed before every read rather than written by an action, so the
+   * summary can never disagree with the screens a reader opens to check it.
+   * Read-only for the same reason a measurement is: there is nothing here to
+   * edit, only things to go and change.
+   */
+  @readonly entity ProjectOverviews as projection on ins.ProjectOverview {
+    *,
+    /**
+     * The colours, computed once on the service rather than per screen.
+     *
+     * A margin is red because it is negative and amber because it is thin
+     * enough that one bad month takes it. Budget use is red past its own
+     * total, amber as it approaches. A slip is red when the programme lands
+     * after the contract date. Repeating any of these thresholds in an
+     * annotation is how two screens come to disagree about which projects
+     * need attention.
+     */
+    case
+      when forecastMarginPct is null then 0
+      when forecastMarginPct <  0    then 1
+      when forecastMarginPct <  5    then 2
+      else                                3
+    end as marginCriticality : Integer,
+    case
+      when cpi is null then 0
+      when cpi <  0.95 then 1
+      when cpi <  1.00 then 2
+      when cpi <= 1.15 then 3
+      else                  0
+    end as cpiCriticality : Integer,
+    case
+      when budgetUsedPct is null then 0
+      when budgetUsedPct > 100   then 1
+      when budgetUsedPct >  90   then 2
+      else                            3
+    end as budgetCriticality : Integer,
+    case
+      when slipDays is null then 0
+      when slipDays >  0    then 1
+      when slipDays =  0    then 2
+      else                       3
+    end as slipCriticality : Integer,
+  };
+
+  /**
+   * The spend curve: what each period is expected to cost, and what it has.
+   * Recomputed on read, from the phased budget and the signed cost.
+   */
+  @readonly entity Cashflow as projection on ins.ProjectCashflow;
+
+  /**
+   * Today's work front: the activities the job is standing on right now, who
+   * is on them and which of them nobody has touched this week.
+   *
+   * Recomputed before every read, like the overview and for a stronger reason:
+   * a stored row that says "today" is wrong by tomorrow morning and nothing on
+   * the screen would say so.
+   */
+  @readonly entity WorkFronts as projection on ins.WorkFront {
+    *,
+    /**
+     * The colours, computed here rather than in each screen's annotations.
+     *
+     * A front is red when it is overdue or when nobody has signed a day
+     * against it this week, amber when it is behind its own straight line by
+     * more than a tenth, green otherwise. Drift is coloured on the same
+     * thresholds so the two columns cannot contradict each other.
+     */
+    case
+      when driftPct is null   then 0
+      when driftPct < -10.00  then 1
+      when driftPct <   0.00  then 2
+      else                         3
+    end as driftCriticality : Integer,
+    case
+      when daysRemaining is null then 0
+      when daysRemaining <  0    then 1
+      when daysRemaining <= 3    then 2
+      else                            3
+    end as finishCriticality : Integer,
+  };
+
+  /**
+   * Cost Value Reconciliation and Earned Value, as measured each period.
+   *
+   * Read-only: a measurement is not something anyone edits after the fact. It
+   * is written by reconcile on the project, and kept, so a margin can be
+   * compared with the same margin three months ago rather than only stated.
+   */
+  @readonly entity PeriodReports as projection on ins.ProjectPeriodReport {
+    *,
+    /**
+     * Colour for the margin and for the cost index, computed here rather than
+     * on the screen.
+     *
+     * A margin is not red because it is small; it is red because it is
+     * negative, and amber because it is thin enough that one bad month takes
+     * it. Putting the thresholds in the projection keeps every screen that
+     * shows this figure agreeing about which of them is which - a rule
+     * repeated in an annotation is a rule that drifts.
+     */
+    case
+      when forecastMarginPct is null           then 0
+      when forecastMarginPct <  0              then 1
+      when forecastMarginPct <  5              then 2
+      else                                          3
+    end as marginCriticality : Integer,
+    /**
+     * Above 1 is earning more than it spends, which is good and, on a
+     * construction job, usually means cost is only partly captured. Neutral
+     * rather than green above 1.15 for that reason: the note on the row says
+     * which cost categories are behind the number, and a green tick would
+     * invite a reader to skip it.
+     */
+    case
+      when cpi is null      then 0
+      when cpi <  0.95      then 1
+      when cpi <  1.00      then 2
+      when cpi <= 1.15      then 3
+      else                       0
+    end as cpiCriticality : Integer,
+  };
+
+  /**
    * The site's own geography — building, floor, zone, grid. Maintained with
    * the project because that is what owns it.
    */
+
   entity SiteLocations    as projection on prj.SiteLocation;
 
+  /**
+   * Where a bill line's quantity was sent — the join between what was sold,
+   * what gets built and what absorbs the cost. Read from the project rather
+   * than only from the bill: a QS asks "how is this project mapped", not "how
+   * is bill 3 line 41 mapped".
+   */
   entity Allocations      as projection on prj.Allocation;
   entity ProjectResources as projection on prj.ProjectResource;
 

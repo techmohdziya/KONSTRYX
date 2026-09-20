@@ -58,10 +58,15 @@ cds:
         - name: steward_pmi
           password: steward_pmi
           roles: [ MasterDataSteward ]
-        # Local demo only: one session that can reach every screen. Data scope
-        # still applies — this user is assigned to INFC and PRJ-001, so the
-        # authorization and master-scope filtering stay visible rather than
-        # being bypassed the way the Admin bootstrap role would.
+        # Local demo only: one session that reaches every screen a persona is
+        # meant to. NOT the administration screens — AdminService and
+        # AuthorizationService require the Admin role, which is the bootstrap
+        # bypass, and handing it here would switch off the persona layer this
+        # user exists to demonstrate. Number ranges, exchange rates, companies
+        # and the persona catalogue are an administrator's screens and stay so.
+        #
+        # Data scope still applies — this user is assigned to INFC and PRJ-001,
+        # so the authorization and master-scope filtering stay visible.
         - name: demo
           password: demo
           roles: [ MasterDataSteward, ProjectManager, BudgetController,

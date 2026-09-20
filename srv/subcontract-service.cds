@@ -55,9 +55,9 @@ service SubcontractService @(path:'/subcontract') {
 
       /** Records one decision on the certificate's sign-off chain. */
       action signOff(
-        role     : String(60),
-        name     : String(80),
-        decision : String(20)
+        role     : String(60) @title : 'Signing as',
+        name     : String(80) @title : 'Name',
+        decision : String(20) @title : 'Decision'
       ) returns String;
     };
 

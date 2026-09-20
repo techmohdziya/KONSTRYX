@@ -99,13 +99,13 @@ service AdminService @(path:'/admin') {
 
   /**
    * Plants, purchasing organizations, profit centres, cost centres and project
-   * profiles as they exist in this tenant's own S/4 system. Read-only, like
-   * every S/4 mirror: correcting a plant means correcting it in S/4.
+   * profiles as they exist in this tenant's own ERP system. Read-only, like
+   * every ERP mirror: correcting a plant means correcting it in ERP.
    */
   @readonly entity S4OrgValues as projection on admin.S4OrgValue;
 
   /**
-   * Re-reads the organizational values from S/4 through the ITS_S4 destination
+   * Re-reads the organizational values from ERP through the ITS_S4 destination
    * and fills each company from what it finds.
    *
    * These values cannot be shipped in a content pack. They are configuration

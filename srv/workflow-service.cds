@@ -8,6 +8,7 @@ using { konstryx.eq } from '../db/eq';
 using { konstryx.mpr } from '../db/mpr';
 using { konstryx.prj } from '../db/prj';
 using { konstryx.sys } from '../db/sys';
+using { konstryx.master } from '../db/master';
 
 @requires: 'ResourceCoordinator'
 service WorkflowService @(path:'/workflow') {
@@ -37,7 +38,7 @@ service WorkflowService @(path:'/workflow') {
       /**
        * Availability for the in-house lines. Locally this documents what
        * KONSTRYX itself knows — competing reservations on the same resource.
-       * The S/4 ATP call slots in behind the same document once a tenant
+       * The ERP ATP call slots in behind the same document once a tenant
        * exists (Q-09); the document shape does not change.
        */
       action runAvailabilityCheck() returns String;
@@ -56,9 +57,9 @@ service WorkflowService @(path:'/workflow') {
        * nothing consumed it.
        *
        * The requisition is deliberately not a KONSTRYX document — it draws no
-       * number range and gets no docNo, because S/4 owns the requisition
+       * number range and gets no docNo, because ERP owns the requisition
        * number. It is created here as NOT_SENT with its account assignment
-       * carried from each request line, and takes its prNo when S/4 accepts it.
+       * carried from each request line, and takes its prNo when ERP accepts it.
        */
       action raisePurchaseRequisition() returns String;
     };
@@ -104,15 +105,46 @@ service WorkflowService @(path:'/workflow') {
        *
        * Costs the day from the manpower line's all-in head-day rate and moves
        * it Draft -> Signed. Only a signed day is counted against a
-       * reservation, and only a signed day may reach S/4.
+       * reservation, and only a signed day may reach ERP.
        *
        * standardDayHours defaults to 8. Overtime is costed at the same all-in
        * hourly rate as regular time, because the model carries one rate per
        * head-day and no premium - an overtime multiplier would be a number
        * invented here rather than agreed commercially.
        */
-      action sign(standardDayHours : Decimal(4,2)) returns String;
+      action sign(standardDayHours : Decimal(4,2) @title : 'Standard day (hours)') returns String;
     };
+  /**
+   * What a reservation's value has been moved by, and why.
+   *
+   * Read-only over the service: a variation is written by the action on the
+   * reservation it varies, because the reservation is what holds the money and
+   * a variation keyed on its own would move a lock nobody authorised.
+   */
+  @readonly entity ReservationVariations as projection on wf.ReservationVariation {
+    *,
+    reservation.docNo         as reservationNo : String(20),
+    reservation.project.code  as projectCode   : String(24),
+    reservation.rr.verticalType as verticalType : String(20),
+    // A variation that gives budget back reads differently from one that asks
+    // for more, and the sign is the whole of it.
+    case
+      when deltaAmount > 0 then 1
+      when deltaAmount < 0 then 3
+      else 0
+    end as deltaCriticality : Integer
+  };
+
+  @readonly entity ReservationVariationLines as projection on wf.ReservationVariationLine {
+    *,
+    variation.docNo as variationNo : String(20),
+    case
+      when delta > 0 then 1
+      when delta < 0 then 3
+      else 0
+    end as deltaCriticality : Integer
+  };
+
   entity AdvisoryDecisions    as projection on wf.AdvisoryDecision;
   entity AvailabilityChecks   as projection on wf.AvailabilityCheck;
 
@@ -143,9 +175,97 @@ service WorkflowService @(path:'/workflow') {
        * Drafts are ignored. A day nobody has signed is not consumption.
        */
       action postConsumption() returns String;
+
+      /**
+       * Asks a store for stock this reservation has already locked the money
+       * for. One pull request per line per ask: a line drawn in three loads is
+       * three documents, because each one is a different movement in ERP and
+       * each is confirmed on site separately.
+       *
+       * Raised here rather than on the pull request itself because the
+       * reservation is what authorises it. A pull request keyed on its own
+       * would draw stock against a budget nobody encumbered.
+       */
+      action raisePullRequest(lineNo : Integer,
+                              resourceCode : String(40),
+                              qty : Decimal(15,3),
+                              storageLoc : String(10)) returns String;
+
+      /**
+       * Step 8: varies what this reservation has locked.
+       *
+       * Applied, not proposed. The line's quantity or its rate moves, the lock
+       * moves with it, and the before and after are both written down — the
+       * reservation line only ever carries the current figure, so a variation
+       * that stored only the outcome would leave no way to check it.
+       *
+       * The one thing it will not do is lock less than the line has already
+       * spent. Releasing budget that is already gone would report headroom
+       * nobody has; an overrun is a cost to explain, not a lock to reduce.
+       *
+       * Three figures make the lock and the line stores only two. Its quantity
+       * is heads or instances and its rate is per day; the duration is implied
+       * by what the approval locked, and it is read back so that moving one
+       * figure leaves the other two where they were.
+       *
+       * Any of the three may be left empty to keep what the line has. All
+       * three unchanged is refused: a variation that varies nothing is a
+       * document number spent on a narrative.
+       *
+       * extendByDays says the same thing about duration in the way people
+       * actually ask it — "both cranes need thirty more days" — and exists
+       * because nobody outside this handler knows what the current duration is
+       * to write an absolute one. Giving both is refused: two ways of saying
+       * one thing is two things that can disagree.
+       */
+      action vary(lineNo : Integer,
+                  newQty : Decimal(15,3),
+                  newRate : Decimal(15,2),
+                  newDurationDays : Decimal(9,2),
+                  extendByDays : Decimal(9,2),
+                  /**
+                   * Several lines moved by one decision, in one document.
+                   *
+                   * The slab cycle slips and both cranes stay thirty more
+                   * days. That is one variation with two lines: one reason,
+                   * one narrative, one delta against the budget. Moving one
+                   * line per document made it two, and while each was
+                   * complete and carried its own before and after, a reader
+                   * counting variations counted the decision twice and only
+                   * the narrative tied the pair together.
+                   *
+                   * Give this or the flat parameters above, never both — two
+                   * ways of saying which lines move are two answers that can
+                   * disagree. Every line is checked before any is written, so
+                   * a document that cannot be applied in full is not applied
+                   * at all.
+                   */
+                  lines : many {
+                    lineNo          : Integer;
+                    newQty          : Decimal(15,3);
+                    newRate         : Decimal(15,2);
+                    newDurationDays : Decimal(9,2);
+                    extendByDays    : Decimal(9,2);
+                  },
+                  reason : String(20),
+                  narrative : String(500),
+                  effectiveFrom : Date) returns String;
     };
+  // Nothing on a reservation line is typed. The quantity and the rate come
+  // from the request the approval judged, the lock from its approved value,
+  // the consumption from goods issues and signed days, and every later move
+  // from a variation -- which exists precisely so the lock cannot be rewritten
+  // by hand. Left writable, the whole of that is one PATCH away from being
+  // beside the point.
+  @readonly
   entity ReservationLines as projection on wf.ReservationLine {
     *,
+    // reservedDays comes through with the rest of the line. It is deliberately
+    // not derived when it is absent: quantity times rate divided into the lock
+    // gives the duration only where the rate is a daily one, and nothing on
+    // the line says whether it is. Rebar is priced by the tonne and cement by
+    // the bag, and the division answers "one day" for both — a fabricated
+    // number in a column a reader would take at face value.
     // Burn is the number a coordinator scans a reservation for, so it carries
     // its own colour. Over the encumbrance is red because the line is spending
     // money nobody locked for it; the band below it is amber because that is
@@ -169,10 +289,13 @@ service WorkflowService @(path:'/workflow') {
 
   /**
    * The reservation overview a coordinator actually needs: per reservation,
-   * how far its thread has come through the ten-step chain, what is still
-   * pending, and — honestly — its S/4 connection state. The project sync is
-   * live; the CMT budget commitment is not connected yet, and the screen says
-   * so per row rather than implying otherwise.
+   * how far its thread has come along the chain its vertical actually has,
+   * what is still anybody's work, and what nothing in this build can finish.
+   *
+   * The three are reported apart on purpose. The ten-step chain is drawn for
+   * plant, so a material reservation is scored against the eight steps that
+   * apply to it rather than against two it can never reach; and a step held
+   * up by an unwired connector is not a step somebody forgot.
    */
   action reservationOverview() returns array of {
     reservationID  : UUID;
@@ -187,19 +310,28 @@ service WorkflowService @(path:'/workflow') {
     encumbered     : Decimal(15,2);
     consumed       : Decimal(15,2);
     burnPct        : Decimal(5,2);
+    verticalType   : String(20);
+    chainScope     : String(60);
     stepsDone      : Integer;
     stepsTotal     : Integer;
+    stepsBlocked   : Integer;
     pendingSteps   : String(255);
+    blockedSteps   : String(255);
     s4Commitment   : String(40);
   };
 
   /**
-   * Exposed here so a daily log can offer a value help for what it charges to.
-   * A Fiori value list must resolve inside the service it is annotated in, and
-   * a timesheet that asks a foreman to type a WBS UUID is not a screen anyone
-   * can use. Read-only: the structures are maintained on ProjectService, and
-   * this is a lookup, not a second place to edit them.
+   * Exposed here so a request line and a daily log can resolve and offer a
+   * value help for what they point at. A Fiori value list must resolve inside
+   * the service it is annotated in, and a line that asks a coordinator to read
+   * a UUID is not a screen anyone can use - a request line showing
+   * "4c000000-0000-..." where the resource belongs reads as a line pointing at
+   * nothing in the master, which is exactly how it was reported.
+   *
+   * Read-only: these are maintained on ProjectService and MasterDataService,
+   * and this is a lookup rather than a second place to edit them.
    */
+  @readonly entity Resources     as projection on master.ResourceNode;
   @readonly entity WBSElements   as projection on prj.WBSElement;
   @readonly entity ProjectCBS    as projection on prj.CBSInstance;
   @readonly entity ChargeProjects as projection on prj.Project;
