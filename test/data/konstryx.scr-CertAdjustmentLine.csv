@@ -1,2 +1,4 @@
 ID;pc_ID;subBoqLine;description;claimedQty;certifiedQty;deltaQty;uom;reason
 73000000-0000-0000-0000-000000000001;72000000-0000-0000-0000-000000000006;L1 (mullion-related);Spider fittings re-measurement;100.000;88.000;-12.000;pcs;12 pcs not yet installed per site inspection 28 Dec 2026
+73000000-0000-0000-0000-000000002210;72000000-0000-0000-0000-000000000221;BW-04.2;Blockwork 200mm - Level 4 zone B;1180.000;1140.000;-40.000;m2;40 m2 rejected at inspection: joint thickness outside tolerance. Remeasured on the certified area: 40 m2 at AED 212.50 = AED 8,500 off the claim.
+73000000-0000-0000-0000-000000002440;72000000-0000-0000-0000-000000000244;ST-11;Structural steel - roof trusses T7 to T9;84.000;78.000;-6.000;t;Three trusses delivered but not erected at cut-off. Certified on erected weight, not delivered: 6 t at AED 4,000 = AED 24,000 off the claim.

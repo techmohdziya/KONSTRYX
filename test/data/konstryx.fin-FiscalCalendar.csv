@@ -1,0 +1,2 @@
+ID;code;name;company_ID;variant;startMonth;weekStartsOn;isDefault
+3f000000-0000-0000-0000-000000000001;K4;Calendar year, January to December;;CALENDAR_MONTH;1;1;true
