@@ -54,10 +54,10 @@ sap.ui.define([
 				lines: aLines,
 				lineCount: aLines.length,
 				stepColumn: oDoc.lineExtra ? oDoc.lineExtra.label : "Detail",
-				ownerNote: oDoc.owner === "S/4 PS"
+				ownerNote: oDoc.owner === "ERP PS"
 					? "system of record — read-only in KONSTRYX"
 					: "KONSTRYX owns this document",
-				readOnlyText: "S/4HANA Project System owns this document. KONSTRYX displays the synced values and never authors them — posting, reversal and release all happen in S/4.",
+				readOnlyText: "The ERP Project System owns this document. KONSTRYX displays the synced values and never authors them — posting, reversal and release all happen in the ERP.",
 				hasPrimary: aPrimary.length > 0,
 				primaryText: aPrimary.length ? aPrimary[0].text : "",
 				primaryTarget: aPrimary.length ? aPrimary[0].target : null,

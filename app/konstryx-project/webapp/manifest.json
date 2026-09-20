@@ -109,6 +109,16 @@
           "pattern": "Projects({key}):?query:",
           "name": "ProjectsObjectPage",
           "target": "ProjectsObjectPage"
+        },
+        {
+          "pattern": "Projects({key})/wbsElements({wbsKey}):?query:",
+          "name": "WBSObjectPage",
+          "target": "WBSObjectPage"
+        },
+        {
+          "pattern": "Activities({key}):?query:",
+          "name": "ActivitiesObjectPage",
+          "target": "ActivitiesObjectPage"
         }
       ],
       "targets": {
@@ -131,6 +141,14 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "importP6": {
+                      "press": "konstryxproject.ext.controller.P6Import.openUpload",
+                      "visible": true,
+                      "enabled": true,
+                      "text": "Sync WBS from Primavera P6"
+                    }
                   }
                 }
               },
@@ -150,7 +168,55 @@
                 "body": {
                   "sections": {}
                 }
+              },
+              "controlConfiguration": {
+                "wbsElements/@com.sap.vocabularies.UI.v1.PresentationVariant#WBSTree": {
+                  "tableSettings": {
+                    "type": "TreeTable",
+                    "hierarchyQualifier": "WBSHierarchy"
+                  }
+                },
+                "cbs/@com.sap.vocabularies.UI.v1.PresentationVariant#CBSTree": {
+                  "tableSettings": {
+                    "type": "TreeTable",
+                    "hierarchyQualifier": "ProjectCBSHierarchy"
+                  }
+                }
+              },
+              "navigation": {
+                "wbsElements": {
+                  "detail": {
+                    "route": "WBSObjectPage"
+                  }
+                },
+                "activities": {
+                  "detail": {
+                    "route": "ActivitiesObjectPage"
+                  }
+                }
               }
+            }
+          }
+        },
+        "WBSObjectPage": {
+          "type": "Component",
+          "id": "WBSObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/Projects/wbsElements"
+            }
+          }
+        },
+        "ActivitiesObjectPage": {
+          "type": "Component",
+          "id": "ActivitiesObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/Activities"
             }
           }
         }

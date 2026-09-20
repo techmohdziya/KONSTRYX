@@ -1,7 +1,7 @@
 {
   "name": "konstryx-vendor",
   "version": "0.0.1",
-  "description": "Supplier master mirrored from S/4",
+  "description": "Supplier master mirrored from ERP",
   "keywords": [
     "ui5",
     "openui5",

@@ -6,7 +6,7 @@
       "id": "konstryx-sandbox",
       "namespace": "",
       "title": "KONSTRYX",
-      "description": "Local launchpad matching the S/4HANA Public Cloud shell"
+      "description": "Local launchpad matching the ERP Public Cloud shell"
     },
     "payload": {
       "config": {

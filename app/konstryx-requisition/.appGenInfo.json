@@ -7,7 +7,7 @@
     "serviceUrl": "http://localhost:4004/odata/v4/material/",
     "appName": "konstryx-requisition",
     "appTitle": "Purchase Requisitions",
-    "appDescription": "Purchase requisitions raised to S/4",
+    "appDescription": "Purchase requisitions raised to ERP",
     "appNamespace": "",
     "ui5Theme": "sap_horizon",
     "ui5Version": "1.120.0",

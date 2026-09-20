@@ -77,6 +77,24 @@ annotate service.ResourceRequests with @(
       Label  : 'Attachments',
       Target : 'attachments/@UI.LineItem',
     },
+    /**
+     * The document flow. A request is the spine of the chain and its own
+     * screen said nothing about what it had become — whether it reached an
+     * availability check, a reservation, a requisition, or stopped. The links
+     * were being written all along and read by no one.
+     */
+    {
+      $Type  : 'UI.ReferenceFacet',
+      ID     : 'Flow',
+      Label  : 'Document Flow',
+      Target : 'flowOut/@UI.LineItem',
+    },
+    {
+      $Type  : 'UI.ReferenceFacet',
+      ID     : 'History',
+      Label  : 'Status History',
+      Target : 'history/@UI.LineItem',
+    },
   ],
 
   /**
@@ -99,6 +117,132 @@ annotate service.ResourceRequests with @(
       Label  : 'Raise purchase requisition' },
   ],
 );
+
+/**
+ * What a request line points at, in words.
+ *
+ * The line stored resource, WBS and CBS as keys and displayed them as keys, so
+ * a reader saw "4c000000-0000-0000-0000-000000000005" where the resource
+ * should be and reasonably concluded the line pointed at nothing in the
+ * master. It always did; the screen simply never resolved it.
+ */
+annotate service.ResourceRequestLines with {
+  lineNo      @title : 'Line';
+  description @title : 'Description';
+  qty         @title : 'Quantity';
+  uom         @title : 'UoM';
+  estUnitCost @title : 'Unit cost';
+  estTotal    @title : 'Line value';
+  needBy      @title : 'Need by';
+  lineStatus  @title : 'Status';
+
+  resource @Common : {
+    Text            : resource.code,
+    TextArrangement : #TextOnly,
+    ValueList       : {
+      $Type          : 'Common.ValueListType',
+      CollectionPath : 'Resources',
+      Label          : 'Resource',
+      Parameters     : [
+        { $Type : 'Common.ValueListParameterInOut',
+          LocalDataProperty : resource_ID, ValueListProperty : 'ID' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'code' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'description' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'level' }
+      ]
+    }
+  };
+
+  wbs @Common : {
+    Text            : wbs.code,
+    TextArrangement : #TextOnly,
+    ValueList       : {
+      $Type          : 'Common.ValueListType',
+      CollectionPath : 'WBSElements',
+      Label          : 'WBS element',
+      Parameters     : [
+        { $Type : 'Common.ValueListParameterInOut',
+          LocalDataProperty : wbs_ID, ValueListProperty : 'ID' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'code' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'description' }
+      ]
+    }
+  };
+
+  cbs @Common : {
+    Text            : cbs.code,
+    TextArrangement : #TextOnly,
+    ValueList       : {
+      $Type          : 'Common.ValueListType',
+      CollectionPath : 'ProjectCBS',
+      Label          : 'CBS node',
+      Parameters     : [
+        { $Type : 'Common.ValueListParameterInOut',
+          LocalDataProperty : cbs_ID, ValueListProperty : 'ID' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'code' },
+        { $Type : 'Common.ValueListParameterDisplayOnly', ValueListProperty : 'level' }
+      ]
+    }
+  };
+};
+
+/** The picker's own columns; without them it leads with the UUID. */
+annotate service.Resources with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : code,        Label : 'Code' },
+    { $Type : 'UI.DataField', Value : description, Label : 'Description' },
+    { $Type : 'UI.DataField', Value : level,       Label : 'Level' },
+    { $Type : 'UI.DataField', Value : verticalType, Label : 'Vertical' },
+  ],
+);
+annotate service.Resources with { ID @UI.Hidden };
+
+/**
+ * One step of the chain: what this document produced, and how.
+ */
+annotate service.DocumentLinks with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : linkType, Label : 'Step' },
+    { $Type : 'UI.DataField', Value : fromDoc,  Label : 'From document' },
+    { $Type : 'UI.DataField', Value : toDoc,    Label : 'To document' },
+    { $Type : 'UI.DataField', Value : linkedAt, Label : 'Linked at' },
+  ],
+
+  UI.HeaderInfo : {
+    $Type          : 'UI.HeaderInfoType',
+    TypeName       : 'Chain Step',
+    TypeNamePlural : 'Document Flow',
+    Title          : { $Type : 'UI.DataField', Value : linkType },
+    Description    : { $Type : 'UI.DataField', Value : toDoc },
+  },
+);
+
+annotate service.DocumentLinks with {
+  linkType @title : 'Step';
+  fromDoc  @title : 'From document';
+  toDoc    @title : 'To document';
+  linkedAt @title : 'Linked at';
+  ID       @UI.Hidden;
+};
+
+annotate service.StatusHistory with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : changedOn, Label : 'When' },
+    { $Type : 'UI.DataField', Value : fromState, Label : 'From' },
+    { $Type : 'UI.DataField', Value : toState,   Label : 'To' },
+    { $Type : 'UI.DataField', Value : changedBy, Label : 'By' },
+    { $Type : 'UI.DataField', Value : comment,   Label : 'Comment' },
+  ],
+);
+
+annotate service.StatusHistory with {
+  changedOn @title : 'When';
+  fromState @title : 'From';
+  toState   @title : 'To';
+  changedBy @title : 'By';
+  comment   @title : 'Comment';
+  ID        @UI.Hidden;
+};
 
 annotate service.ResourceRequestLines with @(
   UI.LineItem : [

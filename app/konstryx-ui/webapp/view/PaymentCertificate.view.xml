@@ -169,11 +169,11 @@
 				</Table>
 				<HBox wrap="Wrap" class="sapUiSmallMargin">
 					<VBox class="kxKpiTile sapUiMediumMarginEnd">
-						<Label text="Triggers · S/4 Supplier Invoice"/>
+						<Label text="Triggers · ERP Supplier Invoice"/>
 						<Text text="{view>/pc/s4InvoiceRef}" class="kxMono"/>
 					</VBox>
 					<VBox class="kxKpiTile sapUiMediumMarginEnd">
-						<Label text="S/4 API"/>
+						<Label text="ERP API"/>
 						<Text text="{view>/pc/s4Api}" class="kxMono"/>
 					</VBox>
 					<VBox class="kxKpiTile">

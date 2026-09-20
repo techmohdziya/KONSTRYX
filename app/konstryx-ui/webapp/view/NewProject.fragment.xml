@@ -67,7 +67,7 @@
 			</Table>
 
 			<MessageStrip
-				text="Creating a project does not put it in S/4. Release it when it is ready, and the connector posts it then."
+				text="Creating a project does not put it in the ERP. Release it when it is ready, and the connector posts it then."
 				type="Information" showIcon="true" class="sapUiSmallMargin"/>
 		</content>
 		<beginButton>

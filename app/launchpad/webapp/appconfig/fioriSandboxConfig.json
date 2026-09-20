@@ -1,0 +1,4797 @@
+{
+  "ushell": {
+    "spaces": {
+      "enabled": true
+    }
+  },
+  "renderers": {
+    "fiori2": {
+      "componentData": {
+        "config": {
+          "enableSearch": false
+        }
+      }
+    }
+  },
+  "services": {
+    "CommonDataModel": {
+      "adapter": {
+        "config": {
+          "siteData": {
+            "site": {
+              "identification": {
+                "id": "konstryx-site",
+                "title": "KONSTRYX"
+              },
+              "payload": {
+                "spaceOrder": [
+                  "konstryx-planning",
+                  "konstryx-execution",
+                  "konstryx-commercial",
+                  "konstryx-master"
+                ]
+              }
+            },
+            "spaces": {
+              "konstryx-planning": {
+                "identification": {
+                  "id": "konstryx-planning",
+                  "title": "Planning",
+                  "description": "The project, what it is worth, and what it may spend",
+                  "entityType": "space"
+                },
+                "payload": {
+                  "pages": [
+                    {
+                      "id": "konstryx-planning-page"
+                    }
+                  ]
+                }
+              },
+              "konstryx-execution": {
+                "identification": {
+                  "id": "konstryx-execution",
+                  "title": "Execution",
+                  "description": "Sourcing the work, and recording what was done",
+                  "entityType": "space"
+                },
+                "payload": {
+                  "pages": [
+                    {
+                      "id": "konstryx-execution-page"
+                    }
+                  ]
+                }
+              },
+              "konstryx-commercial": {
+                "identification": {
+                  "id": "konstryx-commercial",
+                  "title": "Commercial",
+                  "description": "Certifying and paying for the work, and what it is making",
+                  "entityType": "space"
+                },
+                "payload": {
+                  "pages": [
+                    {
+                      "id": "konstryx-commercial-page"
+                    }
+                  ]
+                }
+              },
+              "konstryx-master": {
+                "identification": {
+                  "id": "konstryx-master",
+                  "title": "Master Data",
+                  "description": "The catalogues every document draws on",
+                  "entityType": "space"
+                },
+                "payload": {
+                  "pages": [
+                    {
+                      "id": "konstryx-master-page"
+                    }
+                  ]
+                }
+              }
+            },
+            "pages": {
+              "konstryx-planning-page": {
+                "identification": {
+                  "id": "konstryx-planning-page",
+                  "title": "Planning",
+                  "description": "The project, what it is worth, and what it may spend"
+                },
+                "payload": {
+                  "layout": {
+                    "sectionOrder": [
+                      "overview",
+                      "set-up"
+                    ]
+                  },
+                  "sections": {
+                    "overview": {
+                      "id": "overview",
+                      "title": "Overview",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-project360"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-project360": {
+                          "id": "viz-konstryx-project360",
+                          "vizId": "viz-konstryx-project360"
+                        }
+                      }
+                    },
+                    "set-up": {
+                      "id": "set-up",
+                      "title": "Set up",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-project",
+                          "viz-konstryx-boq",
+                          "viz-konstryx-budget"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-project": {
+                          "id": "viz-konstryx-project",
+                          "vizId": "viz-konstryx-project"
+                        },
+                        "viz-konstryx-boq": {
+                          "id": "viz-konstryx-boq",
+                          "vizId": "viz-konstryx-boq"
+                        },
+                        "viz-konstryx-budget": {
+                          "id": "viz-konstryx-budget",
+                          "vizId": "viz-konstryx-budget"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "konstryx-execution-page": {
+                "identification": {
+                  "id": "konstryx-execution-page",
+                  "title": "Execution",
+                  "description": "Sourcing the work, and recording what was done"
+                },
+                "payload": {
+                  "layout": {
+                    "sectionOrder": [
+                      "today",
+                      "source-resources",
+                      "bought-and-billed",
+                      "on-site"
+                    ]
+                  },
+                  "sections": {
+                    "today": {
+                      "id": "today",
+                      "title": "Today",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-approval",
+                          "viz-konstryx-gang",
+                          "viz-konstryx-absence",
+                          "viz-konstryx-workfront"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-approval": {
+                          "id": "viz-konstryx-approval",
+                          "vizId": "viz-konstryx-approval"
+                        },
+                        "viz-konstryx-gang": {
+                          "id": "viz-konstryx-gang",
+                          "vizId": "viz-konstryx-gang"
+                        },
+                        "viz-konstryx-absence": {
+                          "id": "viz-konstryx-absence",
+                          "vizId": "viz-konstryx-absence"
+                        },
+                        "viz-konstryx-workfront": {
+                          "id": "viz-konstryx-workfront",
+                          "vizId": "viz-konstryx-workfront"
+                        }
+                      }
+                    },
+                    "source-resources": {
+                      "id": "source-resources",
+                      "title": "Source resources",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-resource-request",
+                          "viz-konstryx-requisition"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-resource-request": {
+                          "id": "viz-konstryx-resource-request",
+                          "vizId": "viz-konstryx-resource-request"
+                        },
+                        "viz-konstryx-requisition": {
+                          "id": "viz-konstryx-requisition",
+                          "vizId": "viz-konstryx-requisition"
+                        }
+                      }
+                    },
+                    "bought-and-billed": {
+                      "id": "bought-and-billed",
+                      "title": "Bought and billed",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-po",
+                          "viz-konstryx-invoice"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-po": {
+                          "id": "viz-konstryx-po",
+                          "vizId": "viz-konstryx-po"
+                        },
+                        "viz-konstryx-invoice": {
+                          "id": "viz-konstryx-invoice",
+                          "vizId": "viz-konstryx-invoice"
+                        }
+                      }
+                    },
+                    "on-site": {
+                      "id": "on-site",
+                      "title": "On site",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-reservation",
+                          "viz-konstryx-resvariation",
+                          "viz-konstryx-pull",
+                          "viz-konstryx-consumption",
+                          "viz-konstryx-timesheet",
+                          "viz-konstryx-productivity"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-reservation": {
+                          "id": "viz-konstryx-reservation",
+                          "vizId": "viz-konstryx-reservation"
+                        },
+                        "viz-konstryx-resvariation": {
+                          "id": "viz-konstryx-resvariation",
+                          "vizId": "viz-konstryx-resvariation"
+                        },
+                        "viz-konstryx-pull": {
+                          "id": "viz-konstryx-pull",
+                          "vizId": "viz-konstryx-pull"
+                        },
+                        "viz-konstryx-consumption": {
+                          "id": "viz-konstryx-consumption",
+                          "vizId": "viz-konstryx-consumption"
+                        },
+                        "viz-konstryx-timesheet": {
+                          "id": "viz-konstryx-timesheet",
+                          "vizId": "viz-konstryx-timesheet"
+                        },
+                        "viz-konstryx-productivity": {
+                          "id": "viz-konstryx-productivity",
+                          "vizId": "viz-konstryx-productivity"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "konstryx-commercial-page": {
+                "identification": {
+                  "id": "konstryx-commercial-page",
+                  "title": "Commercial",
+                  "description": "Certifying and paying for the work, and what it is making"
+                },
+                "payload": {
+                  "layout": {
+                    "sectionOrder": [
+                      "change-control",
+                      "certification",
+                      "reports"
+                    ]
+                  },
+                  "sections": {
+                    "change-control": {
+                      "id": "change-control",
+                      "title": "Change control",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-variation"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-variation": {
+                          "id": "viz-konstryx-variation",
+                          "vizId": "viz-konstryx-variation"
+                        }
+                      }
+                    },
+                    "certification": {
+                      "id": "certification",
+                      "title": "Certification",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-payment-certificate"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-payment-certificate": {
+                          "id": "viz-konstryx-payment-certificate",
+                          "vizId": "viz-konstryx-payment-certificate"
+                        }
+                      }
+                    },
+                    "reports": {
+                      "id": "reports",
+                      "title": "Reports",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-report",
+                          "viz-konstryx-cashflow"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-report": {
+                          "id": "viz-konstryx-report",
+                          "vizId": "viz-konstryx-report"
+                        },
+                        "viz-konstryx-cashflow": {
+                          "id": "viz-konstryx-cashflow",
+                          "vizId": "viz-konstryx-cashflow"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "konstryx-master-page": {
+                "identification": {
+                  "id": "konstryx-master-page",
+                  "title": "Master Data",
+                  "description": "The catalogues every document draws on"
+                },
+                "payload": {
+                  "layout": {
+                    "sectionOrder": [
+                      "catalogues",
+                      "structures",
+                      "norms-&-rates",
+                      "configuration",
+                      "workforce",
+                      "people"
+                    ]
+                  },
+                  "sections": {
+                    "catalogues": {
+                      "id": "catalogues",
+                      "title": "Catalogues",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-resource",
+                          "viz-konstryx-material",
+                          "viz-konstryx-vendor",
+                          "viz-konstryx-customer"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-resource": {
+                          "id": "viz-konstryx-resource",
+                          "vizId": "viz-konstryx-resource"
+                        },
+                        "viz-konstryx-material": {
+                          "id": "viz-konstryx-material",
+                          "vizId": "viz-konstryx-material"
+                        },
+                        "viz-konstryx-vendor": {
+                          "id": "viz-konstryx-vendor",
+                          "vizId": "viz-konstryx-vendor"
+                        },
+                        "viz-konstryx-customer": {
+                          "id": "viz-konstryx-customer",
+                          "vizId": "viz-konstryx-customer"
+                        }
+                      }
+                    },
+                    "structures": {
+                      "id": "structures",
+                      "title": "Structures",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-cbs"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-cbs": {
+                          "id": "viz-konstryx-cbs",
+                          "vizId": "viz-konstryx-cbs"
+                        }
+                      }
+                    },
+                    "norms-&-rates": {
+                      "id": "norms-&-rates",
+                      "title": "Norms & rates",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-productivity-rate",
+                          "viz-konstryx-consumption-rate",
+                          "viz-konstryx-rate"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-productivity-rate": {
+                          "id": "viz-konstryx-productivity-rate",
+                          "vizId": "viz-konstryx-productivity-rate"
+                        },
+                        "viz-konstryx-consumption-rate": {
+                          "id": "viz-konstryx-consumption-rate",
+                          "vizId": "viz-konstryx-consumption-rate"
+                        },
+                        "viz-konstryx-rate": {
+                          "id": "viz-konstryx-rate",
+                          "vizId": "viz-konstryx-rate"
+                        }
+                      }
+                    },
+                    "configuration": {
+                      "id": "configuration",
+                      "title": "Configuration",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-exchange-rate",
+                          "viz-konstryx-persona",
+                          "viz-konstryx-user-assignment",
+                          "viz-konstryx-approval-scheme"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-exchange-rate": {
+                          "id": "viz-konstryx-exchange-rate",
+                          "vizId": "viz-konstryx-exchange-rate"
+                        },
+                        "viz-konstryx-persona": {
+                          "id": "viz-konstryx-persona",
+                          "vizId": "viz-konstryx-persona"
+                        },
+                        "viz-konstryx-user-assignment": {
+                          "id": "viz-konstryx-user-assignment",
+                          "vizId": "viz-konstryx-user-assignment"
+                        },
+                        "viz-konstryx-approval-scheme": {
+                          "id": "viz-konstryx-approval-scheme",
+                          "vizId": "viz-konstryx-approval-scheme"
+                        }
+                      }
+                    },
+                    "workforce": {
+                      "id": "workforce",
+                      "title": "Workforce",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-trade",
+                          "viz-konstryx-shift-pattern",
+                          "viz-konstryx-holiday-calendar",
+                          "viz-konstryx-crew",
+                          "viz-konstryx-absence-reason"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-trade": {
+                          "id": "viz-konstryx-trade",
+                          "vizId": "viz-konstryx-trade"
+                        },
+                        "viz-konstryx-shift-pattern": {
+                          "id": "viz-konstryx-shift-pattern",
+                          "vizId": "viz-konstryx-shift-pattern"
+                        },
+                        "viz-konstryx-holiday-calendar": {
+                          "id": "viz-konstryx-holiday-calendar",
+                          "vizId": "viz-konstryx-holiday-calendar"
+                        },
+                        "viz-konstryx-crew": {
+                          "id": "viz-konstryx-crew",
+                          "vizId": "viz-konstryx-crew"
+                        },
+                        "viz-konstryx-absence-reason": {
+                          "id": "viz-konstryx-absence-reason",
+                          "vizId": "viz-konstryx-absence-reason"
+                        }
+                      }
+                    },
+                    "people": {
+                      "id": "people",
+                      "title": "People",
+                      "layout": {
+                        "vizOrder": [
+                          "viz-konstryx-worker",
+                          "viz-konstryx-sc-worker",
+                          "viz-konstryx-engagement",
+                          "viz-konstryx-roster",
+                          "viz-konstryx-worker-push"
+                        ]
+                      },
+                      "viz": {
+                        "viz-konstryx-worker": {
+                          "id": "viz-konstryx-worker",
+                          "vizId": "viz-konstryx-worker"
+                        },
+                        "viz-konstryx-sc-worker": {
+                          "id": "viz-konstryx-sc-worker",
+                          "vizId": "viz-konstryx-sc-worker"
+                        },
+                        "viz-konstryx-engagement": {
+                          "id": "viz-konstryx-engagement",
+                          "vizId": "viz-konstryx-engagement"
+                        },
+                        "viz-konstryx-roster": {
+                          "id": "viz-konstryx-roster",
+                          "vizId": "viz-konstryx-roster"
+                        },
+                        "viz-konstryx-worker-push": {
+                          "id": "viz-konstryx-worker-push",
+                          "vizId": "viz-konstryx-worker-push"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "applications": {
+              "konstryxproject360": {
+                "sap.app": {
+                  "id": "konstryxproject360",
+                  "title": "Project 360",
+                  "subTitle": "Every project on one page",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxProject360-display": {
+                        "semanticObject": "KonstryxProject360",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://overview-chart"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxproject360"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-project360",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxproject": {
+                "sap.app": {
+                  "id": "konstryxproject",
+                  "title": "Projects",
+                  "subTitle": "Project setup and WBS",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxProject-display": {
+                        "semanticObject": "KonstryxProject",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://project-definition-triangle-2"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxproject"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-project",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxboq": {
+                "sap.app": {
+                  "id": "konstryxboq",
+                  "title": "Bills of Quantities",
+                  "subTitle": "Contract bills and items",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxBOQ-display": {
+                        "semanticObject": "KonstryxBOQ",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://list"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxboq"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-boq",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxbudget": {
+                "sap.app": {
+                  "id": "konstryxbudget",
+                  "title": "Budgets",
+                  "subTitle": "Budget lines and encumbrance",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxBudget-display": {
+                        "semanticObject": "KonstryxBudget",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://money-bills"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxbudget"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-budget",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxapproval": {
+                "sap.app": {
+                  "id": "konstryxapproval",
+                  "title": "My Approvals",
+                  "subTitle": "Documents waiting on your decision",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxApproval-display": {
+                        "semanticObject": "KonstryxApproval",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://approvals"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxapproval"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-approval",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxgang": {
+                "sap.app": {
+                  "id": "konstryxgang",
+                  "title": "Gangs",
+                  "subTitle": "Who is on site, against what the template said",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxGang-display": {
+                        "semanticObject": "KonstryxGang",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://group"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxgang"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-gang",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxabsence": {
+                "sap.app": {
+                  "id": "konstryxabsence",
+                  "title": "Availability",
+                  "subTitle": "Who cannot be planned, and why",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxAbsence-display": {
+                        "semanticObject": "KonstryxAbsence",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://employee-rejections"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxabsence"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-absence",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxworkfront": {
+                "sap.app": {
+                  "id": "konstryxworkfront",
+                  "title": "Today's Work Front",
+                  "subTitle": "What the site is building, and who is on it",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxWorkFront-display": {
+                        "semanticObject": "KonstryxWorkFront",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://employee-pane"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxworkfront"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-workfront",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxresourcerequest": {
+                "sap.app": {
+                  "id": "konstryxresourcerequest",
+                  "title": "Resource Requests",
+                  "subTitle": "The RR spine of the chain",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxResourceRequest-display": {
+                        "semanticObject": "KonstryxResourceRequest",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://request"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxresourcerequest"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-resource-request",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxrequisition": {
+                "sap.app": {
+                  "id": "konstryxrequisition",
+                  "title": "Purchase Requisitions",
+                  "subTitle": "Raised to ERP",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxPurchaseRequisition-display": {
+                        "semanticObject": "KonstryxPurchaseRequisition",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://cart"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxrequisition"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-requisition",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxpo": {
+                "sap.app": {
+                  "id": "konstryxpo",
+                  "title": "Purchase Orders",
+                  "subTitle": "Raised by ERP against our requisitions",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxPurchaseOrder-display": {
+                        "semanticObject": "KonstryxPurchaseOrder",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://shipping-status"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxpo"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-po",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxinvoice": {
+                "sap.app": {
+                  "id": "konstryxinvoice",
+                  "title": "Supplier Invoices",
+                  "subTitle": "Vendor bills ERP FI posted against our orders",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxSupplierInvoice-display": {
+                        "semanticObject": "KonstryxSupplierInvoice",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://receipt"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxinvoice"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-invoice",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxreservation": {
+                "sap.app": {
+                  "id": "konstryxreservation",
+                  "title": "Reservations",
+                  "subTitle": "Reserved resources",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxReservation-display": {
+                        "semanticObject": "KonstryxReservation",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://sales-order"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxreservation"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-reservation",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxresvariation": {
+                "sap.app": {
+                  "id": "konstryxresvariation",
+                  "title": "Reservation Variations",
+                  "subTitle": "Changes to what a reservation has locked",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxReservationVariation-display": {
+                        "semanticObject": "KonstryxReservationVariation",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://request"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxresvariation"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-resvariation",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxpull": {
+                "sap.app": {
+                  "id": "konstryxpull",
+                  "title": "Stock Draws",
+                  "subTitle": "Material drawn from a store against a reservation",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxPullRequest-display": {
+                        "semanticObject": "KonstryxPullRequest",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://shipping-status"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxpull"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-pull",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxconsumption": {
+                "sap.app": {
+                  "id": "konstryxconsumption",
+                  "title": "Material Consumption",
+                  "subTitle": "What the work used against the norm it should have used",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxConsumption-display": {
+                        "semanticObject": "KonstryxConsumption",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://measuring-point"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxconsumption"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-consumption",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxtimesheet": {
+                "sap.app": {
+                  "id": "konstryxtimesheet",
+                  "title": "Daily Logs",
+                  "subTitle": "Site attendance and hours",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxTimesheet-display": {
+                        "semanticObject": "KonstryxTimesheet",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://timesheet"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxtimesheet"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-timesheet",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxproductivity": {
+                "sap.app": {
+                  "id": "konstryxproductivity",
+                  "title": "Productivity",
+                  "subTitle": "Output per man-hour",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxProductivity-display": {
+                        "semanticObject": "KonstryxProductivity",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://line-chart"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxproductivity"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-productivity",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxvariation": {
+                "sap.app": {
+                  "id": "konstryxvariation",
+                  "title": "Variation Orders",
+                  "subTitle": "What changed after the contract was signed",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxVariation-display": {
+                        "semanticObject": "KonstryxVariation",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://request"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxvariation"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-variation",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxpaymentcertificate": {
+                "sap.app": {
+                  "id": "konstryxpaymentcertificate",
+                  "title": "Payment Certificates",
+                  "subTitle": "Subcontractor certification",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxPaymentCertificate-display": {
+                        "semanticObject": "KonstryxPaymentCertificate",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://payment-approval"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxpaymentcertificate"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-payment-certificate",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxreport": {
+                "sap.app": {
+                  "id": "konstryxreport",
+                  "title": "Cost Value Reconciliation",
+                  "subTitle": "Earned against spent, per period",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxReport-display": {
+                        "semanticObject": "KonstryxReport",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://business-objects-experience"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxreport"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-report",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxcashflow": {
+                "sap.app": {
+                  "id": "konstryxcashflow",
+                  "title": "Project Cashflow",
+                  "subTitle": "Planned spend against actual, per period",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxCashflow-display": {
+                        "semanticObject": "KonstryxCashflow",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://line-charts"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxcashflow"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-cashflow",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxresource": {
+                "sap.app": {
+                  "id": "konstryxresource",
+                  "title": "Resources",
+                  "subTitle": "Resource catalogue",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxResource-display": {
+                        "semanticObject": "KonstryxResource",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://org-chart"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxresource"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-resource",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxmaterial": {
+                "sap.app": {
+                  "id": "konstryxmaterial",
+                  "title": "Materials",
+                  "subTitle": "Material master from ERP",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxMaterial-display": {
+                        "semanticObject": "KonstryxMaterial",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://product"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxmaterial"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-material",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxvendor": {
+                "sap.app": {
+                  "id": "konstryxvendor",
+                  "title": "Vendors",
+                  "subTitle": "Supplier master from ERP",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxVendor-display": {
+                        "semanticObject": "KonstryxVendor",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://supplier"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxvendor"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-vendor",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxcustomer": {
+                "sap.app": {
+                  "id": "konstryxcustomer",
+                  "title": "Customers",
+                  "subTitle": "Customer master from ERP",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxCustomer-display": {
+                        "semanticObject": "KonstryxCustomer",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://customer"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxcustomer"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-customer",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxcbs": {
+                "sap.app": {
+                  "id": "konstryxcbs",
+                  "title": "Cost Breakdown Library",
+                  "subTitle": "The CBS every project instantiates",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxCBS-display": {
+                        "semanticObject": "KonstryxCBS",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://tree"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxcbs"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-cbs",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxproductivityrate": {
+                "sap.app": {
+                  "id": "konstryxproductivityrate",
+                  "title": "Productivity Norms",
+                  "subTitle": "Output per hour, per crew and activity",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxProductivityRate-display": {
+                        "semanticObject": "KonstryxProductivityRate",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://performance"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxproductivityrate"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-productivity-rate",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxconsumptionrate": {
+                "sap.app": {
+                  "id": "konstryxconsumptionrate",
+                  "title": "Consumption Norms",
+                  "subTitle": "Material per unit, with wastage",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxConsumptionRate-display": {
+                        "semanticObject": "KonstryxConsumptionRate",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://measuring-point"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxconsumptionrate"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-consumption-rate",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxrate": {
+                "sap.app": {
+                  "id": "konstryxrate",
+                  "title": "Rate Master",
+                  "subTitle": "What a resource costs, by basis and date",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxRate-display": {
+                        "semanticObject": "KonstryxRate",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://currency"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxrate"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-rate",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxexchangerate": {
+                "sap.app": {
+                  "id": "konstryxexchangerate",
+                  "title": "Exchange Rates",
+                  "subTitle": "Rates by pair and type",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxExchangeRate-display": {
+                        "semanticObject": "KonstryxExchangeRate",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://currency"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxexchangerate"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-exchange-rate",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxpersona": {
+                "sap.app": {
+                  "id": "konstryxpersona",
+                  "title": "Personas",
+                  "subTitle": "What each role in the product may do",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxPersona-display": {
+                        "semanticObject": "KonstryxPersona",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://key-user-settings"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxpersona"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-persona",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxuserassignment": {
+                "sap.app": {
+                  "id": "konstryxuserassignment",
+                  "title": "User Assignments",
+                  "subTitle": "Who holds which persona, and where",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxUserAssignment-display": {
+                        "semanticObject": "KonstryxUserAssignment",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://user-settings"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxuserassignment"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-user-assignment",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxapprovalscheme": {
+                "sap.app": {
+                  "id": "konstryxapprovalscheme",
+                  "title": "Approval Schemes",
+                  "subTitle": "Who signs which document, and above what value",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxApprovalScheme-display": {
+                        "semanticObject": "KonstryxApprovalScheme",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://workflow-tasks"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxapprovalscheme"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-approval-scheme",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxtrade": {
+                "sap.app": {
+                  "id": "konstryxtrade",
+                  "title": "Trades",
+                  "subTitle": "The trades, their grades and the cards they need",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxTrade-display": {
+                        "semanticObject": "KonstryxTrade",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://wrench"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxtrade"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-trade",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxshiftpattern": {
+                "sap.app": {
+                  "id": "konstryxshiftpattern",
+                  "title": "Shift Patterns",
+                  "subTitle": "The working day and where overtime begins",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxShiftPattern-display": {
+                        "semanticObject": "KonstryxShiftPattern",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://time-entry-request"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxshiftpattern"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-shift-pattern",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxholidaycalendar": {
+                "sap.app": {
+                  "id": "konstryxholidaycalendar",
+                  "title": "Holiday Calendars",
+                  "subTitle": "The days that change what a man is paid",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxHolidayCalendar-display": {
+                        "semanticObject": "KonstryxHolidayCalendar",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://appointment-2"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxholidaycalendar"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-holiday-calendar",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxcrew": {
+                "sap.app": {
+                  "id": "konstryxcrew",
+                  "title": "Crew Templates",
+                  "subTitle": "What a gang contains, and what it costs",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxCrew-display": {
+                        "semanticObject": "KonstryxCrew",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://employee"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxcrew"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-crew",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxabsencereason": {
+                "sap.app": {
+                  "id": "konstryxabsencereason",
+                  "title": "Absence Reasons",
+                  "subTitle": "What follows from each reason",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxAbsenceReason-display": {
+                        "semanticObject": "KonstryxAbsenceReason",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://survey"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxabsencereason"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-absence-reason",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxworker": {
+                "sap.app": {
+                  "id": "konstryxworker",
+                  "title": "Workers",
+                  "subTitle": "Own payroll, and what each man is qualified for",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxWorker-display": {
+                        "semanticObject": "KonstryxWorker",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://employee-pane"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxworker"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-worker",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxscworker": {
+                "sap.app": {
+                  "id": "konstryxscworker",
+                  "title": "Subcontract Workers",
+                  "subTitle": "The man, held once, across every supplier",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxScWorker-display": {
+                        "semanticObject": "KonstryxScWorker",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://customer"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxscworker"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-sc-worker",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxengagement": {
+                "sap.app": {
+                  "id": "konstryxengagement",
+                  "title": "Engagements",
+                  "subTitle": "One spell on site against one order item",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxEngagement-display": {
+                        "semanticObject": "KonstryxEngagement",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://contacts"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxengagement"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-engagement",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxroster": {
+                "sap.app": {
+                  "id": "konstryxroster",
+                  "title": "Roster Upload",
+                  "subTitle": "A supplier's list, judged before it is believed",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxRoster-display": {
+                        "semanticObject": "KonstryxRoster",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://upload-to-cloud"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxroster"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-roster",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxworkerpush": {
+                "sap.app": {
+                  "id": "konstryxworkerpush",
+                  "title": "Work Agreements",
+                  "subTitle": "Men whose agreement has not reached the ERP",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxWorkerPush-display": {
+                        "semanticObject": "KonstryxWorkerPush",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://synchronize"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxworkerpush"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-worker-push",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              }
+            },
+            "visualizations": {
+              "viz-konstryx-project360": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxproject360",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Project 360",
+                    "subTitle": "Every project on one page"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://overview-chart"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxproject360",
+                      "inboundId": "KonstryxProject360-display"
+                    },
+                    "numberUnit": "projects",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/ProjectOverviews/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-project": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxproject",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Projects",
+                    "subTitle": "Project setup and WBS"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://project-definition-triangle-2"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxproject",
+                      "inboundId": "KonstryxProject-display"
+                    },
+                    "numberUnit": "projects",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/Projects/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-boq": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxboq",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Bills of Quantities",
+                    "subTitle": "Contract bills and items"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://list"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxboq",
+                      "inboundId": "KonstryxBOQ-display"
+                    },
+                    "numberUnit": "bills",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/BOQs/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-budget": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxbudget",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Budgets",
+                    "subTitle": "Budget lines and encumbrance"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://money-bills"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxbudget",
+                      "inboundId": "KonstryxBudget-display"
+                    },
+                    "numberUnit": "budgets",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/budget/Budgets/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-approval": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxapproval",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "My Approvals",
+                    "subTitle": "Documents waiting on your decision"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://approvals"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxapproval",
+                      "inboundId": "KonstryxApproval-display"
+                    },
+                    "numberUnit": "waiting on you",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/collaboration/MyApprovals/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-gang": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxgang",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Gangs",
+                    "subTitle": "Who is on site, against what the template said"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://group"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxgang",
+                      "inboundId": "KonstryxGang-display"
+                    },
+                    "numberUnit": "gangs",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Gangs/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-absence": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxabsence",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Availability",
+                    "subTitle": "Who cannot be planned, and why"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://employee-rejections"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxabsence",
+                      "inboundId": "KonstryxAbsence-display"
+                    },
+                    "numberUnit": "away",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Absences/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-workfront": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxworkfront",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Today's Work Front",
+                    "subTitle": "What the site is building, and who is on it"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://employee-pane"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxworkfront",
+                      "inboundId": "KonstryxWorkFront-display"
+                    },
+                    "numberUnit": "fronts open",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/WorkFronts/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-resource-request": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxresourcerequest",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Resource Requests",
+                    "subTitle": "The RR spine of the chain"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://request"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxresourcerequest",
+                      "inboundId": "KonstryxResourceRequest-display"
+                    },
+                    "numberUnit": "requests",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/workflow/ResourceRequests/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-requisition": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxrequisition",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Purchase Requisitions",
+                    "subTitle": "Raised to ERP"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://cart"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxrequisition",
+                      "inboundId": "KonstryxPurchaseRequisition-display"
+                    },
+                    "numberUnit": "requisitions",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/material/PurchaseRequisitions/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-po": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxpo",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Purchase Orders",
+                    "subTitle": "Raised by ERP against our requisitions"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://shipping-status"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxpo",
+                      "inboundId": "KonstryxPurchaseOrder-display"
+                    },
+                    "numberUnit": "orders placed",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/material/PurchaseOrders/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-invoice": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxinvoice",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Supplier Invoices",
+                    "subTitle": "Vendor bills ERP FI posted against our orders"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://receipt"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxinvoice",
+                      "inboundId": "KonstryxSupplierInvoice-display"
+                    },
+                    "numberUnit": "bills received",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/material/SupplierInvoices/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-reservation": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxreservation",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Reservations",
+                    "subTitle": "Reserved resources"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://sales-order"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxreservation",
+                      "inboundId": "KonstryxReservation-display"
+                    },
+                    "numberUnit": "reservations",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/workflow/Reservations/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-resvariation": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxresvariation",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Reservation Variations",
+                    "subTitle": "Changes to what a reservation has locked"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://request"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxresvariation",
+                      "inboundId": "KonstryxReservationVariation-display"
+                    },
+                    "numberUnit": "variations",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/workflow/ReservationVariations/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-pull": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxpull",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Stock Draws",
+                    "subTitle": "Material drawn from a store against a reservation"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://shipping-status"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxpull",
+                      "inboundId": "KonstryxPullRequest-display"
+                    },
+                    "numberUnit": "stock draws",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/material/PullRequests/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-consumption": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxconsumption",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Material Consumption",
+                    "subTitle": "What the work used against the norm it should have used"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://measuring-point"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxconsumption",
+                      "inboundId": "KonstryxConsumption-display"
+                    },
+                    "numberUnit": "days measured",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/material/ConsumptionRecords/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-timesheet": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxtimesheet",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Daily Logs",
+                    "subTitle": "Site attendance and hours"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://timesheet"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxtimesheet",
+                      "inboundId": "KonstryxTimesheet-display"
+                    },
+                    "numberUnit": "days",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/workflow/Timesheets/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-productivity": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxproductivity",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Productivity",
+                    "subTitle": "Output per man-hour"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://line-chart"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxproductivity",
+                      "inboundId": "KonstryxProductivity-display"
+                    },
+                    "numberUnit": "measured",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/workflow/ProductivitySnapshots/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-variation": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxvariation",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Variation Orders",
+                    "subTitle": "What changed after the contract was signed"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://request"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxvariation",
+                      "inboundId": "KonstryxVariation-display"
+                    },
+                    "numberUnit": "variations",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/Variations/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-payment-certificate": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxpaymentcertificate",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Payment Certificates",
+                    "subTitle": "Subcontractor certification"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://payment-approval"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxpaymentcertificate",
+                      "inboundId": "KonstryxPaymentCertificate-display"
+                    },
+                    "numberUnit": "certificates",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/subcontract/PaymentCertificates/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-report": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxreport",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Cost Value Reconciliation",
+                    "subTitle": "Earned against spent, per period"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://business-objects-experience"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxreport",
+                      "inboundId": "KonstryxReport-display"
+                    },
+                    "numberUnit": "periods",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/PeriodReports/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-cashflow": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxcashflow",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Project Cashflow",
+                    "subTitle": "Planned spend against actual, per period"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://line-charts"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxcashflow",
+                      "inboundId": "KonstryxCashflow-display"
+                    },
+                    "numberUnit": "periods",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/Cashflow/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-resource": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxresource",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Resources",
+                    "subTitle": "Resource catalogue"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://org-chart"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxresource",
+                      "inboundId": "KonstryxResource-display"
+                    },
+                    "numberUnit": "resources",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Resources/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-material": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxmaterial",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Materials",
+                    "subTitle": "Material master from ERP"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://product"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxmaterial",
+                      "inboundId": "KonstryxMaterial-display"
+                    },
+                    "numberUnit": "materials",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Materials/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-vendor": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxvendor",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Vendors",
+                    "subTitle": "Supplier master from ERP"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://supplier"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxvendor",
+                      "inboundId": "KonstryxVendor-display"
+                    },
+                    "numberUnit": "vendors",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Vendors/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-customer": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxcustomer",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Customers",
+                    "subTitle": "Customer master from ERP"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://customer"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxcustomer",
+                      "inboundId": "KonstryxCustomer-display"
+                    },
+                    "numberUnit": "customers",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Customers/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-cbs": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxcbs",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Cost Breakdown Library",
+                    "subTitle": "The CBS every project instantiates"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://tree"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxcbs",
+                      "inboundId": "KonstryxCBS-display"
+                    },
+                    "numberUnit": "nodes",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/CBSLibrary/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-productivity-rate": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxproductivityrate",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Productivity Norms",
+                    "subTitle": "Output per hour, per crew and activity"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://performance"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxproductivityrate",
+                      "inboundId": "KonstryxProductivityRate-display"
+                    },
+                    "numberUnit": "norms",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/ProductivityRates/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-consumption-rate": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxconsumptionrate",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Consumption Norms",
+                    "subTitle": "Material per unit, with wastage"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://measuring-point"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxconsumptionrate",
+                      "inboundId": "KonstryxConsumptionRate-display"
+                    },
+                    "numberUnit": "norms",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/ConsumptionRates/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-rate": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxrate",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Rate Master",
+                    "subTitle": "What a resource costs, by basis and date"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://currency"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxrate",
+                      "inboundId": "KonstryxRate-display"
+                    },
+                    "numberUnit": "rates",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Rates/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-exchange-rate": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxexchangerate",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Exchange Rates",
+                    "subTitle": "Rates by pair and type"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://currency"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxexchangerate",
+                      "inboundId": "KonstryxExchangeRate-display"
+                    },
+                    "numberUnit": "rates",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/admin/ExchangeRates/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-persona": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxpersona",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Personas",
+                    "subTitle": "What each role in the product may do"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://key-user-settings"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxpersona",
+                      "inboundId": "KonstryxPersona-display"
+                    },
+                    "numberUnit": "personas",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/authorization/Personas/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-user-assignment": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxuserassignment",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "User Assignments",
+                    "subTitle": "Who holds which persona, and where"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://user-settings"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxuserassignment",
+                      "inboundId": "KonstryxUserAssignment-display"
+                    },
+                    "numberUnit": "assignments",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/authorization/UserAssignments/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-approval-scheme": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxapprovalscheme",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Approval Schemes",
+                    "subTitle": "Who signs which document, and above what value"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://workflow-tasks"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxapprovalscheme",
+                      "inboundId": "KonstryxApprovalScheme-display"
+                    },
+                    "numberUnit": "schemes",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/authorization/ApprovalSchemes/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-trade": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxtrade",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Trades",
+                    "subTitle": "The trades, their grades and the cards they need"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://wrench"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxtrade",
+                      "inboundId": "KonstryxTrade-display"
+                    },
+                    "numberUnit": "trades",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Trades/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-shift-pattern": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxshiftpattern",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Shift Patterns",
+                    "subTitle": "The working day and where overtime begins"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://time-entry-request"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxshiftpattern",
+                      "inboundId": "KonstryxShiftPattern-display"
+                    },
+                    "numberUnit": "patterns",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/ShiftPatterns/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-holiday-calendar": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxholidaycalendar",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Holiday Calendars",
+                    "subTitle": "The days that change what a man is paid"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://appointment-2"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxholidaycalendar",
+                      "inboundId": "KonstryxHolidayCalendar-display"
+                    },
+                    "numberUnit": "calendars",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/HolidayCalendars/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-crew": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxcrew",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Crew Templates",
+                    "subTitle": "What a gang contains, and what it costs"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://employee"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxcrew",
+                      "inboundId": "KonstryxCrew-display"
+                    },
+                    "numberUnit": "crews",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/CrewTemplates/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-absence-reason": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxabsencereason",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Absence Reasons",
+                    "subTitle": "What follows from each reason"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://survey"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxabsencereason",
+                      "inboundId": "KonstryxAbsenceReason-display"
+                    },
+                    "numberUnit": "reasons",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/AbsenceReasons/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-worker": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxworker",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Workers",
+                    "subTitle": "Own payroll, and what each man is qualified for"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://employee-pane"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxworker",
+                      "inboundId": "KonstryxWorker-display"
+                    },
+                    "numberUnit": "workers",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/Workers/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-sc-worker": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxscworker",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Subcontract Workers",
+                    "subTitle": "The man, held once, across every supplier"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://customer"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxscworker",
+                      "inboundId": "KonstryxScWorker-display"
+                    },
+                    "numberUnit": "workers",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/SubcontractWorkers/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-engagement": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxengagement",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Engagements",
+                    "subTitle": "One spell on site against one order item"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://contacts"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxengagement",
+                      "inboundId": "KonstryxEngagement-display"
+                    },
+                    "numberUnit": "engagements",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/SubcontractEngagements/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-roster": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxroster",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Roster Upload",
+                    "subTitle": "A supplier's list, judged before it is believed"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://upload-to-cloud"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxroster",
+                      "inboundId": "KonstryxRoster-display"
+                    },
+                    "numberUnit": "uploads",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/RosterUploads/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-worker-push": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxworkerpush",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Work Agreements",
+                    "subTitle": "Men whose agreement has not reached the ERP"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://synchronize"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxworkerpush",
+                      "inboundId": "KonstryxWorkerPush-display"
+                    },
+                    "numberUnit": "waiting",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/masterdata/WorkerPushQueue/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              }
+            },
+            "menus": {
+              "main": {
+                "identification": {
+                  "id": "main"
+                },
+                "payload": {
+                  "menuEntries": [
+                    {
+                      "id": "konstryx-planning",
+                      "title": "Planning",
+                      "description": "The project, what it is worth, and what it may spend",
+                      "icon": "sap-icon://blueprint",
+                      "type": "IBN",
+                      "target": {
+                        "semanticObject": "Launchpad",
+                        "action": "openFLPPage",
+                        "parameters": [
+                          {
+                            "name": "pageId",
+                            "value": "konstryx-planning-page"
+                          },
+                          {
+                            "name": "spaceId",
+                            "value": "konstryx-planning"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "konstryx-execution",
+                      "title": "Execution",
+                      "description": "Sourcing the work, and recording what was done",
+                      "icon": "sap-icon://building",
+                      "type": "IBN",
+                      "target": {
+                        "semanticObject": "Launchpad",
+                        "action": "openFLPPage",
+                        "parameters": [
+                          {
+                            "name": "pageId",
+                            "value": "konstryx-execution-page"
+                          },
+                          {
+                            "name": "spaceId",
+                            "value": "konstryx-execution"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "konstryx-commercial",
+                      "title": "Commercial",
+                      "description": "Certifying and paying for the work, and what it is making",
+                      "icon": "sap-icon://money-bills",
+                      "type": "IBN",
+                      "target": {
+                        "semanticObject": "Launchpad",
+                        "action": "openFLPPage",
+                        "parameters": [
+                          {
+                            "name": "pageId",
+                            "value": "konstryx-commercial-page"
+                          },
+                          {
+                            "name": "spaceId",
+                            "value": "konstryx-commercial"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "konstryx-master",
+                      "title": "Master Data",
+                      "description": "The catalogues every document draws on",
+                      "icon": "sap-icon://course-book",
+                      "type": "IBN",
+                      "target": {
+                        "semanticObject": "Launchpad",
+                        "action": "openFLPPage",
+                        "parameters": [
+                          {
+                            "name": "pageId",
+                            "value": "konstryx-master-page"
+                          },
+                          {
+                            "name": "spaceId",
+                            "value": "konstryx-master"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "NavTargetResolution": {
+      "config": {
+        "enableClientSideTargetResolution": true
+      }
+    },
+    "ClientSideTargetResolution": {
+      "adapter": {
+        "config": {
+          "inbounds": {
+            "konstryxproject360-KonstryxProject360-display": {
+              "semanticObject": "KonstryxProject360",
+              "action": "display",
+              "title": "Project 360",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxproject360",
+                "url": "/konstryx-project360"
+              }
+            },
+            "konstryxproject-KonstryxProject-display": {
+              "semanticObject": "KonstryxProject",
+              "action": "display",
+              "title": "Projects",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxproject",
+                "url": "/konstryx-project"
+              }
+            },
+            "konstryxboq-KonstryxBOQ-display": {
+              "semanticObject": "KonstryxBOQ",
+              "action": "display",
+              "title": "Bills of Quantities",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxboq",
+                "url": "/konstryx-boq"
+              }
+            },
+            "konstryxbudget-KonstryxBudget-display": {
+              "semanticObject": "KonstryxBudget",
+              "action": "display",
+              "title": "Budgets",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxbudget",
+                "url": "/konstryx-budget"
+              }
+            },
+            "konstryxapproval-KonstryxApproval-display": {
+              "semanticObject": "KonstryxApproval",
+              "action": "display",
+              "title": "My Approvals",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxapproval",
+                "url": "/konstryx-approval"
+              }
+            },
+            "konstryxgang-KonstryxGang-display": {
+              "semanticObject": "KonstryxGang",
+              "action": "display",
+              "title": "Gangs",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxgang",
+                "url": "/konstryx-gang"
+              }
+            },
+            "konstryxabsence-KonstryxAbsence-display": {
+              "semanticObject": "KonstryxAbsence",
+              "action": "display",
+              "title": "Availability",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxabsence",
+                "url": "/konstryx-absence"
+              }
+            },
+            "konstryxworkfront-KonstryxWorkFront-display": {
+              "semanticObject": "KonstryxWorkFront",
+              "action": "display",
+              "title": "Today's Work Front",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxworkfront",
+                "url": "/konstryx-workfront"
+              }
+            },
+            "konstryxresourcerequest-KonstryxResourceRequest-display": {
+              "semanticObject": "KonstryxResourceRequest",
+              "action": "display",
+              "title": "Resource Requests",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxresourcerequest",
+                "url": "/konstryx-resource-request"
+              }
+            },
+            "konstryxrequisition-KonstryxPurchaseRequisition-display": {
+              "semanticObject": "KonstryxPurchaseRequisition",
+              "action": "display",
+              "title": "Purchase Requisitions",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxrequisition",
+                "url": "/konstryx-requisition"
+              }
+            },
+            "konstryxpo-KonstryxPurchaseOrder-display": {
+              "semanticObject": "KonstryxPurchaseOrder",
+              "action": "display",
+              "title": "Purchase Orders",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxpo",
+                "url": "/konstryx-po"
+              }
+            },
+            "konstryxinvoice-KonstryxSupplierInvoice-display": {
+              "semanticObject": "KonstryxSupplierInvoice",
+              "action": "display",
+              "title": "Supplier Invoices",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxinvoice",
+                "url": "/konstryx-invoice"
+              }
+            },
+            "konstryxreservation-KonstryxReservation-display": {
+              "semanticObject": "KonstryxReservation",
+              "action": "display",
+              "title": "Reservations",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxreservation",
+                "url": "/konstryx-reservation"
+              }
+            },
+            "konstryxresvariation-KonstryxReservationVariation-display": {
+              "semanticObject": "KonstryxReservationVariation",
+              "action": "display",
+              "title": "Reservation Variations",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxresvariation",
+                "url": "/konstryx-resvariation"
+              }
+            },
+            "konstryxpull-KonstryxPullRequest-display": {
+              "semanticObject": "KonstryxPullRequest",
+              "action": "display",
+              "title": "Stock Draws",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxpull",
+                "url": "/konstryx-pull"
+              }
+            },
+            "konstryxconsumption-KonstryxConsumption-display": {
+              "semanticObject": "KonstryxConsumption",
+              "action": "display",
+              "title": "Material Consumption",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxconsumption",
+                "url": "/konstryx-consumption"
+              }
+            },
+            "konstryxtimesheet-KonstryxTimesheet-display": {
+              "semanticObject": "KonstryxTimesheet",
+              "action": "display",
+              "title": "Daily Logs",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxtimesheet",
+                "url": "/konstryx-timesheet"
+              }
+            },
+            "konstryxproductivity-KonstryxProductivity-display": {
+              "semanticObject": "KonstryxProductivity",
+              "action": "display",
+              "title": "Productivity",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxproductivity",
+                "url": "/konstryx-productivity"
+              }
+            },
+            "konstryxvariation-KonstryxVariation-display": {
+              "semanticObject": "KonstryxVariation",
+              "action": "display",
+              "title": "Variation Orders",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxvariation",
+                "url": "/konstryx-variation"
+              }
+            },
+            "konstryxpaymentcertificate-KonstryxPaymentCertificate-display": {
+              "semanticObject": "KonstryxPaymentCertificate",
+              "action": "display",
+              "title": "Payment Certificates",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxpaymentcertificate",
+                "url": "/konstryx-payment-certificate"
+              }
+            },
+            "konstryxreport-KonstryxReport-display": {
+              "semanticObject": "KonstryxReport",
+              "action": "display",
+              "title": "Cost Value Reconciliation",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxreport",
+                "url": "/konstryx-report"
+              }
+            },
+            "konstryxcashflow-KonstryxCashflow-display": {
+              "semanticObject": "KonstryxCashflow",
+              "action": "display",
+              "title": "Project Cashflow",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxcashflow",
+                "url": "/konstryx-cashflow"
+              }
+            },
+            "konstryxresource-KonstryxResource-display": {
+              "semanticObject": "KonstryxResource",
+              "action": "display",
+              "title": "Resources",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxresource",
+                "url": "/konstryx-resource"
+              }
+            },
+            "konstryxmaterial-KonstryxMaterial-display": {
+              "semanticObject": "KonstryxMaterial",
+              "action": "display",
+              "title": "Materials",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxmaterial",
+                "url": "/konstryx-material"
+              }
+            },
+            "konstryxvendor-KonstryxVendor-display": {
+              "semanticObject": "KonstryxVendor",
+              "action": "display",
+              "title": "Vendors",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxvendor",
+                "url": "/konstryx-vendor"
+              }
+            },
+            "konstryxcustomer-KonstryxCustomer-display": {
+              "semanticObject": "KonstryxCustomer",
+              "action": "display",
+              "title": "Customers",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxcustomer",
+                "url": "/konstryx-customer"
+              }
+            },
+            "konstryxcbs-KonstryxCBS-display": {
+              "semanticObject": "KonstryxCBS",
+              "action": "display",
+              "title": "Cost Breakdown Library",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxcbs",
+                "url": "/konstryx-cbs"
+              }
+            },
+            "konstryxproductivityrate-KonstryxProductivityRate-display": {
+              "semanticObject": "KonstryxProductivityRate",
+              "action": "display",
+              "title": "Productivity Norms",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxproductivityrate",
+                "url": "/konstryx-productivity-rate"
+              }
+            },
+            "konstryxconsumptionrate-KonstryxConsumptionRate-display": {
+              "semanticObject": "KonstryxConsumptionRate",
+              "action": "display",
+              "title": "Consumption Norms",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxconsumptionrate",
+                "url": "/konstryx-consumption-rate"
+              }
+            },
+            "konstryxrate-KonstryxRate-display": {
+              "semanticObject": "KonstryxRate",
+              "action": "display",
+              "title": "Rate Master",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxrate",
+                "url": "/konstryx-rate"
+              }
+            },
+            "konstryxexchangerate-KonstryxExchangeRate-display": {
+              "semanticObject": "KonstryxExchangeRate",
+              "action": "display",
+              "title": "Exchange Rates",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxexchangerate",
+                "url": "/konstryx-exchange-rate"
+              }
+            },
+            "konstryxpersona-KonstryxPersona-display": {
+              "semanticObject": "KonstryxPersona",
+              "action": "display",
+              "title": "Personas",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxpersona",
+                "url": "/konstryx-persona"
+              }
+            },
+            "konstryxuserassignment-KonstryxUserAssignment-display": {
+              "semanticObject": "KonstryxUserAssignment",
+              "action": "display",
+              "title": "User Assignments",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxuserassignment",
+                "url": "/konstryx-user-assignment"
+              }
+            },
+            "konstryxapprovalscheme-KonstryxApprovalScheme-display": {
+              "semanticObject": "KonstryxApprovalScheme",
+              "action": "display",
+              "title": "Approval Schemes",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxapprovalscheme",
+                "url": "/konstryx-approval-scheme"
+              }
+            },
+            "konstryxtrade-KonstryxTrade-display": {
+              "semanticObject": "KonstryxTrade",
+              "action": "display",
+              "title": "Trades",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxtrade",
+                "url": "/konstryx-trade"
+              }
+            },
+            "konstryxshiftpattern-KonstryxShiftPattern-display": {
+              "semanticObject": "KonstryxShiftPattern",
+              "action": "display",
+              "title": "Shift Patterns",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxshiftpattern",
+                "url": "/konstryx-shift-pattern"
+              }
+            },
+            "konstryxholidaycalendar-KonstryxHolidayCalendar-display": {
+              "semanticObject": "KonstryxHolidayCalendar",
+              "action": "display",
+              "title": "Holiday Calendars",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxholidaycalendar",
+                "url": "/konstryx-holiday-calendar"
+              }
+            },
+            "konstryxcrew-KonstryxCrew-display": {
+              "semanticObject": "KonstryxCrew",
+              "action": "display",
+              "title": "Crew Templates",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxcrew",
+                "url": "/konstryx-crew"
+              }
+            },
+            "konstryxabsencereason-KonstryxAbsenceReason-display": {
+              "semanticObject": "KonstryxAbsenceReason",
+              "action": "display",
+              "title": "Absence Reasons",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxabsencereason",
+                "url": "/konstryx-absence-reason"
+              }
+            },
+            "konstryxworker-KonstryxWorker-display": {
+              "semanticObject": "KonstryxWorker",
+              "action": "display",
+              "title": "Workers",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxworker",
+                "url": "/konstryx-worker"
+              }
+            },
+            "konstryxscworker-KonstryxScWorker-display": {
+              "semanticObject": "KonstryxScWorker",
+              "action": "display",
+              "title": "Subcontract Workers",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxscworker",
+                "url": "/konstryx-sc-worker"
+              }
+            },
+            "konstryxengagement-KonstryxEngagement-display": {
+              "semanticObject": "KonstryxEngagement",
+              "action": "display",
+              "title": "Engagements",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxengagement",
+                "url": "/konstryx-engagement"
+              }
+            },
+            "konstryxroster-KonstryxRoster-display": {
+              "semanticObject": "KonstryxRoster",
+              "action": "display",
+              "title": "Roster Upload",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxroster",
+                "url": "/konstryx-roster"
+              }
+            },
+            "konstryxworkerpush-KonstryxWorkerPush-display": {
+              "semanticObject": "KonstryxWorkerPush",
+              "action": "display",
+              "title": "Work Agreements",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxworkerpush",
+                "url": "/konstryx-worker-push"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

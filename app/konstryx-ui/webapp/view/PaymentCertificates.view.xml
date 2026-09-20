@@ -12,7 +12,7 @@
 					<Title text="Payment Certificates" level="H2"/>
 				</f:heading>
 				<f:expandedContent>
-					<Text text="Commercial — the Engineer's certification of a subcontractor's payment application. Certifying triggers the S/4 supplier invoice; the certificate is never edited after issue."/>
+					<Text text="Commercial — the Engineer's certification of a subcontractor's payment application. Certifying triggers the ERP supplier invoice; the certificate is never edited after issue."/>
 				</f:expandedContent>
 			</f:DynamicPageTitle>
 		</f:title>

@@ -31,7 +31,7 @@
           "semanticObject": "KonstryxPurchaseRequisition",
           "action": "display",
           "title": "Purchase Requisitions",
-          "subTitle": "Raised to S/4",
+          "subTitle": "Raised to ERP",
           "icon": "sap-icon://cart",
           "signature": {
             "parameters": {},

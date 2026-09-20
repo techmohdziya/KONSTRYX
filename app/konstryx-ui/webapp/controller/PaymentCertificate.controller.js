@@ -56,7 +56,7 @@ sap.ui.define([
 				nNetCertified = Number(oPC.netCertified);
 
 			oPC.subtitle = "Engineer's certification of " + oPC.docNo.replace(/^PC-/, "PA-")
-				+ ". Certifying triggers the S/4 supplier invoice under " + oPC.s4Api
+				+ ". Certifying triggers the ERP supplier invoice under " + oPC.s4Api
 				+ " (SAP_COM_0057).";
 			oPC.certLabel = "PC-…-" + String(oPC.certSeq).padStart(2, "0");
 			oPC.claimedGrossText = fFmt(nClaimedGross);

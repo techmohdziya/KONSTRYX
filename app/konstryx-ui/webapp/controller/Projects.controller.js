@@ -109,7 +109,7 @@ sap.ui.define([
 			}
 			if (aWbs.length === 0) {
 				MessageBox.warning("Add at least one WBS element. A project with none "
-					+ "cannot be released to S/4, and nothing can be costed against it.");
+					+ "cannot be released to the ERP, and nothing can be costed against it.");
 				return;
 			}
 
@@ -161,7 +161,7 @@ sap.ui.define([
 			ActionPost.post("/odata/v4/admin/syncOrgFromS4", {},
 					"The organizational values could not be read.").then(function (oBody) {
 				MessageBox.information(String(oBody.value || ""), {
-					title: "Organizational values from S/4",
+					title: "Organizational values from the ERP",
 					contentWidth: "40rem"
 				});
 				that._refresh();
@@ -186,11 +186,11 @@ sap.ui.define([
 				oProject = oContext.getObject();
 
 			MessageBox.confirm(
-				"Send " + oProject.code + " to S/4?\n\n"
+				"Send " + oProject.code + " to the ERP?\n\n"
 					+ "This creates the project and its WBS elements in the connected "
-					+ "S/4 system. It is not undone by releasing again.",
+					+ "ERP system. It is not undone by releasing again.",
 				{
-					title: "Release to S/4",
+					title: "Release to the ERP",
 					emphasizedAction: MessageBox.Action.OK,
 					onClose: function (sAction) {
 						if (sAction === MessageBox.Action.OK) {
@@ -214,7 +214,7 @@ sap.ui.define([
 			}).catch(function (oError) {
 				// Say what S/4 said. A refusal names a field or an org value,
 				// and that is the whole of the diagnosis.
-				MessageBox.error(oError.message || "S/4 refused the project.");
+				MessageBox.error(oError.message || "The ERP refused the project.");
 				that._refresh();
 			});
 		},

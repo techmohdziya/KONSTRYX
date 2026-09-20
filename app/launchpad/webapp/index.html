@@ -4,157 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KONSTRYX</title>
-    <script>
-    // Every KONSTRYX application, registered by semantic object and action.
-    // Tiles resolve through intents rather than URLs, so the same registration
-    // works here, in the S/4 launchpad and in Work Zone.
-    //
-    // Columns: semantic object, path, component, title, subtitle, icon,
-    //          group (the wireframe's own phases), count query.
-    var apps = [
-        ["KonstryxProject",             "konstryx-project",             "konstryxproject",            "Projects",              "Setup, WBS and schedule",     "sap-icon://project-definition-triangle-2", "① Set up",             "/odata/v4/project/Projects?$top=0&$count=true&$filter=IsActiveEntity eq true"],
-        ["KonstryxBOQ",                 "konstryx-boq",                 "konstryxboq",                "Bills of Quantities",   "Contract bills and items",    "sap-icon://list",                          "② Plan the project",   "/odata/v4/project/BOQs?$top=0&$count=true&$filter=IsActiveEntity eq true"],
-        ["KonstryxBudget",              "konstryx-budget",              "konstryxbudget",             "Budgets",               "Lines and encumbrance",       "sap-icon://money-bills",                   "② Plan the project",   "/odata/v4/budget/Budgets?$top=0&$count=true&$filter=IsActiveEntity eq true"],
-        ["KonstryxResourceRequest",     "konstryx-resource-request",    "konstryxresourcerequest",    "Resource Requests",     "The RR spine of the chain",   "sap-icon://request",                       "③ Source resources",   "/odata/v4/workflow/ResourceRequests?$top=0&$count=true&$filter=IsActiveEntity eq true"],
-        ["KonstryxPurchaseRequisition", "konstryx-requisition",         "konstryxrequisition",        "Purchase Requisitions", "Raised to S/4",               "sap-icon://cart",                          "③ Source resources",   "/odata/v4/material/PurchaseRequisitions?$top=0&$count=true"],
-        ["KonstryxReservation",         "konstryx-reservation",         "konstryxreservation",        "Reservations",          "Reserved resources",          "sap-icon://sales-order",                   "④ Execute",            "/odata/v4/workflow/Reservations?$top=0&$count=true"],
-        ["KonstryxTimesheet",             "konstryx-timesheet",           "konstryxtimesheet",          "Daily Logs",            "Site attendance and hours",   "sap-icon://timesheet",                     "④ Execute",            "/odata/v4/workflow/Timesheets?$top=0&$count=true&$filter=IsActiveEntity eq true"],
-        ["KonstryxProductivity",          "konstryx-productivity",        "konstryxproductivity",       "Productivity",          "Output per man-hour",         "sap-icon://line-chart",                    "④ Execute",            "/odata/v4/workflow/ProductivitySnapshots?$top=0&$count=true"],
-        ["KonstryxPaymentCertificate",  "konstryx-payment-certificate", "konstryxpaymentcertificate", "Payment Certificates",  "Subcontractor certification", "sap-icon://payment-approval",              "⑥ Commercial & money", "/odata/v4/subcontract/PaymentCertificates?$top=0&$count=true"],
-        ["KonstryxExchangeRate",          "konstryx-exchange-rate",       "konstryxexchangerate",       "Exchange Rates",        "Rates by pair and type",      "sap-icon://currency",                      "Master data",               "/odata/v4/admin/ExchangeRates?$top=0&$count=true"],
-        ["KonstryxResource",            "konstryx-resource",            "konstryxresource",           "Resources",             "Resource catalogue",          "sap-icon://org-chart",                     "Master data",               "/odata/v4/masterdata/Resources?$top=0&$count=true&$filter=IsActiveEntity eq true"],
-        ["KonstryxMaterial",            "konstryx-material",            "konstryxmaterial",           "Materials",             "Material master from S/4",    "sap-icon://product",                       "Master data",               "/odata/v4/masterdata/Materials?$top=0&$count=true"],
-        ["KonstryxVendor",              "konstryx-vendor",              "konstryxvendor",             "Vendors",               "Supplier master from S/4",    "sap-icon://supplier",                      "Master data",               "/odata/v4/masterdata/Vendors?$top=0&$count=true"]
-    ];
 
-    var applications = {};
-    var inbounds = {};
-    var groups = {};
-    var subtitleOf = {};
+    <!--
+        The site - spaces, pages, sections, tiles and the intents behind them -
+        is not written here. It is generated from the app manifests by
+        tools/build_launchpad_site.py into appconfig/fioriSandboxConfig.json,
+        which the sandbox bootstrap loads by convention, and into
+        launchpad-content/CommonDataModel.json, which Work Zone loads. One
+        definition, two consumers, so the local launchpad and the deployed one
+        cannot drift.
 
-    apps.forEach(function (a) {
-        var so = a[0], path = a[1], component = a[2], title = a[3],
-            sub = a[4], icon = a[5], group = a[6], countUrl = a[7];
-
-        // The count belongs on the face of the tile. These are ten small
-        // same-origin reads and they have to finish before the configuration
-        // below is published, which is why they block: a tile that renders
-        // first and fills in afterwards reads as an empty application for its
-        // first few seconds.
-        var subtitle = sub;
-        try {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", countUrl, false);
-            xhr.setRequestHeader("Accept", "application/json");
-            xhr.send(null);
-            if (xhr.status >= 200 && xhr.status < 300) {
-                var body = JSON.parse(xhr.responseText);
-                var n = body["@odata.count"] !== undefined
-                    ? body["@odata.count"] : body["@count"];
-                subtitle = (Number(n) === 0 ? "none yet" : Number(n).toLocaleString())
-                    + " · " + sub;
-            } else {
-                // Never show a zero that cannot be told apart from an empty
-                // application. Say the count could not be read.
-                subtitle = "count unavailable · " + sub;
-            }
-        } catch (e) {
-            subtitle = "count unavailable · " + sub;
-        }
-
-        subtitleOf[so] = subtitle;
-
-        applications[so + "-display"] = {
-            title: title,
-            description: subtitle,
-            additionalInformation: "SAPUI5.Component=" + component,
-            applicationType: "URL",
-            url: "/" + path,
-            navigationMode: "embedded"
-        };
-
-        inbounds[so + "-display"] = {
-            semanticObject: so,
-            action: "display",
-            title: title,
-            signature: { parameters: {}, additionalParameters: "allowed" },
-            resolutionResult: {
-                applicationType: "SAPUI5",
-                additionalInformation: "SAPUI5.Component=" + component,
-                url: "/" + path
-            }
-        };
-
-        // Exactly the shape the sandbox LaunchPage adapter accepts. Adding
-        // tileType, id or size makes it drop the tile without a word, and the
-        // page then renders the sandbox's own demo tiles instead.
-        (groups[group] = groups[group] || []).push({
-            title: title,
-            subTitle: subtitle,
-            icon: icon,
-            target: { semanticObject: so, action: "display" },
-            properties: {
-                title: title,
-                subtitle: subtitle,
-                icon: icon,
-                targetURL: "#" + so + "-display"
-            }
-        });
-    });
-
-    var PHASE_ORDER = ["① Set up", "② Plan the project",
-                       "③ Source resources", "④ Execute",
-                       "⑥ Commercial & money", "Master data"];
-    var orderedGroups = PHASE_ORDER.filter(function (name) { return groups[name]; })
-        .concat(Object.keys(groups).filter(function (name) {
-            return PHASE_ORDER.indexOf(name) === -1;
-        }).sort());
-
-    var groupList = orderedGroups.map(function (name, i) {
-        return { id: "group" + i, title: name, isPreset: true, isVisible: true,
-                 isGroupLocked: false, tiles: groups[name] };
-    });
-
-    // sandbox2 renders spaces, not the classic home page, and it compiles the
-    // groups above into page sections on the way - one section per group, in
-    // array order. Two things follow from its conversion, and both are easy to
-    // get wrong because neither fails loudly:
-    //
-    //   the subtitle is read from tile.properties.subtitle, not tile.subTitle
-    //   the target is read from tile.properties.targetURL as an intent hash
-    //
-    // A tile missing those still renders, just bare and inert.
-
-    window["sap-ushell-config"] = {
-        defaultRenderer: "fiori2",
-        // Spaces mode is sandbox2's default, and it ignores the LaunchPage
-        // groups entirely - the phases below were being flattened into one
-        // "Sample Space" alongside the sandbox's own demo tiles. The classic
-        // home page is what renders groups, so it is asked for explicitly.
-        ushell: {
-            spaces: { enabled: false },
-            homeApp: { component: null }
-        },
-        renderers: {
-            fiori2: {
-                componentData: { config: {
-                    enableSearch: false,
-                    rootIntent: "Shell-home",
-                    // The sandbox seeds three navigation-demo tiles of its own.
-                    // Harmless in a scratch page, wrong in front of a customer.
-                    applications: {}
-                } }
-            }
-        },
-        services: {
-            LaunchPage: { adapter: { config: { groups: groupList } } },
-            NavTargetResolution: { config: { enableClientSideTargetResolution: true } },
-            ClientSideTargetResolution: { adapter: { config: { inbounds: inbounds } } }
-        }
-    };
-    </script>
-
-    <script id="sap-ushell-bootstrap" src="/resources/sap/ushell/bootstrap/sandbox2.js"></script>
+        It has to arrive that way rather than through window["sap-ushell-config"]:
+        the bootstrap applies its own default site first and REPLACES whatever
+        site the page supplied, then merges the JSON config over the result. A
+        site built in this file was therefore dead code, and the phases it
+        defined were flattened into the sandbox's own "Sample Space".
+    -->
+    <script id="sap-ushell-bootstrap"
+            src="https://ui5.sap.com/1.150.0/resources/sap/ushell/bootstrap/sandbox2.js"></script>
 
     <!--
         The UI5 runtime comes from SAP's CDN, pinned to the version this app is
@@ -180,15 +47,6 @@
     // so the renderer is created once the core is ready. The method was
     // renamed between UI5 versions; both names are tried rather than pinning
     // this page to one runtime.
-    // The sandbox ships three navigation-demo tiles in a "Sample Applications"
-    // section of its own site, and _applyDefaultSiteData replaces whatever site
-    // this page supplies rather than merging with it - so they cannot be
-    // configured away, and deleting the section after bootstrap does not reach
-    // the copy the renderer has already read. They are an artefact of the local
-    // development shell and do not exist in Work Zone, which is where this
-    // launchpad is going; leaving them is the honest trade rather than a hack
-    // that half works.
-
     sap.ui.getCore().attachInit(function () {
         sap.ui.require(["sap/ushell/Container"], function (Container) {
             var create = Container.createRendererInternal || Container.createRenderer;

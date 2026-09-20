@@ -31,7 +31,7 @@
           "semanticObject": "KonstryxMaterial",
           "action": "display",
           "title": "Materials",
-          "subTitle": "Material master from S/4",
+          "subTitle": "Material master from ERP",
           "icon": "sap-icon://product",
           "signature": {
             "parameters": {},

@@ -137,7 +137,7 @@
 			"step": 5,
 			"name": "Budget Commitment",
 			"plural": "Budget Commitments",
-			"owner": "S/4 PS",
+			"owner": "ERP PS",
 			"icon": "sap-icon://money-bills"
 		},
 		{
@@ -763,7 +763,7 @@
 					"value": "AED 177,580 · 24.8% consumed"
 				},
 				{
-					"label": "S/4 Reference",
+					"label": "ERP Reference",
 					"value": "Activity Type EQ-TWC-12T · Service Product SVC-EQ-TWC-12T"
 				},
 				{
@@ -794,13 +794,13 @@
 			"id": "CMT-2026-0188",
 			"request": "RR-2026-0188",
 			"title": "Budget Commitment",
-			"owner": "S/4 PS",
+			"owner": "ERP PS",
 			"date": "2026-05-12",
 			"status": "Posted",
 			"statusState": "Success",
 			"persona": "Rohan Menon · Cost Engineer",
 			"readOnly": true,
-			"intro": "Owned by S/4HANA Project System, not by KONSTRYX. The per-line encumbrance is posted against the WBS through the Universal Journal. KONSTRYX reads it and shows the sync state; it never authors it.",
+			"intro": "Owned by ERP Project System, not by KONSTRYX. The per-line encumbrance is posted against the WBS through the Universal Journal. KONSTRYX reads it and shows the sync state; it never authors it.",
 			"fields": [
 				{
 					"label": "Commitment Doc",
@@ -808,7 +808,7 @@
 				},
 				{
 					"label": "System of Record",
-					"value": "S/4HANA Public Cloud · Project System"
+					"value": "ERP Public Cloud · Project System"
 				},
 				{
 					"label": "Posting Date",
@@ -887,7 +887,7 @@
 				},
 				{
 					"label": "Lifting Gear Bound",
-					"value": "6 sub-components bound to TC-002 (S/4 SuperiorEquipment)"
+					"value": "6 sub-components bound to TC-002 (ERP SuperiorEquipment)"
 				},
 				{
 					"label": "Site Handover",
@@ -1228,7 +1228,7 @@
 			"tiles": [
 				{
 					"title": "Projects",
-					"subtitle": "Mastered here, pushed to S/4",
+					"subtitle": "Mastered here, pushed to ERP",
 					"icon": "sap-icon://building",
 					"value": "2",
 					"unit": "projects",
@@ -1264,7 +1264,7 @@
 				},
 				{
 					"title": "Budget Encumbrance",
-					"subtitle": "S/4 PS commitment",
+					"subtitle": "ERP PS commitment",
 					"icon": "sap-icon://money-bills",
 					"value": "4.8",
 					"unit": "AED M",
@@ -1315,7 +1315,7 @@
 			"tiles": [
 				{
 					"title": "Reservations",
-					"subtitle": "Chain progress & S/4 state",
+					"subtitle": "Chain progress & ERP state",
 					"icon": "sap-icon://sales-order",
 					"value": "38",
 					"unit": "active",

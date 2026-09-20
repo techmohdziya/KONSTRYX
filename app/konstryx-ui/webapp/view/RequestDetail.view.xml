@@ -183,7 +183,7 @@
 					<uxap:ObjectPageSubSection>
 						<uxap:blocks>
 							<MessageStrip visible="{/ui/showIntegrationStatus}"
-								text="Budget encumbrance is owned by S/4HANA Project System. KONSTRYX shows the headroom it reads back; the posting itself happens in S/4 at step 5 of the chain."
+								text="Budget encumbrance is owned by the ERP Project System. KONSTRYX shows the headroom it reads back; the posting itself happens in the ERP at step 5 of the chain."
 								type="Information"
 								showIcon="true"
 								class="sapUiSmallMarginBottom"/>

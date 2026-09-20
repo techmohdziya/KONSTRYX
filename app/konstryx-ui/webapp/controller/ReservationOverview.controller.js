@@ -70,10 +70,15 @@ sap.ui.define([
 					lines: oRow.lines,
 					encumberedText: fEnc.toLocaleString("en-US"),
 					burnPct: Number(oRow.burnPct || 0),
+					verticalType: oRow.verticalType,
+					chainScope: oRow.chainScope,
 					stepsDone: oRow.stepsDone,
 					stepsTotal: oRow.stepsTotal,
-					progressPct: Math.round(100 * oRow.stepsDone / oRow.stepsTotal),
-					pendingSteps: oRow.pendingSteps,
+					stepsBlocked: oRow.stepsBlocked,
+					progressPct: oRow.stepsTotal
+						? Math.round(100 * oRow.stepsDone / oRow.stepsTotal) : 0,
+					pendingSteps: oRow.pendingSteps || "nothing outstanding",
+					blockedSteps: oRow.blockedSteps,
 					s4Commitment: oRow.s4Commitment === "CONNECTOR PENDING"
 						? "Connector pending" : oRow.s4Commitment
 				};
@@ -82,6 +87,11 @@ sap.ui.define([
 			this._oViewModel.setProperty("/rows", aRows);
 			this._oViewModel.setProperty("/kpi", {
 				count: aRows.length,
+				// Steps done, averaged. Each row's progress bar is divided by its
+				// own scope rather than by a flat ten: the chain a material
+				// reservation runs is shorter than the one drawn for plant, and
+				// scoring both out of ten reports the material thread as further
+				// behind the more of it is finished.
 				avgDone: aRows.length ? (iSteps / aRows.length).toFixed(1) : "0",
 				encumbered: fEncumbered.toLocaleString("en-US"),
 				consumed: fConsumed.toLocaleString("en-US"),
@@ -117,16 +127,18 @@ sap.ui.define([
 							{ label: "Reservation", property: "docNo" },
 							{ label: "Request", property: "rrDocNo" },
 							{ label: "Project", property: "projectCode" },
-							{ label: "Project S/4 sync", property: "projectSync" },
+							{ label: "Project ERP sync", property: "projectSync" },
 							{ label: "Flow", property: "executionFlow" },
 							{ label: "Status", property: "status" },
 							{ label: "Lines", property: "lines", type: "Number" },
 							{ label: "Encumbered (AED)", property: "encumberedText" },
 							{ label: "Consumed %", property: "burnPct", type: "Number" },
+							{ label: "Chain scope", property: "chainScope" },
 							{ label: "Steps done", property: "stepsDone", type: "Number" },
-							{ label: "Steps total", property: "stepsTotal", type: "Number" },
+							{ label: "Steps in scope", property: "stepsTotal", type: "Number" },
 							{ label: "Pending steps", property: "pendingSteps" },
-							{ label: "S/4 commitment", property: "s4Commitment" }
+							{ label: "Blocked steps", property: "blockedSteps" },
+							{ label: "ERP commitment", property: "s4Commitment" }
 						]
 					},
 					dataSource: aRows,

@@ -25,13 +25,22 @@ import webbrowser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEBAPP = os.path.join(HERE, "webapp")
+# What `/` serves. The FLP launchpad reaches all 44 generated apps; the custom
+# launchpad in this folder reaches 20 and was the only one anyone found,
+# because it held the root and nothing linked to the other. Both stay served —
+# the custom one is a sibling app like any other, at /konstryx-ui/.
+ROOT_APP = os.path.join(os.path.dirname(HERE),
+                        os.environ.get("KX_ROOT_APP", "launchpad"), "webapp")
 # Every UI5 application lives under app/. Sibling apps are served from this
 # same origin so they share the OData proxy and the local UI5 runtime.
 APPS_ROOT = os.path.dirname(HERE)
 
 DEFAULT_RUNTIME = r"C:\Users\Ziya\Documents\Claude\sapui5-rt-1.150.0"
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+# 8081, the same port run-local.bat passes and the same one tools/smoke_demo.py
+# looks for. It defaulted to 8080, so starting this by hand put the UI where
+# neither of them expected it.
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8081
 RUNTIME = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("UI5_RUNTIME", DEFAULT_RUNTIME)
 
 # The CAP Java service. /odata/... is reverse-proxied there so the app and the
@@ -167,6 +176,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if parts and parts[0] == "resources":
             return os.path.join(RUNTIME, "resources", *parts[1:])
 
+        # The FLP sandbox looks for its site at /appconfig/fioriSandboxConfig.json
+        # - an absolute path it chooses, not one the page can point elsewhere.
+        # It is served from the launchpad's own folder so the site stays with
+        # the app that renders it.
+        if parts and parts[0] == "appconfig":
+            return os.path.join(APPS_ROOT, "launchpad", "webapp", "appconfig",
+                                *parts[1:])
+
         # A sibling application, e.g. /konstryx-resource-request/index.html.
         # Every UI5 app in app/ is reachable from this one origin, so they all
         # share the OData proxy and the local runtime rather than needing a
@@ -177,7 +194,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         if not parts:
             parts = ["index.html"]
-        return os.path.join(WEBAPP, *parts)
+        return os.path.join(ROOT_APP, *parts)
 
     def guess_type(self, path):
         ext = os.path.splitext(path)[1].lower()
@@ -211,6 +228,22 @@ def main():
     class ThreadingServer(socketserver.ThreadingTCPServer):
         daemon_threads = True
         allow_reuse_address = True
+
+        def handle_error(self, request, client_address):
+            """A browser hanging up is not a reason to stop serving.
+
+            A UI5 app cancels in-flight requests constantly - navigating away
+            mid-batch, reloading during a metadata read - and each one surfaces
+            here as ConnectionAbortedError or ConnectionResetError. The default
+            handler prints a traceback for every one, and the noise buried the
+            failures worth reading; worse, the server was found dead after a
+            reload with nothing in the log but a stack trace.
+            """
+            error = sys.exc_info()[1]
+            if isinstance(error, (ConnectionAbortedError, ConnectionResetError,
+                                  BrokenPipeError)):
+                return
+            super().handle_error(request, client_address)
 
     # Bind every interface rather than 127.0.0.1 only. On Windows "localhost"
     # often resolves to ::1 first, and a server bound to IPv4 loopback alone

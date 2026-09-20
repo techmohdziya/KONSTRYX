@@ -1,0 +1,36 @@
+specVersion: "3.0"
+metadata:
+  name: konstryxconsumptionrate
+type: application
+
+# The Cloud Foundry build: the ordinary ui5.yaml plus the task that zips the
+# output. That zip is not packaging, it is what the deploy ships - mbt looks
+# for an artifact named after the MTA module and `ui5 build` emits a directory
+# and no archive, so without this it finds nothing, says "copying ... ok"
+# anyway, and uploads an empty payload.
+builder:
+  customTasks:
+    - name: ui5-task-zipper
+      afterTask: generateVersionInfo
+      configuration:
+        # Must match the MTA module name: mbt looks for <module>.zip.
+        archiveName: konstryx-consumption-rate
+        keepResources: true
+
+framework:
+  # SAPUI5 rather than OpenUI5: sap.fe.templates and sap.ui.export exist only
+  # in SAPUI5, and every one of these screens is Fiori Elements.
+  name: SAPUI5
+  version: "1.150.0"
+  libraries:
+    - name: sap.ui.core
+    - name: sap.m
+    - name: sap.f
+    - name: sap.uxap
+    - name: sap.ui.layout
+    - name: sap.ui.table
+    - name: sap.ui.export
+    - name: sap.ui.unified
+    - name: sap.fe.templates
+    - name: sap.ushell
+    - name: themelib_sap_horizon

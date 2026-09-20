@@ -1,0 +1,184 @@
+{
+  "_version": "1.60.0",
+  "sap.app": {
+    "id": "konstryxapprovalscheme",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/authorization/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "KonstryxApprovalScheme-display": {
+          "semanticObject": "KonstryxApprovalScheme",
+          "action": "display",
+          "title": "Approval Schemes",
+          "subTitle": "Who signs which document, and above what value",
+          "icon": "sap-icon://workflow-tasks",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "konstryxapprovalscheme.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "ApprovalSchemesList",
+          "target": "ApprovalSchemesList"
+        },
+        {
+          "pattern": "ApprovalSchemes({key}):?query:",
+          "name": "ApprovalSchemesObjectPage",
+          "target": "ApprovalSchemesObjectPage"
+        },
+        {
+          "pattern": "ApprovalSchemes({key})/steps({steps}):?query:",
+          "name": "ApprovalStepDefsObjectPage",
+          "target": "ApprovalStepDefsObjectPage"
+        }
+      ],
+      "targets": {
+        "ApprovalSchemesList": {
+          "type": "Component",
+          "id": "ApprovalSchemesList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/ApprovalSchemes",
+              "variantManagement": "Page",
+              "navigation": {
+                "ApprovalSchemes": {
+                  "detail": {
+                    "route": "ApprovalSchemesObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
+        },
+        "ApprovalSchemesObjectPage": {
+          "type": "Component",
+          "id": "ApprovalSchemesObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/ApprovalSchemes",
+              "navigation": {
+                "steps": {
+                  "detail": {
+                    "route": "ApprovalStepDefsObjectPage"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ApprovalStepDefsObjectPage": {
+          "type": "Component",
+          "id": "ApprovalStepDefsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/ApprovalSchemes/steps"
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  },
+  "sap.fe": {
+    "app": {
+      "enableLazyLoading": true
+    }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "konstryx.app"
+  }
+}

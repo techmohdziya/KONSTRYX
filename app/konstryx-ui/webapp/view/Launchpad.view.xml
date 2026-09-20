@@ -13,7 +13,7 @@
 			</VBox>
 
 			<MessageStrip visible="{/ui/showIntegrationStatus}"
-				text="S/4HANA Public Cloud is the system of record for budget, procurement and finance. KONSTRYX owns the resource workflow on top of it and reads S/4 through the SAP_COM_* scenarios."
+				text="The ERP is the system of record for budget, procurement and finance. KONSTRYX owns the resource workflow on top of it and reads the ERP through the SAP_COM_* communication scenarios."
 				type="Information"
 				showIcon="true"
 				class="kxLaunchpadStrip"/>

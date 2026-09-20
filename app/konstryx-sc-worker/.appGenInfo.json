@@ -1,0 +1,28 @@
+{
+  "generationParameters": {
+    "generationDate": "Tue Aug 25 2026 18:02:37 GMT+0400 (Gulf Standard Time)",
+    "generatorPlatform": "CLI",
+    "serviceType": "Local CAP",
+    "metadataFilename": "",
+    "serviceUrl": "http://localhost:4004/odata/v4/masterdata/",
+    "appName": "konstryx-sc-worker",
+    "appTitle": "SubcontractWorkers",
+    "appDescription": "Supplier master mirrored from ERP",
+    "appNamespace": "",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.120.0",
+    "enableEslint": true,
+    "enableTypeScript": false,
+    "showMockDataInfo": false,
+    "generatorVersion": "1.29.0",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "SubcontractWorkers"
+      }
+    ],
+    "launchText": "To launch the generated app, start your CAP project:  (```mvn spring-boot:run```) and navigate to the following location in your browser:\n\nhttp://localhost:8080/konstryx-sc-worker/webapp/index.html"
+  }
+}
