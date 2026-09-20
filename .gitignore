@@ -36,3 +36,5 @@ mta-op-*/
 
 # ui5 build output
 app/konstryx-ui/dist/
+test/verify/runner.out
+__pycache__/

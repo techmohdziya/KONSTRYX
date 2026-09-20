@@ -1,0 +1,36 @@
+The MTA module and resource that deploy this site, lifted out of mta.yaml
+until the SAPLaunchpad offering is entitled in the subaccount.
+
+Paste the module back among modules: and the resource among resources:
+
+  # The Work Zone site itself: four spaces, their pages, and the tiles on them.
+  #
+  # Deployed rather than assembled in the Content Manager. A site built by
+  # clicking exists only in the tenant it was clicked in - it cannot be
+  # reviewed, cannot be diffed, and has to be rebuilt from memory the next time
+  # a subaccount is set up. tools/build_launchpad_site.py generates the model
+  # from the app manifests, so a tile's intent cannot drift away from the app
+  # that answers it.
+  - name: konstryx-launchpad-content
+    type: com.sap.application.content
+    path: launchpad-content
+    requires:
+      - name: konstryx-launchpad
+        parameters:
+          content-target: true
+    # No build-parameters. mbt packages the module's own directory into the
+    # data.zip the content deployer expects; naming a build-result sent it
+    # looking for an archive nothing produces, and it failed with "cannot find
+    # konstryx-launchpad-content/data.zip" rather than with anything about the
+    # site.
+
+
+  # The Launchpad service instance the site content is deployed into. Work
+  # Zone is already subscribed in this subaccount; this is the instance that
+  # accepts deployed content, not a second launchpad.
+  - name: konstryx-launchpad
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: SAPLaunchpad
+      service-plan: standard
+

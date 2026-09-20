@@ -30,7 +30,7 @@ built.
 | **Project, WBS** | **KONSTRYX** | **KONSTRYX → S/4**, or **P6 → KONSTRYX** |
 | BOQ, CBS, budget | KONSTRYX | none — KONSTRYX only |
 | Resource Request, Advisory, Availability, Reservation | KONSTRYX | none |
-| Mobilization, Operation Log, Variation, De-mob, Closure | KONSTRYX | none |
+| Mobilization, Operation Log, Reservation Variation, De-mob, Closure | KONSTRYX | none |
 | Purchase Requisition | S/4 | KONSTRYX → S/4 (create), S/4 → KONSTRYX (status) |
 | Purchase Order, Goods Receipt, Invoice | S/4 | S/4 → KONSTRYX |
 | Budget commitment / encumbrance | S/4 PS | S/4 → KONSTRYX |
@@ -41,6 +41,14 @@ built.
 | Employee | SuccessFactors | SF → KONSTRYX |
 | RFQ, bid, award | Ariba | KONSTRYX ↔ Ariba |
 | Bank guarantees | S/4 Treasury | display only — never authored in KONSTRYX |
+
+Two documents are called a variation and only one of them is in that row. A
+**reservation variation** changes what a job has locked to build with — thirty
+more crane-days, a re-agreed labour rate — and goes no further than KONSTRYX,
+because the encumbrance it moves is KONSTRYX's own. A **BOQ variation** changes
+a priced bill, is argued with the client, and reaches the certificate and the
+supplier invoice behind it. The first never touches revenue; the second always
+does.
 
 Mirror entities carry the `s4mirror` aspect: `s4Key`, `s4System`,
 `lastSyncedAt`, `syncStatus`. Anything mirrored renders read-only in the UI
@@ -242,7 +250,105 @@ sends ISO dates and navigation properties rather than V2's `/Date(millis)/` and
 > `API_PURCHASEORDER_PROCESS_SRV` / `SAP_COM_0053`; `SAP_COM_0193` appears
 > nowhere in them. The connector was repointed to match.
 
-### 2.6 Class routes the leaf to S/4
+### 2.6 Purchase order, goods receipt and invoice — the inbound case
+
+Both documents are S/4's, and KONSTRYX never creates either. What exists here
+are the two entry points that write the mirror:
+
+| Action | Writes | Refuses |
+|---|---|---|
+| `MaterialService.recordPurchaseOrder` | a `PurchaseOrder` and its lines, against the requisition it was raised from | a requisition S/4 never received; an order number already mirrored; a line number the requisition does not have |
+| `MaterialService.recordGoodsReceipt` | a `GoodsReceipt` per line, and moves the order line's open quantity | an order we do not hold; a receipt document already mirrored; more than the line has open |
+| `MaterialService.recordSupplierInvoice` | a `SupplierInvoice` and its lines, each matched three ways as it lands | no ERP number; an order we do not hold; an invoice already mirrored; a line that is not on that order |
+
+An order line never restates its account assignment — it inherits the
+requisition line's WBS and CBS. That inheritance is what makes the value
+commit against the right budget line, and an order free to charge elsewhere
+would put the money on a heading nobody was watching.
+
+The invoice is the only leg that **records a failure instead of refusing it**.
+The other two refuse what they cannot honestly write; an invoice that disagrees
+with its order is mirrored anyway, with the reason on the line, because ERP FI
+posted it whether or not it agrees and an invoice we declined to mirror is one
+nobody can see is wrong. Refusal is reserved for what makes the document
+unreadable. The match is per line — quantity against what the receipts actually
+brought in, value against the order's own rate — and it stamps every receipt
+the bill covers, not just the last, so a line delivered in three loads and
+billed once does not leave two deliveries permanently unanswered.
+
+Commitment is the **open** part of the order, not the ordered part. A receipt
+moves value out of commitment, where ERP FI then posts it as actual; counting
+the whole order until final delivery would hold budget against goods already
+on site and double it when the invoice lands. `BudgetService.refreshControl`
+derives all three figures rather than accumulating them, and reports separately
+what is on order against cost nodes the budget has no line for — otherwise a
+misassigned order is invisible: spent, and still showing as available.
+
+`BudgetLine.actual` has its first source here. It had been documented as the
+ERP FI posting since the model was written and was written as zero and left
+there; it is now summed from the invoice lines, placed onto budget lines the
+same way commitment is, so a corrected or cancelled invoice cannot leave a
+figure behind.
+
+**No connector pulls any of the three yet.** `API_PURCHASEORDER_PROCESS_SRV`,
+`API_MATERIAL_DOCUMENT_SRV` and `API_SUPPLIERINVOICE_PROCESS_SRV` are named
+above and unimplemented; nothing
+calls the entry points except a test, a manual correction, and
+`tools/mirror_erp_documents.py`, which stands in for ERP so the demo has
+orders to show. That tool stamps every document it writes with system `DEMO`
+— a real mirror carries the tenant's host — so the two are told apart on the
+screen rather than by trusting the number.
+
+### 2.6a Goods issue — stock we already own
+
+Everything in 2.6 is material we buy. The other half of a material request is
+stock the company already holds, and it never reaches a purchase order: a
+reservation locks the money, the site asks a store for what it locked, and ERP
+moves it.
+
+The KONSTRYX side of that is a **pull request** — our own document, drawing our
+own number from range `PL`, raised by `WorkflowService.raisePullRequest` on the
+reservation that authorises it. The ERP side is the goods issue, which is where
+the money actually moves: a goods issue debits the project in ERP, so that
+movement is the cost and nothing after it is charged again.
+
+| Action | Owns | Writes | Refuses |
+|---|---|---|---|
+| `WorkflowService.raisePullRequest` | KONSTRYX | a `PullRequest` against one reservation line | a closed reservation; a quantity of zero; more than the line still has undrawn; a line it cannot identify |
+| `MaterialService.recordGoodsIssue` | ERP | the movement onto the pull request, and rolls the reservation line's consumed quantity, cost, burn and drift | a pull request already issued; more than was asked for; a movement with neither a document number nor a reason |
+| `MaterialService.confirmSiteReceipt` | KONSTRYX | a `SiteReceipt` and what is still outstanding | a draw nothing has been issued against; more arriving than left the store |
+| `MaterialService.recordConsumption` | KONSTRYX | a `ConsumptionRecord` measured against the norm | more used than has been issued; a day with no output; a material with no norm for that cost node |
+
+**The line number identifies the line, not the material.** One request routinely
+orders the same material for several parts of a job — the same ready-mix into a
+slab and into a core wall — and those are separate lines against separate cost
+nodes with separate norms. Naming only the material charged one node for the
+other's concrete, silently, because both lines look identical from outside.
+
+**A norm is keyed by material and cost node together.** `ConsumptionRate` is
+material × linked CBS node, and the same ready-mix is allowed 2.5% waste in a
+slab and 3% in a core wall because the pour is a different job. Resolution takes
+the line's own node first, then a general norm for the material, never another
+node's; then a company norm over a group one; then the latest row effective on
+or before the day. A norm for a different node is somebody else's recipe, not a
+fallback.
+
+**Consumption carries no money.** It is quantity against the norm — the answer
+to whether a crew is wasting material, which is a different question from what
+the project has spent. Costing it as well would pay for the same concrete twice.
+
+`WorkflowService.close` writes the reservation's final account: what it consumed
+of what it locked, and the unspent encumbrance released back per line. Per line,
+because a line that overran releases nothing and letting it offset an underrun
+elsewhere would give back money the first line has already spent.
+
+**No connector posts or pulls a goods issue yet.** There is deliberately no
+outbound push: KONSTRYX does not post movements into ERP, and
+`recordGoodsIssue` is the only way one enters. `tools/mirror_erp_documents.py`
+stands in for the store as well as the vendor, stamping system `DEMO` the same
+way.
+
+### 2.7 Class routes the leaf to S/4
 
 The consolidated requirements make the resource **class** a fixed top dimension
 of the hierarchy (spec §8, principle P10) for one reason: it decides how the
@@ -272,7 +378,7 @@ That split is what the wireframe's own masters already show: one trade listed
 three times on the same day, at three rates — our payroll, and two labour
 subcontractors — each routing somewhere different.
 
-### 2.7 Primavera P6
+### 2.8 Primavera P6
 
 P6 is the alternative source: where a client plans in P6, the project and its
 activity structure come **into** KONSTRYX rather than being created there.

@@ -4,7 +4,7 @@
   "description": "KONSTRYX — SAP BTP extension for Engineering & Construction (CAP Java)",
   "private": true,
   "dependencies": {
-    "@sap/cds": "^9"
+    "@sap/cds": "^9.9.3"
   },
   "devDependencies": {
     "@sap/cds-dk": "^9"
@@ -46,15 +46,49 @@
     }
   },
   "sapux": [
-    "app/konstryx-resource-request",
-    "app/konstryx-project",
+    "app/konstryx-approval",
+    "app/konstryx-approval-scheme",
+    "app/konstryx-boq",
     "app/konstryx-budget",
+    "app/konstryx-cashflow",
+    "app/konstryx-cbs",
+    "app/konstryx-consumption",
+    "app/konstryx-consumption-rate",
+    "app/konstryx-customer",
+    "app/konstryx-exchange-rate",
+    "app/konstryx-invoice",
     "app/konstryx-material",
-    "app/konstryx-vendor",
-    "app/konstryx-resource",
+    "app/konstryx-payment-certificate",
+    "app/konstryx-persona",
+    "app/konstryx-po",
+    "app/konstryx-productivity",
+    "app/konstryx-productivity-rate",
+    "app/konstryx-project",
+    "app/konstryx-project360",
+    "app/konstryx-pull",
+    "app/konstryx-rate",
+    "app/konstryx-report",
     "app/konstryx-requisition",
     "app/konstryx-reservation",
-    "app/konstryx-payment-certificate",
-    "app/konstryx-boq"
+    "app/konstryx-resource",
+    "app/konstryx-resource-request",
+    "app/konstryx-resvariation",
+    "app/konstryx-timesheet",
+    "app/konstryx-user-assignment",
+    "app/konstryx-variation",
+    "app/konstryx-vendor",
+    "app/konstryx-workfront",
+    "app/konstryx-crew",
+    "app/konstryx-gang",
+    "app/konstryx-shift-pattern",
+    "app/konstryx-holiday-calendar",
+    "app/konstryx-worker",
+    "app/konstryx-worker-push",
+    "app/konstryx-absence",
+    "app/konstryx-absence-reason",
+    "app/konstryx-sc-worker",
+    "app/konstryx-engagement",
+    "app/konstryx-roster",
+    "app/konstryx-trade"
   ]
 }
