@@ -58,9 +58,9 @@ entity Company : cuid, managed {
  *
  * **Why these are read and never shipped.** Plants, purchasing organizations,
  * profit centres and project profiles are configuration of the customer's own
- * S/4 system. In a multi-tenant product there is no value that is right for
+ * ERP system. In a multi-tenant product there is no value that is right for
  * every tenant, so a content pack cannot carry them: the pack that seeded
- * tenant my434396 carried values read off my401381, and S/4 answered a real
+ * tenant my434396 carried values read off my401381, and ERP answered a real
  * project push with "Profit Center 10001000 does not exist". They were
  * plausible, and they belonged to a different system.
  *

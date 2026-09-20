@@ -48,7 +48,19 @@ aspect documented {
   docNo    : String(20);       // e.g. RR-2026-00142
   project  : Association to prj.Project;
   company  : Association to admin.Company;
-  status   : String(20);       // per status model §6.1
+  /**
+   * Where the document is, per the status model §6.1 — and it starts
+   * somewhere.
+   *
+   * It used to start nowhere: a request created and activated through the API
+   * carried no status until something submitted it, so a document with a
+   * number, lines and prices on it said nothing about where it was. Every
+   * screen that groups or filters by status dropped it, its first history
+   * entry read "from null", and each guard that let a document be submitted
+   * had to spell out that null meant the same as Draft — an accommodation
+   * every new document type would have had to remember to repeat.
+   */
+  status   : String(20) default 'Draft';
   raisedBy : String(120);
   raisedOn : Date;
 }

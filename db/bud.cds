@@ -7,6 +7,7 @@ namespace konstryx.bud;
 using { cuid, managed } from '@sap/cds/common';
 using { konstryx.common } from './common';
 using { konstryx.prj } from './prj';
+using { konstryx.fin } from './fin';
 
 entity Budget : cuid, managed, common.documented {
   // status: Draft -> Submitted -> Approved -> Baselined -> Locked
@@ -20,6 +21,21 @@ entity Budget : cuid, managed, common.documented {
 // The control record: budget vs committed/encumbered/actual.
 entity BudgetLine : cuid {
   budget     : Association to Budget;
+  /**
+   * The three questions a budget line has to answer at once: what work it pays
+   * for, who builds it, and what absorbs the cost.
+   *
+   * A line that names only its CBS says what kind of cost it is and nothing
+   * about where that cost is incurred. Allocation already joins the bill line
+   * to a WBS element and a CBS node, so the budget is generated over that join
+   * rather than over the CBS alone — which is also what lets a line be phased
+   * from the activities under its own WBS instead of spread flat.
+   *
+   * Any of the three may be empty on a line that genuinely has no counterpart:
+   * preliminaries are carried by the project, not by a bill item, and are left
+   * blank rather than attached to an arbitrary one.
+   */
+  wbs        : Association to prj.WBSElement;
   cbs        : Association to prj.CBSInstance;
   boqItem    : Association to prj.BOQItem;
   /**
@@ -41,6 +57,50 @@ entity BudgetLine : cuid {
   eacMargin  : Decimal(15,2);
   costRate   : Decimal(15,2);
   costDelta  : Decimal(15,2);
+  /**
+   * When this line is expected to be spent.
+   *
+   * A budget line knew its amount and its CBS and nothing said which month
+   * that amount was meant to go out in — which is why planned value, the
+   * schedule index and the cashflow curve were all missing at once. They are
+   * the same missing fact asked three ways.
+   */
+  phases     : Composition of many BudgetPhase on phases.line = $self;
+}
+
+/**
+ * One month of one budget line: what it is expected to cost, and when.
+ *
+ * Derived, never keyed. A phase is produced by spreading a line across the
+ * periods its work actually falls in, and re-phasing replaces the set rather
+ * than adding to it — a hand-edited phase would be a figure nobody could
+ * reconcile against either the line above it or the programme behind it.
+ *
+ * The period is a fiscal period, not a month string, for the same reason the
+ * period report's is: a cashflow bucket, a certificate and a CVR that end
+ * their month on different days cannot be reconciled against each other.
+ */
+entity BudgetPhase : cuid {
+  line       : Association to BudgetLine;
+  /** Denormalised so a curve can be read for a project without a join. */
+  project    : Association to prj.Project;
+  budget     : Association to Budget;
+  period     : Association to fin.FiscalPeriod;
+  periodName : String(40);
+  /** The period's own start, so a series sorts without resolving the period. */
+  startDate  : Date;
+  amount     : Decimal(15,2);
+  /**
+   * How the share was decided.
+   *
+   * PROGRAMME  the line's CBS is mapped to WBS elements that carry activities,
+   *            and the amount follows those activities' working days.
+   * ENVELOPE   nothing maps it to any dated work, so it is spread evenly
+   *            across the project's own dates. Flagged rather than silent: a
+   *            curve built from envelopes is a straight line pretending to be
+   *            a forecast, and the reader has to know which lines are which.
+   */
+  basis      : String(12) enum { PROGRAMME; ENVELOPE; };
 }
 
 /**

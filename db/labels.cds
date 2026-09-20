@@ -29,18 +29,19 @@ using { konstryx.sys } from './sys';
 using { konstryx.wf } from './wf';
 
 annotate konstryx.admin.CompanyGroup with {
-  code         @title : 'Code';
-  name         @title : 'Name';
-  iasGroup     @title : 'IAS group';
-  reportingCcy @title : 'Reporting currency';
-  companies    @title : 'Companies';
+  code              @title : 'Code';
+  name              @title : 'Name';
+  iasGroup          @title : 'IAS group';
+  reportingCcy      @title : 'Reporting currency';
+  reportingRateType @title : 'Reporting rate type';
+  companies         @title : 'Companies';
 }
 
 annotate konstryx.admin.Company with {
   code           @title : 'Code';
   legalName      @title : 'Legal name';
   group          @title : 'Group';
-  s4CoCode       @title : 'S/4 company code';
+  s4CoCode       @title : 'ERP company code';
   defaultPlant   @title : 'Default plant';
   purchOrg       @title : 'Purchasing organisation';
   purchGroup     @title : 'Purchasing group';
@@ -60,7 +61,7 @@ annotate konstryx.admin.S4OrgValue with {
   ccy        @title : 'Currency';
   source     @title : 'Source';
   inUse      @title : 'In use';
-  s4System   @title : 'S/4 system';
+  s4System   @title : 'ERP system';
   readAt     @title : 'Read at';
 }
 
@@ -295,16 +296,59 @@ annotate konstryx.fin.ExchangeRate with {
   source    @title : 'Source';
 }
 
-annotate konstryx.ins.CostRevenueSnapshot with {
-  project     @title : 'Project';
-  period      @title : 'Period';
-  budget      @title : 'Budget';
-  committed   @title : 'Committed';
-  encumbered  @title : 'Encumbered';
-  actual      @title : 'Actual';
-  revenue     @title : 'Revenue';
-  earnedValue @title : 'Earned value';
-  eac         @title : 'EAC';
+annotate konstryx.fin.FiscalCalendar with {
+  code         @title : 'Code';
+  name         @title : 'Name';
+  company      @title : 'Company';
+  variant      @title : 'Variant';
+  startMonth   @title : 'Start month';
+  weekStartsOn @title : 'Week starts on';
+  isDefault    @title : 'Default';
+  periods      @title : 'Periods';
+}
+
+annotate konstryx.fin.FiscalPeriod with {
+  calendar     @title : 'Calendar';
+  fiscalYear   @title : 'Fiscal year';
+  periodNo     @title : 'Period number';
+  name         @title : 'Name';
+  startDate    @title : 'Start date';
+  endDate      @title : 'End date';
+  status       @title : 'Status';
+  isAdjustment @title : 'Adjustment period';
+}
+
+annotate konstryx.ins.ProjectPeriodReport with {
+  project             @title : 'Project';
+  period              @title : 'Period';
+  periodName          @title : 'Period';
+  takenAt             @title : 'Measured at';
+  contractValue       @title : 'Contract value';
+  variations          @title : 'Variations';
+  adjustedValue       @title : 'Adjusted value';
+  plannedValue        @title : 'Planned value';
+  earnedValue         @title : 'Earned value';
+  actualCost          @title : 'Actual cost';
+  costVariance        @title : 'Cost variance';
+  scheduleVariance    @title : 'Schedule variance';
+  cpi                 @title : 'CPI (earned / spent)';
+  spi                 @title : 'SPI (earned / planned)';
+  costToDate          @title : 'Cost to date';
+  signedLabourCost    @title : 'Signed labour cost';
+  stockIssuedCost     @title : 'Stock issued cost';
+  costToComplete      @title : 'Estimated cost to complete';
+  forecastCost        @title : 'Forecast cost';
+  forecastMargin      @title : 'Forecast margin';
+  forecastMarginPct   @title : 'Forecast margin %';
+  percentComplete     @title : 'Percent complete';
+  companyCcy          @title : 'Company currency';
+  groupCcy            @title : 'Group currency';
+  rateType            @title : 'Rate type';
+  rateApplied         @title : 'Rate applied';
+  adjustedValueGroup  @title : 'Adjusted value (group)';
+  forecastCostGroup   @title : 'Forecast cost (group)';
+  forecastMarginGroup @title : 'Forecast margin (group)';
+  note                @title : 'Note';
 }
 
 annotate konstryx.int.SyncRun with {
@@ -330,9 +374,9 @@ annotate konstryx.int.ErrorQueueItem with {
 
 annotate konstryx.int.S4DocXref with {
   konstryxDoc @title : 'KONSTRYX document';
-  s4DocType   @title : 'S/4 document type';
-  s4DocNo     @title : 'S/4 document number';
-  s4System    @title : 'S/4 system';
+  s4DocType   @title : 'ERP document type';
+  s4DocNo     @title : 'ERP document number';
+  s4System    @title : 'ERP system';
 }
 
 annotate konstryx.master.ResourceNode with {
@@ -343,8 +387,8 @@ annotate konstryx.master.ResourceNode with {
   description      @title : 'Description';
   consUoM          @title : 'Consumption UoM';
   outputUoM        @title : 'Output UoM';
-  s4Material       @title : 'S/4 material';
-  s4ServiceProduct @title : 'S/4 service product';
+  s4Material       @title : 'ERP material';
+  s4ServiceProduct @title : 'ERP service product';
   defaultCBS       @title : 'Default CBS';
   linkedRate       @title : 'Linked rate';
   children         @title : 'Children';
@@ -403,8 +447,8 @@ annotate konstryx.master.RateMaster with {
   resource         @title : 'Resource';
   source           @title : 'Source';
   vendor           @title : 'Vendor';
-  s4ActivityType   @title : 'S/4 activity type';
-  s4ServiceProduct @title : 'S/4 service product';
+  s4ActivityType   @title : 'ERP activity type';
+  s4ServiceProduct @title : 'ERP service product';
   rateValue        @title : 'Rate';
   basis            @title : 'Basis';
   ccy              @title : 'Currency';
@@ -434,11 +478,217 @@ annotate konstryx.master.WorkforceCatalog with {
 }
 
 annotate konstryx.master.TradeCatalogue with {
-  code @title : 'Code';
+  code         @title : 'Trade';
+  description  @title : 'Description';
+  discipline   @title : 'Discipline';
+  grades       @title : 'Grades';
+  certificates @title : 'Certificates required';
+}
+
+annotate konstryx.master.TradeGrade with {
+  code        @title : 'Grade';
+  description @title : 'Description';
+  sequence    @title : 'Order';
+}
+
+annotate konstryx.master.TradeCertificate with {
+  code        @title : 'Certificate';
+  description @title : 'Description';
+  blocking    @title : 'Stops him working';
 }
 
 annotate konstryx.master.ShiftPattern with {
-  code @title : 'Code';
+  code          @title : 'Pattern';
+  description   @title : 'Description';
+  dutyHours     @title : 'Duty day (hours)';
+  mandayHours   @title : 'Manday (hours)';
+  breakMinutes  @title : 'Break (minutes)';
+  allHoursAreOT @title : 'Whole day is overtime';
+  calendar      @title : 'Holiday calendar';
+  effectiveFrom @title : 'Effective from';
+  overtimeSteps @title : 'Overtime ladder';
+}
+
+annotate konstryx.master.OvertimeStep with {
+  kind         @title : 'Rung';
+  description  @title : 'Description';
+  costFactor   @title : 'Cost factor';
+  chargeFactor @title : 'Charge factor';
+  fromHour     @title : 'From hour';
+  sequence     @title : 'Order';
+}
+
+annotate konstryx.master.HolidayCalendar with {
+  code        @title : 'Calendar';
+  description @title : 'Description';
+  country     @title : 'Country';
+  region      @title : 'Region';
+  year        @title : 'Year';
+  entries     @title : 'Days';
+}
+
+annotate konstryx.master.HolidayCalendarEntry with {
+  holidayDate @title : 'Date';
+  description @title : 'Occasion';
+  class       @title : 'Class';
+  status      @title : 'Status';
+  otKind      @title : 'Overtime rung';
+  nonWorking  @title : 'Non-working';
+}
+
+annotate konstryx.master.Employee with {
+  empNo        @title : 'Works number';
+  fullName     @title : 'Name';
+  passportNo   @title : 'Passport';
+  emiratesId   @title : 'Emirates ID';
+  nationality  @title : 'Nationality';
+  source       @title : 'Mastered in';
+  trade        @title : 'Trade';
+  grade        @title : 'Grade';
+  shiftPattern @title : 'Shift pattern';
+  calendar     @title : 'Holiday calendar';
+  costCentre   @title : 'Cost centre';
+  gradingBand  @title : 'Grading band';
+  joinedOn     @title : 'Joined';
+  leftOn       @title : 'Left';
+  status       @title : 'Status';
+  documents    @title : 'Documents';
+}
+
+annotate konstryx.master.EmployeeDocument with {
+  code        @title : 'Document';
+  description @title : 'Description';
+  documentNo  @title : 'Number';
+  issuedOn    @title : 'Issued';
+  expiresOn   @title : 'Expires';
+  blocking    @title : 'Stops him working';
+}
+
+annotate konstryx.master.CrewTemplate with {
+  code                  @title : 'Crew';
+  description           @title : 'Description';
+  outputBasis           @title : 'Output stated per';
+  outputPerDay          @title : 'Output per day';
+  outputUoM             @title : 'Unit';
+  minimumManning        @title : 'Minimum manning';
+  substitutionAllowed   @title : 'Substitution allowed';
+  foremanCountsToOutput @title : 'Foreman counts to output';
+  mixedSourcingAllowed  @title : 'Mixed sourcing allowed';
+  crewRatePerHr         @title : 'Crew rate / hour';
+  slots                 @title : 'Composition';
+}
+
+annotate konstryx.master.CrewTemplateSlot with {
+  slotNo    @title : 'Slot';
+  trade     @title : 'Trade';
+  grade     @title : 'Grade';
+  isForeman @title : 'Foreman';
+  ratePerHr @title : 'Rate / hour';
+}
+
+annotate konstryx.master.Gang with {
+  code            @title : 'Gang';
+  description     @title : 'Description';
+  template        @title : 'Crew template';
+  project         @title : 'Project';
+  manned          @title : 'Manned';
+  slotsRequired   @title : 'Slots';
+  actualRatePerHr @title : 'Actual rate / hour';
+  status          @title : 'Status';
+  blockedReason   @title : 'Why it cannot work';
+  slots           @title : 'Slots';
+}
+
+annotate konstryx.master.GangSlot with {
+  slotNo        @title : 'Slot';
+  source        @title : 'Sourced from';
+  employee      @title : 'Worker';
+  engagement    @title : 'Engagement';
+  trade         @title : 'Slot trade';
+  grade         @title : 'Grade';
+  ratePerHr     @title : 'Rate / hour';
+  blockedReason @title : 'Why he does not count';
+}
+
+annotate konstryx.master.AbsenceReason with {
+  code                 @title : 'Reason';
+  description          @title : 'Description';
+  blocksTimesheet      @title : 'Blocks timesheet';
+  blocksMobilisation   @title : 'Blocks mobilisation';
+  documentRequired     @title : 'Document required';
+  postsAsAbsenceHours  @title : 'Posts as absence hours';
+  returnsAutomatically @title : 'Returns automatically';
+}
+
+annotate konstryx.master.Absence with {
+  employee   @title : 'Worker';
+  engagement @title : 'Engagement';
+  reason     @title : 'Reason';
+  fromDate   @title : 'From';
+  toDate     @title : 'To';
+  derived    @title : 'Raised by an expiry';
+  note       @title : 'Note';
+}
+
+annotate konstryx.master.SubcontractWorker with {
+  workerNo    @title : 'Worker number';
+  fullName    @title : 'Name';
+  passportNo  @title : 'Passport';
+  emiratesId  @title : 'Emirates ID';
+  nationality @title : 'Nationality';
+  status      @title : 'Status';
+  documents   @title : 'Documents';
+  engagements @title : 'Engagements';
+}
+
+annotate konstryx.master.SubcontractWorkerDocument with {
+  code        @title : 'Document';
+  description @title : 'Description';
+  documentNo  @title : 'Number';
+  issuedOn    @title : 'Issued';
+  expiresOn   @title : 'Expires';
+  blocking    @title : 'Stops him working';
+}
+
+annotate konstryx.master.SubcontractEngagement with {
+  worker         @title : 'Worker';
+  vendor         @title : 'Supplier';
+  project        @title : 'Project';
+  poNo           @title : 'Purchase order';
+  poItem         @title : 'Item';
+  trade          @title : 'Engaged as';
+  grade          @title : 'Grade';
+  ratePerHr      @title : 'Rate / hour';
+  fromDate       @title : 'From';
+  toDate         @title : 'To';
+  hseInductionOn @title : 'HSE induction';
+  wcCoverExpiry  @title : 'WC cover expires';
+  status         @title : 'Status';
+}
+
+annotate konstryx.master.RosterUpload with {
+  vendor        @title : 'Supplier';
+  fileName      @title : 'File';
+  uploadedOn    @title : 'Uploaded';
+  status        @title : 'Status';
+  rowsTotal     @title : 'Rows';
+  rowsAccepted  @title : 'Accepted';
+  rowsRejected  @title : 'Rejected';
+  rowsDuplicate @title : 'Already held';
+  rows          @title : 'Rows';
+}
+
+annotate konstryx.master.RosterUploadRow with {
+  lineNo      @title : 'Line';
+  fullName    @title : 'Name';
+  passportNo  @title : 'Passport';
+  tradeCode   @title : 'Trade';
+  gradeCode   @title : 'Grade';
+  joiningDate @title : 'Joining';
+  visaExpiry  @title : 'Visa expires';
+  outcome     @title : 'Outcome';
+  reason      @title : 'Reason';
+  worker      @title : 'Matched to';
 }
 
 annotate konstryx.master.AssetRegister with {
@@ -446,14 +696,17 @@ annotate konstryx.master.AssetRegister with {
 }
 
 annotate konstryx.mat.PullRequest with {
-  pullReqNo       @title : 'Pull request number';
+  docNo           @title : 'Pull request';
   reservationLine @title : 'Reservation line';
   storageLoc      @title : 'Storage location';
   qtyRequested    @title : 'Quantity requested';
   qtyIssued       @title : 'Quantity issued';
-  s4GIDoc         @title : 'S/4 goods issue document';
-  s4GIDate        @title : 'S/4 goods issue date';
-  s4GIQty         @title : 'S/4 goods issue quantity';
+  issuedValue     @title : 'Issued value';
+  s4GIDoc         @title : 'ERP goods issue document';
+  s4GIDate        @title : 'ERP goods issue date';
+  s4GIQty         @title : 'ERP goods issue quantity';
+  s4System        @title : 'ERP system';
+  syncMessage     @title : 'ERP message';
   status          @title : 'Status';
 }
 
@@ -461,6 +714,8 @@ annotate konstryx.mat.SiteReceipt with {
   pullRequest     @title : 'Pull request';
   confirmedOnSite @title : 'Confirmed on site';
   receivedQty     @title : 'Received quantity';
+  shortQty        @title : 'Outstanding after this';
+  note            @title : 'Note';
   receivedBy      @title : 'Received by';
   receivedOn      @title : 'Received on';
 }
@@ -472,8 +727,37 @@ annotate konstryx.mat.ConsumptionRecord with {
   theoreticalQty   @title : 'Theoretical quantity';
   actualQty        @title : 'Actual quantity';
   wastageAllowance @title : 'Wastage allowance';
+  rateApplied      @title : 'Norm applied';
   variance         @title : 'Variance';
   variancePct      @title : 'Variance %';
+  result           @title : 'Result';
+  recordedBy       @title : 'Recorded by';
+  note             @title : 'Note';
+}
+
+annotate konstryx.wf.ReservationVariation with {
+  reservation   @title : 'Reservation';
+  reason        @title : 'Reason';
+  narrative     @title : 'What changed';
+  effectiveFrom @title : 'Effective from';
+  decidedBy     @title : 'Decided by';
+  decidedOn     @title : 'Decided on';
+  deltaAmount   @title : 'Change in value';
+  lines         @title : 'Lines';
+}
+
+annotate konstryx.wf.ReservationVariationLine with {
+  variation        @title : 'Variation';
+  reservationLine  @title : 'Reservation line';
+  qtyBefore        @title : 'Quantity before';
+  qtyAfter         @title : 'Quantity after';
+  rateBefore       @title : 'Rate before';
+  rateAfter        @title : 'Rate after';
+  daysBefore       @title : 'Days before';
+  daysAfter        @title : 'Days after';
+  encumberedBefore @title : 'Locked before';
+  encumberedAfter  @title : 'Locked after';
+  delta            @title : 'Change';
 }
 
 annotate konstryx.mat.ReservationClosure with {
@@ -821,8 +1105,8 @@ annotate konstryx.scr.PaymentCertificate with {
   netCertified    @title : 'Net certified';
   ldApplied       @title : 'Liquidated damages';
   backChargeTotal @title : 'Back charges';
-  s4InvoiceRef    @title : 'S/4 invoice reference';
-  s4Api           @title : 'S/4 API';
+  s4InvoiceRef    @title : 'ERP invoice reference';
+  s4Api           @title : 'ERP API';
   paymentTerm     @title : 'Payment term';
   adjustments     @title : 'Adjustment lines';
   ldSteps         @title : 'LD calculation steps';
@@ -937,6 +1221,7 @@ annotate konstryx.wf.ResourceRequest with {
   isSubstitution @title : 'Is substitution';
   prFlag         @title : 'PR flag';
   lines          @title : 'Lines';
+  attachments    @title : 'Attachments';
 }
 
 annotate konstryx.wf.ResourceRequestLine with {

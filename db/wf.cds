@@ -27,6 +27,23 @@ entity ResourceRequest : cuid, managed, common.documented {
    * and deleting a request should not silently take a signed permit with it.
    */
   attachments : Association to many sys.Attachment on attachments.objectID = ID;
+  /**
+   * The chain this request produced, and the one that produced it.
+   *
+   * The links were being written by the chain handler and read by nothing.
+   * Every step of a request's life was recorded and no screen showed it, so a
+   * coordinator holding an approved request had no way to see whether it had
+   * become an availability check, a reservation, a requisition, some of those
+   * or none.
+   *
+   * Joined on the document number rather than a key, because the chain crosses
+   * entities: a foreign key per target would need a column for every kind of
+   * document a request might ever produce.
+   */
+  flowOut : Association to many DocumentLink on flowOut.fromDoc = docNo;
+  flowIn  : Association to many DocumentLink on flowIn.toDoc = docNo;
+  /** Every state this request has been through, and who moved it. */
+  history : Association to many StatusHistory on history.docId = docNo;
 }
 
 entity ResourceRequestLine : cuid {
@@ -44,6 +61,14 @@ entity ResourceRequestLine : cuid {
   estUnitCost : Decimal(15,2);
   estTotal    : Decimal(15,2);
   needBy      : Date;
+  // How long the resource is wanted for. A crane priced per day and a bag of
+  // cement priced per bag both have a quantity and a rate, and only one of
+  // them costs its rate once: without a period, a request for two cranes at
+  // 320 a day asks for 640, which is what a two-day hire costs and not what
+  // anybody meant. Both dates or neither -- a line with only one end of a
+  // period has said nothing about duration.
+  periodFrom  : Date;
+  periodTo    : Date;
   lineStatus  : String(20);
   advisory    : Association to AdvisoryDecision;
   avcResult   : Association to AvailabilityCheckLine;
@@ -93,11 +118,79 @@ entity ReservationLine : cuid {
   uom             : String(10);
   dailyRate       : Decimal(15,2);
   encumberedAmount: Decimal(15,2);    // locked on create
+  // The duration behind the lock, taken from the request line's period. The
+  // amount alone cannot be read back: 416,000 against 8 heads at 520 is a
+  // hundred days, but only if you already know the arithmetic ran that way,
+  // and dividing to find out breaks on a line that locked nothing. Null on
+  // reservations raised before the period existed, where the division is
+  // still the only answer available.
+  reservedDays    : Decimal(9,2);
   consumedToDate  : Decimal(15,3);
   burnPct         : Decimal(5,2);
   costToDate      : Decimal(15,2);
   drift           : Decimal(15,2);
   lineStatus      : String(20);       // Created(Encumbered) -> Issuing -> Consuming -> Reconciling -> Closed
+}
+
+/**
+ * A change to a reservation that is already live: step 8 of the chain.
+ *
+ * Not the same document as a BOQ variation. That one varies a priced bill and
+ * argues with the client about revenue; this one varies what the job has
+ * locked to build with, and the only party to it is the project. Slab cycle
+ * slipped, both cranes need thirty more days: nothing about the bill changed,
+ * and the reservation is now short.
+ *
+ * A variation is applied, not proposed. It carries the before and the after on
+ * every line it touches, so what the lock was at the moment it moved survives
+ * the move — otherwise the only record of a rate that doubled is the rate it
+ * doubled to.
+ */
+entity ReservationVariation : cuid, managed, common.documented {
+  reservation   : Association to Reservation;
+  /**
+   * Why the reservation moved, which is not the same question as what moved.
+   * A duration extension and a rate correction can produce the identical
+   * delta, and only one of them is a planning failure.
+   */
+  reason        : String(20) enum {
+    DURATION; QUANTITY; RATE; SCOPE; CANCELLATION;
+  };
+  narrative     : String(500);
+  effectiveFrom : Date;
+  decidedBy     : String(120);
+  decidedOn     : Date;
+  /** Signed: the sum of its lines. Negative gives budget back. */
+  deltaAmount   : Decimal(15,2);
+  lines         : Composition of many ReservationVariationLine
+                    on lines.variation = $self;
+}
+
+/**
+ * One line's move. Before and after are both stored: the reservation line
+ * itself only ever holds the current figure, so without these a variation
+ * could be read but never checked.
+ */
+entity ReservationVariationLine : cuid {
+  variation        : Association to ReservationVariation;
+  reservationLine  : Association to ReservationLine;
+  qtyBefore        : Decimal(15,3);
+  qtyAfter         : Decimal(15,3);
+  rateBefore       : Decimal(15,2);
+  rateAfter        : Decimal(15,2);
+  /**
+   * The days the lock covers. Not stored on the reservation line — its
+   * quantity is heads and its rate is per day, so the duration is whatever
+   * the approved lock divided by the two comes to. Written down here because
+   * a variation is the one moment it is known, and a lock read back years
+   * later cannot say whether it grew by heads or by weeks.
+   */
+  daysBefore       : Decimal(9,2);
+  daysAfter        : Decimal(9,2);
+  encumberedBefore : Decimal(15,2);
+  encumberedAfter  : Decimal(15,2);
+  /** After less before. What the budget gains or gives up on this line. */
+  delta            : Decimal(15,2);
 }
 
 // ---- Cross-cutting ----
@@ -108,11 +201,38 @@ entity StatusHistory : cuid {
   toState   : String(20);
   changedBy : String(120);
   changedOn : DateTime;
+  /**
+   * Where this entry sits in that document's own account of itself, counting
+   * from one.
+   *
+   * Ordering on changedOn alone cannot separate two moves made inside one
+   * request: they tie on the wall clock, and what comes back first is then
+   * whatever the store feels like. A withdrawal and the resubmission that
+   * followed it read in either order on successive runs, which on a record
+   * whose whole purpose is to say how a document got where it is means it can
+   * be read as saying the opposite.
+   *
+   * Per document rather than global, so it survives the document being given a
+   * new number: a requisition enters the flow under its own key and takes its
+   * history with it when ERP issues one, and the entries stay in the order
+   * they happened.
+   */
+  seq       : Integer;
   comment   : String(500);
 }
 
+/**
+ * One step of a document chain: which document produced which, and how.
+ *
+ * Held by document number rather than by key because the chain crosses
+ * entities - a request produces an availability check, a reservation and a
+ * requisition - and a foreign key per target would need a column for every
+ * kind of document anything might ever produce.
+ */
 entity DocumentLink : cuid {
   fromDoc  : String(40);
   toDoc    : String(40);
   linkType : String(30);
+  /** When the step happened, so a flow reads in the order it occurred. */
+  linkedAt : Timestamp;
 }

@@ -43,7 +43,7 @@ entity PaymentApplication : cuid, managed {
 
 /**
  * PC: the Engineer's certification of one PA — the object this screen
- * renders. Triggers the S/4 supplier invoice on certification (not built
+ * renders. Triggers the ERP supplier invoice on certification (not built
  * here; s4InvoiceRef/s4Api are the wireframe's own read-only trigger panel).
  */
 entity PaymentCertificate : cuid, managed, common.documented {

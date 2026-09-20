@@ -11,10 +11,10 @@
  * redeploy, because in a per-client deployment the client's own administrator
  * owns that decision.
  *
- * The S/4 analogy is deliberate:
- *   S/4 authorization object   -> auth.AuthObject   (BUDGET, RESERVATION, ...)
- *   S/4 activity (ACTVT)       -> auth.Activity     (01 Create, 03 Display, ...)
- *   S/4 organisational level   -> company + project on auth.UserAssignment
+ * The ERP analogy is deliberate:
+ *   ERP authorization object   -> auth.AuthObject   (BUDGET, RESERVATION, ...)
+ *   ERP activity (ACTVT)       -> auth.Activity     (01 Create, 03 Display, ...)
+ *   ERP organisational level   -> company + project on auth.UserAssignment
  */
 namespace konstryx.auth;
 
@@ -58,7 +58,7 @@ entity AuthObject : cuid, managed {
   activities          : Composition of many AuthObjectActivity on activities.authObject = $self;
 }
 
-/** Activity codes, mirroring the S/4 ACTVT convention so the numbers read familiar. */
+/** Activity codes, mirroring the ERP ACTVT convention so the numbers read familiar. */
 entity Activity : CodeList {
   key code : String(2);              // 01 02 03 06 43 ...
 }

@@ -36,6 +36,22 @@ entity ContentPack : cuid, managed {
   appliedBy    : String(120);
   rowsInserted : Integer;
   rowsSkipped  : Integer;         // already present, left untouched
+  /**
+   * A pack that fails is recorded too, and that is the point of the field.
+   *
+   * A failure used to leave nothing behind: the rows were rolled back, no row
+   * was written here, and a tenant missing its personas looked exactly like a
+   * tenant that was never given any. The only trace was one line in a boot log,
+   * which is the wrong place for it — the symptom is every request returning
+   * 403, that sends somebody to the authorization model, and by the time they
+   * think to doubt the seed the container has restarted and taken the log.
+   *
+   * Kept for the same reason ImportRun keeps every load: the question is asked
+   * long after the event.
+   */
+  outcome      : String(10) default 'APPLIED';   // APPLIED · FAILED
+  /** What went wrong, naming the row. Empty on a pack that applied. */
+  message      : String(1000);
 }
 
 // ------------------------------------------------------------------ imports
@@ -90,6 +106,17 @@ entity Attachment : cuid, managed {
   /** Successive uploads under one logical document keep their history. */
   version     : Integer default 1;
   supersedes  : Association to Attachment;
+  /**
+   * Withdrawn without being destroyed.
+   *
+   * A version another version supersedes cannot be deleted — doing so leaves
+   * its successor pointing at nothing, and the history is the only reason to
+   * keep versions at all. But somebody who uploads the wrong file needs a way
+   * to say so, and refusing with no alternative is how a rule gets worked
+   * around. This is that alternative: the row stays, the chain holds, and the
+   * file stops being offered as current.
+   */
+  isObsolete  : Boolean default false;
 }
 
 entity AttachmentCategory : cuid, managed {

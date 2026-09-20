@@ -9,6 +9,7 @@ using { konstryx.common } from './common';
 using { konstryx.admin } from './admin';
 using { konstryx.master } from './master';
 using { konstryx.fin } from './fin';
+using { konstryx.vo } from './vo';
 
 // S/4 Enterprise Project mirror + Konstryx-local attributes.
 /**
@@ -56,6 +57,25 @@ entity Project : cuid, managed, common.s4outbound {
   cbs              : Association to many CBSInstance on cbs.project = $self;
   activities       : Association to many Activity on activities.project = $self;
   locations        : Association to many SiteLocation on locations.project = $self;
+  allocations      : Association to many Allocation on allocations.project = $self;
+  variations       : Association to many vo.VariationOrder on variations.project = $self;
+
+  /**
+   * Where the programme comes from.
+   *
+   * A WBS tree is authored in the planner's tool and read here, not the other
+   * way round, and on a job that plans in Primavera the structure on this
+   * screen is a copy with a date on it. Saying which export it is a copy of,
+   * and when it was taken, is the difference between a tree someone trusts and
+   * a tree someone re-checks against the planner every time they use it.
+   *
+   * Empty on a project whose structure was built here. That is not a gap: a
+   * structure with no external source is its own source.
+   */
+  p6ProjectId      : String(60);
+  p6File           : String(255);
+  p6LastSyncedAt   : DateTime;
+  p6SyncMessage    : String(500);
 }
 
 // S/4 WBS mirror.
@@ -140,10 +160,13 @@ entity BOQ : cuid, managed {
   boqId         : String(20);
   project       : Association to Project;
   version       : String(10);
-  status        : String(20);
+  /** Starts somewhere, for the same reason a documented header does. */
+  status        : String(20) default 'Draft';
   contractValue : Decimal(15,2);
   source        : String enum { IMPORT; MANUAL; } default 'IMPORT';
   items         : Composition of many BOQItem on items.boq = $self;
+  /** What has changed since this bill was priced. */
+  variations    : Association to many vo.VariationOrder on variations.boq = $self;
 }
 
 entity BOQItem : cuid, managed {
@@ -160,14 +183,40 @@ entity BOQItem : cuid, managed {
    */
   budgetQty    : Decimal(15,3);
   uom          : String(10);
+  /** The contract rate. What the client is billed. */
   rate         : Decimal(15,2);
   amount       : Decimal(15,2);
+  /**
+   * What the line costs to build, per unit and in total.
+   *
+   * Revenue was on the line and cost was not — it could only be reached by
+   * summing the resource build-up, which meant no list could show margin and
+   * no screen could show a line that sells well and builds badly. Derived from
+   * the build-up by recalculateCost, never typed: a cost stated beside a
+   * build-up that contradicts it is two answers to one question.
+   *
+   * Costed against budgetQty where there is one, because that is the quantity
+   * the work is actually planned at - the take-off plus wastage - while
+   * revenue is always the contract quantity (CALC-05). The two differ, and the
+   * difference is a real part of the margin.
+   */
+  costRate     : Decimal(15,2);
+  costAmount   : Decimal(15,2);
+  /** Revenue less cost, and as a percentage of revenue. */
+  marginAmount : Decimal(15,2);
+  marginPct    : Decimal(9,2);
   billedToDate : Decimal(15,2);
   cumDoneQty   : Decimal(15,3);
   cumDonePct   : Decimal(5,2);
   certifiedPct : Decimal(5,2);
   cbs          : Association to CBSInstance;
   buildUp      : Composition of many BOQItemResource on buildUp.boqItem = $self;
+  /**
+   * Where this line's quantity was sent: which WBS element builds it and which
+   * CBS node absorbs its cost. The association back was missing, so the split
+   * could be written and never read from the line it came off.
+   */
+  allocations  : Association to many Allocation on allocations.boqItem = $self;
 }
 
 /**
@@ -209,6 +258,8 @@ entity BOQItemResource : cuid, managed {
 // Project CBS instantiated from the library.
 entity CBSInstance : cuid, managed {
   code         : String(40);
+  /** Copied from the library node, and editable per project. */
+  name         : String(120);
   project      : Association to Project;
   parent       : Association to CBSInstance;
   libraryNode  : Association to master.CBSNode;
@@ -275,6 +326,7 @@ entity SiteLocation : cuid, managed {
 
 // BOQItem <-> WBS <-> CBS mapping.
 entity Allocation : cuid, managed {
+  project      : Association to Project;
   boqItem      : Association to BOQItem;
   wbs          : Association to WBSElement;
   cbs          : Association to CBSInstance;

@@ -44,6 +44,23 @@ entity ResourceNode : cuid, managed, common.scoped {
    */
   s4Material   : Association to Material;
   /**
+   * The ERP product code this resource is registered as, and the code of the
+   * service product it is registered as when it is hired rather than bought.
+   *
+   * The associations above point at rows in the mirror, and the mirror is
+   * rebuilt from ERP on every read - a mirror row's key is generated here, so
+   * an association stored against it stops resolving the moment the catalogue
+   * is read again. The registration therefore has to be the code, which is
+   * stable in S/4 and is what a customer actually configures; the associations
+   * are resolved from it after each master sync.
+   *
+   * A leaf with no registration is not an error. It is a resource KONSTRYX can
+   * plan and cost and cannot yet order, and the requisition says so in those
+   * words rather than failing with a null.
+   */
+  s4MaterialCode       : String(40);
+  s4ServiceProductCode : String(40);
+  /**
    * What a requisition orders when the leaf is NOT a material: manpower hired
    * in, plant rented, a subcontracted service (spec §8 / P10, class -> S/4
    * routing). Held on the leaf rather than on the rate because a requisition
@@ -67,10 +84,21 @@ entity ResourceNode : cuid, managed, common.scoped {
 // CBS library L1->L3 + resource affinity.
 entity CBSNode : cuid, managed, common.scoped {
   code             : String(40);
+  /**
+   * What this node is called.
+   *
+   * There was no name field, so every screen showed `phase` instead — which is
+   * the L1 phase a node belongs to, not the node. The result was a breakdown
+   * where five different level-2 nodes all read "Super-structure" and the only
+   * thing telling them apart was a code, and a cost breakdown whose rows cannot
+   * be told apart is not a breakdown.
+   */
+  name             : String(120);
   level            : String(2) enum { L1; L2; L3; };
   parent           : Association to CBSNode;
   constructionType : String(60);
-  phase            : String(60);     // L1 phase
+  /** The L1 phase this node sits under. A grouping, not a name. */
+  phase            : String(60);
   /**
    * Whether this node absorbs allocated cost or is a pool that gets spread.
    *
@@ -184,6 +212,28 @@ entity Vendor : cuid, managed, common.s4mirror {
   status       : String(20);
 }
 
+/**
+ * S/4 Customer mirror — the other half of the business partner.
+ *
+ * A project already named its client, as free text on customerParent, which is
+ * enough to print on a report and useless for anything else: it cannot be
+ * filtered, two spellings of the same client are two clients, and nothing ties
+ * a project to the account S/4 will invoice. This is the same master the
+ * supplier mirror reads, filtered to the customer role.
+ *
+ * Read-only like every mirror: correcting a customer means correcting it in
+ * S/4.
+ */
+entity Customer : cuid, managed, common.s4mirror {
+  bpNumber     : String(10);
+  name         : String(150);
+  /** The account group S/4 files it under - domestic, foreign, one-time. */
+  accountGroup : String(10);
+  country      : String(3);
+  city         : String(60);
+  status       : String(20);
+}
+
 // S/4 Product Master mirror (MR vertical).
 entity Material : cuid, managed, common.s4mirror {
   materialCode  : String(40);
@@ -194,6 +244,7 @@ entity Material : cuid, managed, common.s4mirror {
 
 // ---- R2-R4 stubs (declared minimally; fields added before S5-S6) ----
 entity WorkforceCatalog : cuid, managed, common.scoped { code : String(40); description : String(255); }
-entity TradeCatalogue   : cuid, managed, common.scoped { code : String(40); description : String(255); }
-entity ShiftPattern     : cuid, managed, common.scoped { code : String(40); description : String(255); }
 entity AssetRegister    : cuid, managed, common.s4mirror { assetNo : String(40); description : String(255); }
+
+// Trades, the working day and the people are in wfm.cds — the same namespace,
+// kept in their own file because they answer availability rather than price.
