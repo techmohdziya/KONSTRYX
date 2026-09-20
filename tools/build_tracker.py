@@ -1,4 +1,8 @@
 """KONSTRYX build tracker — status, decisions, open questions, sequence, issues."""
+import io
+import os
+import subprocess
+
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -38,7 +42,22 @@ def title(ws, text, sub, ncols):
 
 
 def body(ws, start_row, rows, widths, status_col=None):
+    # A row with one field too many does not fail, it slides. Everything past
+    # the extra field moves a column right: Status lands under the next header,
+    # takes no colour because the value there is prose rather than a state, and
+    # the last field spills into a column with no header at all. The sheet still
+    # opens and still looks like a sheet. Two rows had been sitting like that.
+    #
+    # widths is per-column, so it already knows how wide the table is.
     for r, data in enumerate(rows, start=start_row):
+        # Overflow only. A short row leaves its trailing cells empty, which is
+        # how the small fixed blocks on the summary sheet are written and is
+        # visibly a gap. A long one is the silent case.
+        if len(data) > len(widths):
+            raise SystemExit(
+                f"Row {data[0]!r} has {len(data)} fields for {len(widths)} columns. "
+                f"A row that overflows its sheet reports the wrong thing in the "
+                f"right-looking place, so this refuses rather than writes it.")
         for i, v in enumerate(data, start=1):
             cell = ws.cell(row=r, column=i, value=v)
             cell.font = Font(name=FONT, size=9)
@@ -89,10 +108,53 @@ for r, (label, formula) in enumerate(metrics, start=6):
 
 ws["A16"] = "What is running right now"
 ws["A16"].font = Font(name=FONT, bold=True, size=11, color=NAVY)
+# Counted, not typed. This block said "8 OData V4 services" against nine and
+# "48 commits" against a hundred and thirty-nine — both true once, and a figure
+# that is only true once is worse than no figure, because it is read as current.
+def _service_count(repo):
+    try:
+        import glob
+        import re
+        names = set()
+        for path in glob.glob(os.path.join(repo, "srv", "*.cds")):
+            with io.open(path, encoding="utf-8") as f:
+                names.update(re.findall(r"^service\s+(\w+)", f.read(), re.M))
+        return len(names)
+    except Exception:
+        return None
+
+
+def _git(repo, *args):
+    try:
+        out = subprocess.run(["git", "-C", repo, *args], capture_output=True,
+                             text=True, timeout=20)
+        return out.stdout.strip() if out.returncode == 0 else None
+    except Exception:
+        return None
+
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_services = _service_count(REPO)
+_commits = _git(REPO, "rev-list", "--count", "HEAD")
+_dirty = _git(REPO, "status", "--porcelain")
+_last = _git(REPO, "log", "-1", "--date=short", "--format=%ad")
+
+_repo_state = "git" + (f", {_commits} commits" if _commits else "")
+if _last:
+    _repo_state += f", last {_last}"
+if _dirty is not None:
+    changed = len([line for line in _dirty.splitlines() if line.strip()])
+    # A commit count on its own reads as "this is what is saved". It is not,
+    # while a working tree is this far ahead of it.
+    _repo_state += (f", {changed} file(s) uncommitted" if changed
+                    else ", working tree clean")
+
 running = [
-    ["CAP Java service", "http://localhost:8090", "8 OData V4 services, H2, seeded, auth enforced"],
+    ["CAP Java service", "http://localhost:8090",
+     (f"{_services} OData V4 services" if _services else "OData V4 services")
+     + ", H2, seeded, auth enforced"],
     ["UI5 app", "http://localhost:8081", "serve.py proxies /odata to 8090 (same origin)"],
-    ["Repository", r"C:\Users\Ziya\Documents\Claude\Projects\KONSTRYX DEV", "git, 48 commits"],
+    ["Repository", r"C:\Users\Ziya\Documents\Claude\Projects\KONSTRYX DEV", _repo_state],
     ["Reference (read-only)", "OneDrive Products/konstrux/Konstrucx", "FTS, wireframe v12, requirements, backlog"],
 ]
 header(ws, 17, ["Component", "Location", "Notes", "", "", ""])
@@ -124,15 +186,300 @@ items = [
     ("UI-02", "UI", "S/4-style object links, per-user configurable", "An object key is a hyperlink; one target navigates, several open a popover; which targets appear is each user's own choice, persisted through UserVariants. Transaction targets lead; masters are secondary", "Done", "PRJ-001 offers BOQ + Resource Requests; 03.20 offers Assigned CBS + Library", "Roll the registry across every remaining screen with task #12"),
     ("D-23x", "Data", "Canonical mockup data seeded (spec F.1)", "03.10/03.20/03.30 leaves with grade on the attached material row; MP-CIV-CAR-SK-G1 with ALL 1.13 / INFC 1.25 / PMI 0.95; the pile-cap 7-line build-up as IMPORTED at the published figures", "Done", "Per-m3 sum 1,198.95 matches the wireframe to the fils; OPEN-05 residual seeded as published, not invented into agreement", "—"),
     ("F-11", "Frameworks", "A person can read their own import history", "MyImportRuns and MyImportRows, narrowed to what that person uploaded", "Done", "The importing user reads back three runs including 'line 1: Project code DHV-P3 already exists'", "—"),
-    ("A-04", "Authorization", "Write-path input-data check", "Reject CREATE/UPDATE carrying a project outside the user's scope", "Not started", "—", "Validate after Project Setup exists"),
-    ("A-05", "Authorization", "Administration UI", "S/4-like screens to maintain personas, grants, assignments", "Not started", "—", "Part of Masters/Admin UI block"),
+    ("A-04", "Authorization", "The scope was a rule about looking, not about doing",
+     "Reads have been narrowed to the projects and companies a persona reaches since the control was built. Writes were checked for the activity alone -- may this person create requests at all -- and never for where the write landed, so somebody assigned to one job could raise a document naming another, or move one they already had onto a project they have no part in, and it would be kept. Verified before building: a user scoped to PRJ-001 raised and activated a request on PRJ-002 and the row stood",
+     "Done",
+     "The same predicate the read filter uses, extracted so there is one owner of what a grant reaches. Written twice it would drift, and drift silently in the direction that matters. Checked AFTER the write rather than on the payload: the scope paths are expressions over the stored row -- project.code, and four hops on some objects -- and the only thing that can evaluate those is the database with the row in it. Reading the payload would mean walking associations by hand in a second implementation of the read filter, and the two would disagree the first time a path changed. So the row is written, asked about through the same predicate, and the refusal unwinds the change set. Delete is checked before instead, because afterwards there is nothing left to ask about. The boundary is activation, not the draft: a draft is private and not yet a document, which is what the suite already said about the activity check", "test_foundations 1b: a project-scoped user refused on another project and nothing kept, a company-scoped user refused in another company, and a row already in scope refused when moved out of it -- the case no payload check could have answered, because what makes the write wrong is where the row ends up"),
+
+        ("A-05", "Administration", "Administration UI",
+     "S/4-like screens to maintain personas, grants, assignments",
+     "Done",
+     "Three Fiori Elements apps on the authorization service, on Master Data / "
+     "Configuration: Personas with their grants as a facet, User Assignments, and "
+     "Approval Schemes with the steps beneath them. The catalogue is pickable rather "
+     "than typed -- a grant was three UUIDs and is now object, activity, granted, with "
+     "value helps living once on the service. 16 checks: a persona is started, granted "
+     "in its draft and activated, and reads back with what was granted; copyAs carries "
+     "every grant, never marks the copy as delivered, and refuses a duplicate or blank "
+     "code",
+     "The scheme screen is what makes F-16 answerable without hand-written OData"),
     ("F-01", "Frameworks", "Approval framework model", "Schemes per object type, ordered steps, approver persona, value bands, runtime instances", "Done", "Compiles; exposed on /collaboration", "—"),
     ("F-02", "Frameworks", "Approval engine", "Instantiate on submit, match value bands, advance steps, enforce approver persona and separation of duties, delegate, withdraw, audit", "Done", "28 checks against the running service: bands select 1/2/3 steps at 50k/300k/2m; out-of-order, double, reasonless and same-person decisions all refused; persona configured through the admin API then enforced", "Inbox screen (F-04) and per-object wiring (F-05)"),
-    ("F-04", "Frameworks", "Approval inbox screen", "The steps awaiting the signed-in user, with approve, reject and delegate", "Not started", "—", "With the UI rebuild"),
-    ("F-05", "Frameworks", "Wire submit into each object's lifecycle", "Today the caller chooses when to submit. Each document type should move to 'In Approval' on submit and act on the outcome", "Not started", "—", "Per module as each is built"),
+    ("F-04", "Frameworks", "Approval inbox screen",
+     "The steps awaiting the signed-in user, with approve and reject",
+     "Done",
+     "MyApprovals is a projection narrowed as it is read by the same three rules the "
+     "decide path enforces, so filtering, sorting, paging and $count all run over the "
+     "rows the reader is entitled to; list report on Execution / Today with a dynamic "
+     "tile reading the person's own count. 17 checks: a step naming no approver is open "
+     "to all seven demo users, naming Project Manager leaves every inbox but its "
+     "holder's, reading decides nothing, and a row opened from the list is one the "
+     "engine accepts — including its refusals",
+     "Opening the document from a row needs a semantic object per document kind (U-18)"),
+    ("D-05", "Deployment", "An app has three registers and the scaffold wrote two",
+     "konstryx-pull, konstryx-consumption and konstryx-resvariation had manifests, "
+     "annotations and launchpad tiles, and no module in mta.yaml -- a deploy would "
+     "build 30 of 33 and offer three tiles that resolve to nothing. The cause was not "
+     "the apps: tools/scaffold_app.py registers annotations in services.cds and the "
+     "app in package.json sapux, and its own docstring says it adds the app 'where the "
+     "build looks for apps' -- but the deploy looks in mta.yaml, which it never wrote. "
+     "Every app scaffolded by it inherited the same hole. Separately, seven Fiori "
+     "Elements apps were missing from sapux, so the tooling did not count them as its "
+     "own. The freestyle konstryx-ui is legitimately absent from that list, having no "
+     "Fiori Elements target at all",
+     "Done",
+     "All 33 apps are modules with matching deployer artifacts and all 32 Fiori "
+     "Elements apps are in sapux; the scaffold now writes mta.yaml as well, so the "
+     "next one cannot repeat it; test_foundations refuses an app missing from any of "
+     "the three registers",
+     "Still unverified against a real Cloud Foundry deploy, which is D-04"),
+
+    ("A-08", "Administration", "copyAs was declared and had no handler",
+     "The action was in the service contract with a doc comment describing it, and "
+     "nothing implemented it -- calling it returned 500 \"No ON handler completed the "
+     "processing\". Found by exercising the button the new persona screen puts on the "
+     "list, which is the only way a declared-but-absent surface shows itself. Now "
+     "copies the persona and all its grants, clears isDelivered because a copy is not "
+     "product content whatever it was copied from, and refuses a duplicate code -- two "
+     "personas answering to one code make an assignment ambiguous",
+     "Done", "Verified end to end: 10 grants copied, 409 on a duplicate, 400 on a blank code", "—"),
+
+    ("F-19", "Frameworks", "The launchpad computes rich numbers and shows plain ones",
+     "launchpadKpis returns thirteen tiles with a number, a unit, a subtitle and a "
+     "state computed from the number — its own doc comment argues that a tile reading "
+     "only its name makes the launchpad a menu, and that one call exists so a home "
+     "page does not make a dozen. Nothing reads it. The launchpad instead makes 32 "
+     "separate $count calls, and for five screens shows the less informative of the "
+     "two numbers it could: BOQ shows 5 bills where the KPI has 72.04 M AED of "
+     "contract value, and the payment certificates show 5 where the KPI has 2442 K AED "
+     "net. Not a contradiction — different quantities, each labelled — but the tiles "
+     "took the weaker one",
+     "Raised",
+     "Now covered either way: the numbers are checked for a screen that exists, a unit "
+     "and subtitle, states that vary, and agreement with the list a tile would open",
+     "Needs a ruling: an FLP dynamic tile GETs a path and expects a count or the FLP "
+     "number shape, so consuming this action means exposing it in a shape the launcher "
+     "understands. Which shape is a design decision"),
+
+    ("P-08", "Project", "syncWBSFromP6 had never been called by a test",
+     "The action reconciles a live project against a later P6 export and makes four "
+     "promises in its own doc comment: match by code rather than create a second "
+     "project, leave elements the export has dropped in place because they can carry "
+     "budget and signed work, refuse an export naming somebody else's project, and "
+     "never touch the programme. All four held when finally exercised — but nothing "
+     "had exercised them, and it is the one action in the services that appeared in no "
+     "suite, no tool and not even the tracker",
+     "Done",
+     "test_p6 7: a rename, an addition and a re-parent all land; the dropped branch is "
+     "left standing and named in the message so removing it stays a person's decision; "
+     "a stranger's export is refused and changes nothing; one project, not two",
+     "—"),
+
+    ("P-09", "Project", "The cost mapping workbench is two implementations of one question",
+     "costMappingPortfolio answers for every project and costMappingSummary for one, "
+     "and the second is documented as the counterpart of the first. Neither had ever "
+     "been called by a test, which is how two answers to the same question drift apart "
+     "without anyone noticing — a workbench saying a project needs a human while the "
+     "project's own page says it does not is worse than either number alone",
+     "Done",
+     "test_project: 42 comparisons across 7 projects on every count the two share, no "
+     "disagreement, and the exception count never exceeds the lines there are",
+     "—"),
+
+    ("F-20", "Frameworks", "A derived document is less protected than the one it came from",
+     "Measured across the demo tenant: daud sees 5 resource requests, all on PRJ-001, "
+     "and all 6 purchase requisitions -- spanning PRJ-001, 002, 004 and 005, three of "
+     "them projects whose requests he is refused. So the requisition raised from a "
+     "request he cannot read is fully readable to him, with its project, its value and "
+     "its vendor. The cause is structural rather than a bug in the enforcement: 70 of "
+     "the 101 entities the services project are named by no auth object, so "
+     "AuthorizationHandler has no scope path to narrow them by. Persona grants still "
+     "gate the entity as a whole -- jin, vikram, rohan and steward_pmi are refused "
+     "outright -- but among those who may read at all there is no project or company "
+     "scoping. The catalogue itself is clean: no auth object names an entity nobody "
+     "projects. Many of the 70 are legitimately open (activities, modules, the auth "
+     "catalogue, value-help lists); the ones that are not are documents",
+     "Raised", "—",
+     "Needs a ruling on which of the 70 become auth objects and with what projectPath "
+     "and companyPath -- the mechanism is data-driven and already there, so this is "
+     "policy rather than code. Purchase requisitions and orders are the ones in your "
+     "stated priority. The invariant worth adopting: a document is never more readable "
+     "than the document it derives from"),
+
+    ("U-19", "UI", "Every action dialog asked for its parameter by its variable name",
+     "Fiori Elements builds an action dialog from the parameter list and labels each "
+     "field with the parameter's own name when nothing else does, so approving a "
+     "document asked for 'comment' in lower case, rejecting one asked for 'comment' "
+     "again with no hint that the engine refuses a blank, and the P6 sync asked for "
+     "'validateOnly'. No @title existed on any action parameter anywhere in the "
+     "services. Found by opening the screen -- the metadata, the manifest and the "
+     "suites were all correct and none of them could show it",
+     "Done",
+     "All seven dialogs a screen can open are titled; verified in the browser: the "
+     "approve dialog now reads Comment and the reject dialog Reason for rejecting, "
+     "which is also the rule the engine enforces",
+     "The other 61 actions take no parameters or are not on a button"),
+
+    ("U-20", "UI", "The screens had never been seen, only inferred",
+     "Everything built this session was verified through the service and the "
+     "annotations, and the standing rule is that a UI claim needs a browser. The "
+     "service requires an authenticated user for every entity, so a browser gets a "
+     "password box; the way through was a scratch proxy that forwards to 8090 adding "
+     "the same basic-auth header the suites already use, with the mock credentials "
+     "that live in those suites. Nothing added to the repo",
+     "Done",
+     "My Approvals renders four rows with Document, Type from the catalogue, Value, "
+     "Step and Waiting since carrying the ascending sort the PresentationVariant "
+     "declares; selecting a row enables Approve, the dialog takes a comment, the "
+     "decision reaches the step with that comment on it, and the row leaves the list "
+     "4 -> 3. Personas renders six with their grants, Copy as new, and draft editing",
+     "The remaining 31 apps are still unseen; U-19 was the defect one screen produced"),
+
+    ("W-01", "Masters", "The workforce domain the wireframe specifies did not exist",
+     "Wireframe v13 grew 20 screens between 26 Aug and 2 Sep, all in Masters, and the "
+     "build had four one-line stubs where they belong: WorkforceCatalog, TradeCatalogue, "
+     "ShiftPattern and AssetRegister, each carrying a code and a description and nothing "
+     "else. Built out in db/wfm.cds -- the working day and its overtime ladder, holiday "
+     "calendars, trades with grades and blocking certificates, own workers with their "
+     "documents, crew templates with slots, live gangs, absence reasons and an "
+     "availability register, the subcontract man held separately from his engagements, "
+     "and roster upload. Twenty entities, one namespace, exposed on MasterDataService",
+     "Done",
+     "test_workforce 33/33: the ladder reads back with cost and charge separate on all "
+     "six rungs, a crew rate of 142.00 summed from six slots overwrites a typed 999.99, "
+     "a gang of five on a six-slot template reports 5 of 6 and 126.50 against 142.00, a "
+     "man on a slot with a lapsed card does not count toward manning, an overlapping "
+     "engagement is refused 409 and the same passport twice is refused 409. A "
+     "duplicate crew code was possible until a screen showed the same template "
+     "listed twice -- the workforce masters now carry the same code-uniqueness "
+     "rule the resource hierarchy and rate masters already had",
+     "Asset sub-categories (Fix 63) are not built -- they are Equipment Masters, which "
+     "your stated priority holds"),
+
+    ("W-02", "Masters", "There was no overtime ladder anywhere in the build",
+     "workflow-service.cds said it plainly: overtime is costed at the same all-in hourly "
+     "rate as regular time, because an overtime multiplier would be a number invented "
+     "here rather than agreed commercially. Wireframe Fix 36 supplies the agreement -- "
+     "OT-1 x1.25, night x1.50, rest day x1.50, public holiday x2.50, beyond twelve hours "
+     "x2.00, standby x0.70 -- and puts it on the shift pattern as the single place the "
+     "four consumers read. Built as a composition on ShiftPattern, with cost and charge "
+     "as separate factors on each rung because they are two agreements",
+     "Done",
+     "Six rungs read back under one pattern; every rung has a charge factor that differs "
+     "from its cost factor; standby is below 1.0, so the ladder is not assumed to be a "
+     "premium",
+     "The timesheet still costs at a flat rate. Wiring sign() to read the pattern is the "
+     "next step and changes what a day costs, so it wants your word first"),
+
+    ("W-03", "Masters", "A push that failed left no trace of having failed",
+     "releaseToErp recorded FAILED with the reason and then threw, and the throw unwound "
+     "the write -- the worker came back NOT_SENT with no message. The wireframe asks for "
+     "the opposite: a monitor showing six failed and forty queued, each with a reason, "
+     "which only exists if a failure persists. The action now records and returns rather "
+     "than throwing",
+     "Done",
+     "A worker with no trade, shift pattern or cost centre comes back FAILED carrying "
+     "'The agreement needs a trade, a shift pattern, a cost centre' and appears in "
+     "WorkerPushQueue with it",
+     "The push itself is still local -- it sets PENDING and no connector sends it"),
+
+    ("W-04", "UI", "The launchpad rendered a blank page",
+     "Three faults. index.html loaded the shell bootstrap from /resources/sap/ushell/"
+     "bootstrap/sandbox2.js, a path only the CDS dev server proxies, so the jar and the "
+     "UI server both 404 and the page died at 'Missing renderer name'. Then the site "
+     "config was not found and the sandbox fell back to its own demo site -- three sample "
+     "tiles under 'Sample Space'. Then every tile failed to open its app. Only the first "
+     "was real: the second and third I diagnosed against my own proxy onto the CAP "
+     "service, where apps sit under /webapp, rather than app/konstryx-ui/serve.py on 8081 "
+     "which run-local.bat starts and which already maps /appconfig and /<app> correctly. "
+     "Both of those changes were reverted",
+     "Done",
+     "The bootstrap now loads from the pinned runtime, the same reasoning the file already "
+     "gave for sap-ui-core.js. Verified on 8081: the launchpad renders Planning, "
+     "Execution, Commercial and Master Data with their real tiles, and a tile opens its "
+     "app inside the shell",
+     "Nothing outstanding"),
+
+    ("W-05", "UI", "Tile counts read Error, and the product was not at fault",
+     "Every dynamic tile showed 'Error' where its number belongs. I recorded it as F-19 -- "
+     "the tile wanting an FLP number shape that a bare $count does not give. It was not: "
+     "the requests were being aborted by my own scratch proxy, which held connections open "
+     "under HTTP/1.1 while a launchpad opened four counts at once",
+     "Done",
+     "One request per connection in tools/dev_proxy.py, and all 11 Execution tiles answer "
+     "with real numbers -- 12 fronts open, 9 requests, 6 requisitions, 6 orders placed, 3 "
+     "bills received, 45 days, 2 stock draws",
+     "F-19 as originally written is wrong and should be struck: launchpadKpis is still "
+     "unconsumed, but the tiles do not need it"),
+
+    ("W-06", "UI", "Twelve screens for the workforce masters",
+     "Scaffolded from the app that already deploys, with the columns chosen per entity "
+     "rather than templated: trades, shift patterns, holiday calendars, crew templates, "
+     "absence reasons, workers, subcontract workers, engagements, roster upload, the work "
+     "agreement queue, gangs and availability. Two new sections on Master Data -- "
+     "Workforce and People -- and gangs and availability on Execution / Today, because "
+     "they are read on site rather than maintained",
+     "Done",
+     "40 apps across 4 spaces in the generated site; every new app is in mta.yaml, in "
+     "sapux and on a page, so none of them is registered without being reachable",
+     "Unseen in a browser. The screens compile and the service answers them; nobody has "
+     "looked at them"),
+
+    ("F-18", "Frameworks", "A saved list arrangement has nowhere to go",
+     "The 32 Fiori Elements list reports use the template's own VariantManagement, "
+     "which writes through SAPUI5 flexibility. Nothing configures a flex backend: no "
+     "flexibilityServices in any bootstrap, no flex resource in mta.yaml, no route for "
+     "/sap/bc/lrep, and the service 404s the default flex path. So a person arranges a "
+     "list, saves it, and arranges it again tomorrow. The freestyle konstryx-ui has a "
+     "working store for exactly this — CollaborationService.UserVariants, wired in "
+     "ListPersonalization.js — which the apps that replaced it do not use",
+     "Raised", "—",
+     "Needs a ruling between three: bind BTP key-user adaptation (an entitlement, so "
+     "it waits on the subaccount with D-04); register a custom flexibilityServices "
+     "connector onto the UserVariant store that already exists; or accept that "
+     "arrangements do not survive. The connector is buildable now and reuses what is "
+     "there, but it cannot be verified without a browser session"),
+
+    ("F-16", "Frameworks", "The delivered approval schemes name no approver",
+     "Every step of RR-STD and BUD-STD carries a null approver, which the engine reads "
+     "as open to any authorised user. Measured: all seven demo users hold identical "
+     "inboxes of the same six steps, and any of them can conclude a two-million "
+     "resource request. Naming a persona narrows it correctly, so the engine is right "
+     "and the content is empty. Which persona decides each step is an organisational "
+     "ruling, and the catalogue has no Director persona for step 3 at all",
+     "Raised", "—", "Needs a ruling: the persona per step, and whether a Director persona exists"),
+
+    ("F-17", "Frameworks", "Every user can read every approval instance and step",
+     "ApprovalInstances and ApprovalSteps are not in the persona catalogue, so the "
+     "authorization handler never narrows them. Measured: rohan, who is refused the "
+     "resource requests themselves, still reads the approvals carrying their numbers "
+     "and values. MyApprovals is narrowed, but the entities behind it are not",
+     "Raised", "—", "Needs a ruling: which auth object governs approval visibility"),
+
+    ("F-05", "Frameworks", "The approval owned neither end of the document it approved",
+     "Two halves and both were real. At the front, the caller marked the document In Approval: BudgetHandler and ChainHandler each did it in their own code after calling submit, and the generic submitForApproval action -- which takes any entity name -- marked nothing at all, so a document submitted through it sat in whatever state it was already in while approvers worked on it. Two owners of one fact and a third path with no owner. At the back, the decision reached the status field and nothing else: every other transition a document makes is written to its status history, so a reader takes that history as the account of how it got where it is, and the approval was the one transition missing from it -- the one somebody signed for. Measured on a request driven live: the document read Approved and its history stopped at In Approval",
+     "Done",
+     "The engine owns both ends, because a caller cannot forget what it does not do. It marks the document on submit and writes the transition, naming the scheme and the value that selected the steps; the two handlers stopped doing it themselves, so the entry is written once rather than once per owner. On close it reads the state it is leaving BEFORE overwriting it -- an entry that guesses where a document came from reads exactly like one that knows -- and files who decided, and what they said. The docType comes off the document number it already carries rather than a table mapping entity names, so a scheme configured for a document this class has never heard of still files under the same heading as that document own transitions", "test_approval 7: approval, rejection and withdrawal each on the document own history, the state it left read not guessed, and the generic action marking it without a caller"),
+    ("F-14", "Frameworks", "Two transitions in one request could not be told apart in a status history",
+     "StatusHistory ordered on changedOn, stamped from the wall clock. Two moves made inside one request tie on it, and what comes back first is then whatever the store feels like. Found by a check that read the last entry of a withdrawal followed by a resubmission and got the two either way round on successive runs. Measured after building the fix, on a document driven in and out of approval twice: ordering on the clock returned the four entries as 3 2 4 1. On a record whose whole purpose is to say how a document got where it is, that reads as the opposite of what happened",
+     "Done",
+     "A sequence per document, counted from what is already filed under that number rather than held in a counter, so a document renumbered by ERP carries its numbering across and keeps counting. Per document rather than global for the same reason. The backfill worry in the original note did not apply: nothing is deployed, so there are no rows anywhere that predate the column. Every reader now orders on it, and the check that had to be written as a set can be written as a sequence again -- it asserts the entries are numbered from one without a gap AND that each leaves where the one before it arrived, which is the property that makes an account followable and which no timestamp ordering could have tested", "test_approval 7: the trail reads Approved -> In Approval -> Draft -> In Approval in that order and joins up"),
+    ("F-15", "Frameworks", "Only one document type kept a history of how it got where it is",
+     "Counted after the approval work: one class in the service wrote status history, ChainHandler, for the three documents it drives. Nineteen other status writes across six handlers wrote none. A variation order went Draft to Submitted to Approved, a budget went to Baselined, a requisition went to Requisitioned and then Ordered, an order to Partly received and then Received, a pull request to Issued or Refused -- and nothing anywhere recorded when, or on whose word. The status field answers where is it now; there was no answer at all to how did it get there, which is the question asked when something is wrong. It was silent because keeping the history was each handler own business, and a thing that is everyone business is nobody",
+     "Done",
+     "One StatusLog that every handler calls, so a reader sees the same shape whichever document they are reading. Two things the build found by running it rather than by reasoning: deriving the document kind from its number looked right and was wrong -- an ERP order numbered 4500001234 carries no prefix, so every order was filed under a heading only it had, which is the opposite of what a heading is for; the kind is now passed, because the caller always knows and the number does not always say. And a requisition enters the flow under its own key because that is its only identity before ERP issues one: the chain already moved its links across on renumbering and the history did not, so the findable half of its history began in the middle. StatusLog.rename now follows it, called where chain.rename already was. Line-level statuses are deliberately not logged: the history keys on a document number and a line has none", "test_procurement: PR and PO both keep a history, each filed under its kind rather than its own number, the requisition carrying its pre-ERP entries across the renumbering with nothing left behind under the old key"),
+    ("F-12", "Frameworks", "An approval whose outcome cannot reach its document is still accepted",
+     "reflectOutcome writes the lifecycle field only where the entity has an element literally named status, and returns quietly where it does not. Project is the case: its lifecycle field is stage, so an approval configured against it would be submitted, worked, signed and closed while the project never moved -- silently, which is the same defect as S-26 one module over. Latent rather than live: only RR and Budget have schemes today and both carry status, and a scheme for anything else is refused for having no scheme at all rather than for being unreflectable",
+     "Raised",
+     "Two candidate answers and they are not equivalent. Widening the field search to stage is the wrong one: a project stage is where the job is in its life, not whether a document was signed, and writing Approved into it would be inventing a vocabulary nobody asked for. The right one is to refuse at the point of configuration -- an administrator saving a scheme for an object the engine cannot conclude should be told then, not have the first signer find out. That needs a view on what each document type calls its approval state, which is a modelling decision", "2026-08-29"),
+    ("F-13", "Frameworks", "A document that had been activated had no status at all",
+     "A ResourceRequest created and draft-activated through the API carried a null status until something submitted it -- seen directly while driving one through approval, where the first history entry read null -> In Approval. The document existed, had a number, had lines and had priced them, and said nothing about where it was. Every screen that groups or filters by status dropped it, its history began by saying it came from nowhere, and both submit guards had to spell out that null meant the same as Draft -- an accommodation every new document type would have had to remember to repeat",
+     "Done",
+     "Answered once for every document type rather than per vertical, which is what the note said had to happen: the default sits on common.documented, so RR, Budget, Variation Order, Pull Request and every other documented header start as a Draft from one line. BOQ carries its own status and got the same. Project already had it. With null impossible, the two guards that spelled out null-means-Draft say Draft, so there is one meaning of the first state instead of one per reader. Checked first that no shipped content pack seeds a blank status, so the default cannot overwrite anything somebody decided", "test_chain 6: the request trail reads Draft -> In Approval -> Approved -> In Advisory -> Advised -> AVC Done -> Reserved, with no entry coming from nowhere"),
+
     ("F-06", "Frameworks", "Content pack references", "Packs can name another row instead of its UUID, and match on composite natural keys; each pack applies atomically", "Done", "APPROVAL_SCHEMES resolves auth objects and its own schemes at deploy time: 6 rows inserted", "—"),
     ("F-07", "Frameworks", "Attachments on every object", "One polymorphic attachment table for all modules; automatic versioning with a supersedes chain; client-configurable categories; a mandatory category blocks approval submission", "Done", "14 checks: v1 then v2 superseding it, PDF streamed in and read back byte-identical, 404 for a missing target, and submission refused until the mandatory drawing was attached", "fileSize (F-08) and the UI upload control"),
-    ("F-08", "Frameworks", "Attachment file size", "fileSize is null — measuring the media stream consumes it, so it needs a counting wrapper on the upload path", "Not started", "—", "Low priority; display only"),
+    ("F-08", "Frameworks", "Attachment file size, and a ceiling on it", "Two things, and the item only described the first. Measuring the stream in an After handler reports zero — the runtime has already consumed it to persist the content — so the size is read back off the stored blob instead, which is also the only number that describes what is actually there. That half had been done and the item never said so. The second half was missing entirely: no ceiling, so any authenticated user could put a file of any size on any object", "Done", "test_attachments 9: a file under the ceiling is stored and measured, one over it is refused by name, and the refusal unwinds the write so the file that fitted is still the one served back", "25 MB default, KX_ATTACHMENT_MAX_MB to override"),
     ("M-10", "Masters", "Rate master complete", "Draft-maintainable rates and norms; rateOn(resource, date, company) resolves which rate is in force — latest start on or before the date, company beating group; norms validated (no zero output, no 140% wastage, effective-date clashes on the full recipe key)", "Done", "17 checks", "—"),
     ("PS-04", "Project Setup", "BOQ import and arithmetic", "amount always qty x rate, never accepted from the caller; header equals sum of lines; all-or-nothing import that also catches duplicates within the file; re-import replaces", "Done", "20 checks incl. a bad bill refused whole", "—"),
     ("PS-05", "Project Setup", "Project CBS and allocation", "instantiateCBS copies the library (refuses a second run); allocate joins bill to WBS+CBS with an over-allocation guard and cross-project refusal; CBS nodes carry allocated value at bill rate", "Done", "700+500 of a 1200 line to exactly 100%; the repeated 700 refused", "—"),
@@ -143,15 +490,37 @@ items = [
     ("F-09", "Frameworks", "Attachment storage", "Content sits in the database as LargeBinary. Fine for drawings and permits; a project's photo library is a different question", "Not started", "—", "Decide before go-live — see S-24"),
     ("F-03", "Frameworks", "Attachments model", "Polymorphic on entityName+objectID, media-type content, categories", "Done", "Compiles; exposed on /collaboration", "Upload handler + object store not built"),
     ("F-04", "Frameworks", "Attachment upload + storage", "Object store binding for Cloud Foundry vs HANA LOB", "Not started", "—", "Decision needed (see Open Decisions)"),
+    ("U-18", "UI", "An inbox row cannot open the document it is about",
+     "The worklist names the document and its value but does not navigate to it, "
+     "because the semantic object differs by document kind and nothing records which "
+     "one belongs to which. The auth catalogue already maps entity to name and would "
+     "be the place to carry it",
+     "Raised", "—", "Needs a ruling: a semanticObject column on AuthObject, or a fixed map"),
+
     ("F-05", "Frameworks", "Table personalization store", "UserVariant entity holding UI5 p13n state per user", "Done", "Compiles; exposed on /collaboration", "Not wired to any table yet"),
-    ("F-06", "Frameworks", "Table personalization UI wiring", "p13n + VariantManagement on every list screen", "Not started", "—", "Apply as each screen is built"),
+    ("F-06", "Frameworks", "Table personalization UI wiring",
+     "p13n + VariantManagement on every list screen",
+     "Part done",
+     "Measured rather than assumed: all 32 Fiori Elements list reports already declare "
+     "variantManagement Page with flexEnabled, and personalization is the template "
+     "default, so the arrangement is offered everywhere. test_foundations now refuses "
+     "a list report that ships without it",
+     "Where a saved arrangement goes is unanswered — see F-18"),
     ("M-01", "Data model", "Workflow spine RR->ADV->AVC->RES", "Vertical-agnostic, multi-line, seeded with canonical EQR thread", "Done", "Queryable over OData; 5 lines, AED 685,080", "—"),
     ("M-02", "Data model", "WBS on request line", "Spec section 6 requires one WBS per line; was missing", "Done", "3 distinct WBS across the 5 EQR lines", "—"),
     ("M-03", "Data model", "EQR vertical extension", "Instances, mob/demob window, own-vs-rental, vendor, operators", "Done", "$expand=equipment,wbs returns all 5 lines resolved", "—"),
-    ("M-04", "Data model", "Chain steps CMT/MOB/OPL/VAR/DMB/CLS", "Steps 5-10 have no CDS entities at all", "Not started", "—", "Part of Project Execution block"),
+    ("M-04", "Data model", "Chain steps CMT/MOB/OPL/VAR/DMB/CLS", "Recorded as six steps with no entities at all. Three of the six now have them: CLS writes a ReservationClosure, OPL is kept as a TimesheetEntry for manpower and a ConsumptionRecord for material, and VAR is the ReservationVariation built the same day. CMT is ERP's to own. MOB and DMB are the asset steps and belong to the plant block you are holding", "Part done", "reservationOverview reads all ten from data: RES-2026-0162 (MPR) reports its daily record done off 46 signed timesheets, RES-2026-0148 (MR) reports it outstanding, RES-2026-0188 (EQR) reports it unbuilt. test_overview and test_variation", "What is left: an operation log for plant, and mobilization and de-mobilization — all three held with B-09. VAR was built the same day (B-17). CMT stays ERP's"),
     ("U-01", "UI", "RR worklist on live OData", "RequestOverview projection, server-side filters", "Done", "Verified in browser: 4 requests, EQR shows 5 lines / 685,080; EQR filter issues new $batch", "—"),
-    ("U-02", "UI", "Request detail page on OData", "Still reads webapp/model/data.json", "Not started", "—", "Now unblocked by M-03"),
-    ("U-03", "UI", "Chain step pages on OData", "Still read data.json", "Blocked", "—", "Blocked by M-04"),
+    ("U-02", "UI", "Two deployed apps claimed the same launchpad intent, and one of them showed a file",
+     "The item said the request detail page still reads webapp/model/data.json, and it does -- but the page it describes was replaced. konstryx-resource-request and konstryx-reservation are Fiori Elements apps on the workflow service, and the freestyle konstryx-ui declared the SAME semantic object and action for both. A launchpad resolves by that pair, both apps are in mta.yaml, so which one answered \"show me the requests\" was left to resolution order -- and one of the two candidates reads a fixture shipped inside the app. The sandbox happens to resolve to the Fiori Elements components, so this would have surfaced on a real launchpad and not before",
+     "Done",
+     "The freestyle app stops claiming what a live-data app already serves. Removed by brace depth rather than by rewriting the manifest, so the diff is those two blocks and nothing else. Its screens stay reachable in-app; what it no longer does is offer itself as the answer to a question another app answers with data. Not a rewiring of the freestyle pages to OData, because the standing ruling is that screens are rebuilt in Fiori Elements and freestyle survives only by requirement, never by sunk cost -- and for these two the rebuild already exists", "test_foundations 9: no intent is claimed by two apps, and no app answering a launchpad intent has a fixture for its default model"),
+    ("U-17", "UI", "One screen exists only in the freestyle app, and nothing offers it",
+     "KonstryxManpower is declared by konstryx-ui and by nothing else, and the launchpad site does not carry a tile for it -- 28 of the 29 declared intents are offered, and this is the one that is not. So the manpower overview is deployed, unreachable except by direct URL, and reading the same shipped fixture as the rest of that app. It is also the only screen in konstryx-ui with no Fiori Elements replacement, which is why removing its intent alongside the other two would have been the wrong move",
+     "Raised",
+     "Two answers and the choice is yours. Build a Fiori Elements manpower app, which is what the architecture ruling implies and which retires konstryx-ui entirely; or keep the freestyle screen deliberately and wire it to the workflow service and the launchpad, which is freestyle by requirement rather than by sunk cost and needs the requirement stated. Raised rather than picked because the two differ in what happens to the rest of that app, and that is a product decision", "2026-08-30"),
+
+    ("U-03", "UI", "Chain step pages on OData", "Still read data.json", "Blocked", "—", "Five of the ten now have data behind them — RES, OPL for two verticals, VAR, CLS, and the chain links between them. MOB, DMB and CMT still do not"),
     ("U-04", "UI", "Launchpad intents declared", "crossNavigation inbounds for KonstryxResourceRequest and KonstryxReservation", "Done", "manifest parses; two inbounds registered", "—"),
     ("U-05", "UI", "Launchpad-hosted shell (blend with S/4)", "App shell removed: root view is now the NavContainer alone. Launchpad supplies header, search, user menu, theme", "Done", "Verified in browser as daud: worklist renders with no app chrome, 4 of 5 requests correctly scoped, EQR at AED 685,080", "—"),
     ("U-06", "UI", "Spaces and Pages navigation", "flp.html + flpSite.json written: CDM 3.1 site, one space, one page, two intent tiles", "At risk", "Site JSON authored against the runtime's own sandboxSite.json schema", "Sandbox bootstrap fails reading a null script element; finish or verify on real BTP instead"),
@@ -166,6 +535,37 @@ items = [
     ("U-13", "UI", "Budget screens — the engine finally has a front end", "The whole budget engine (generateLines / submit / baseline / shift / riskTransfer / variation / refreshControl) was backend-only, exercised solely by test_budget.py. Built against the wireframe at KONSTRYX_Wireframe_v12/modules/budget.html — which existed all along and was missed by the previous session's search, not genuinely absent. Shipped: a per-project Budget worklist with a New Budget dialog (draft create then draftActivate for the company-scoped BUD- number); a Budget detail page with a five-KPI header (total/committed/encumbered/actual/available), header actions for the four parameterless engine actions gated on lifecycle status, and three tabs — Budget Lines (the CBS x cost-nature control record), Ledger & History (every movement, its category, signed delta, reference and reason) and Approvals (the live CollaborationService chain, since bud.cds's own BudgetApproval composition is unwritten); and Shift / Risk Transfer / Variation dialogs enabled only once Baselined, each enforcing the engine's own mandatory fields client-side before posting", "Done", "Verified in browser against a live baselined budget end to end (fresh tab per pass, zero console errors): BUD-INFC-2026-0001 reads 381,600 across 2 lines, the ledger shows all four categories with the paired SHIFT and RISK_TRANSFER entries summing to zero and the VARIATION unpaired, and the approval chain shows both steps APPROVED with actor and comment. Shift posted through the real dialog moved 1,000 MR->EQR and the tables refreshed to match. Full regression 13 suites / 271 checks green", "Cost Mapping's Generate Budget Lines placeholder now navigates here; budget added to the ObjectLinks project registry. The wireframe's Resources / Time Phasing / BOQ Analysis / Reconciliation tabs are not built — they need entities that do not exist yet (time-phased BCWS, reconciliation adjustments)"),
     ("U-14", "UI", "Cross-project worklists and tiles for BOQ and Budget", "Both objects could only be reached by opening a project first. Added portfolio-wide BOQ and Budget worklists with full personalization (variant management, adapt filters, column/sort/group settings, Excel export) and launchpad tiles in the Setup & Budget group, matching the way Resource Requests already works", "Done", "Verified in browser: BOQ worklist lists both projects' bills with project code and name resolved, row press opens the right project's BOQ; Budget worklist lists every project's budget, row press opens its detail page", "Cost Mapping and Allocations still have no portfolio-wide entry point — the user asked for those too"),
     ("U-16", "UI", "Cost Mapping — both views, per project and across the portfolio", "Your call: provide both. The per-project workbench is untouched; a portfolio list sits alongside it answering the different question a multi-project reader has — which projects still need a human at all. Counts only, no exception rows, because the point of the list is which project to open and the workbench handles what to do inside it. A 'Needs attention' filter deliberately excludes projects with no bill yet: nothing to map is not the same as work outstanding", "Done", "Verified in browser: the portfolio's numbers reconcile exactly with the workbench it links to (PRJ-001 reads CBS 0 open, WBS 5, resources 4, 9 exceptions, 2 gate rules failing on both screens), the filter drops PRJ-002 which has no bill, and row press opens the right project's workbench. Console clean", "Backed by a new unbound action costMappingPortfolio, which reuses the existing per-project computation rather than duplicating it (onSummary was refactored to delegate to the same summaryOf method). It reads Projects through the ApplicationService, not the PersistenceService, so the authorization layer's instance filter applies — verified live: demo sees both projects, vikram sees only PRJ-001, and users without project rights are refused"),
+    ("B-16", "Business", "Stock we already own becomes project cost",
+     "A reservation locked the money and nothing ever spent it. Material could be reserved, encumbered and reported on for the whole life of a project without one unit being drawn, and the budget went on holding the full amount against work that had already been built. Cost came from signed daily logs and from supplier invoices - labour, and what was bought - so the concrete out of our own batching plant was free. Four steps now close it: the site raises a pull request against the reservation, ERP posts the goods issue, the site counts what arrived, and the day's work is measured against the norm",
+     "Done",
+     "82 checks in test_issue.py, which builds its own thread end to end rather than leaning on a fixture. Verified live on the flagship: 123,372 of concrete drawn from store 1710 against RES-2026-0003, PRJ-001 now reports 3,113,423.84 spent with no coverage caveat left on any category. Two new screens, both opening with rows. Full regression green at 735",
+     "The goods issue is the cost and nothing after it is charged again - a goods issue debits the project in ERP, so costing consumption as well would pay for the same concrete twice. Consumption therefore carries quantities and no money: it answers whether a crew is wasting material, which is a different question from what the project has spent. There is deliberately NO outbound push: KONSTRYX does not post movements into ERP, and recordGoodsIssue is the only way one enters"),
+    ("B-17", "Business", "Reservation variation — step 8 of the chain", "A change to a reservation that is already running: the slab cycle slips and both cranes need thirty more days. Nothing about the bill changed and the client is not in the conversation. Until now the only way to record it was to edit the reservation line, which left no trace it had ever said anything else. RVO document, before and after on every figure it moves, and the encumbrance the budget reads follows because it is derived from the line", "Done", "test_variation, 71 checks. Two rules carry it: a variation will not lock less than the line has already spent (the budget reads the lock less the spend, so reducing it under the spend turns an overrun into free headroom), and a variation that varies nothing is refused. The duration is read back from the lock — the line stores heads and a daily rate, not days — so a rate correction leaves the hundred days alone instead of collapsing the lock to one day", "Not the BOQ variation (B-08). Same word, different document: that one varies a priced bill and argues with the client about revenue. vary() takes extendByDays as well as an absolute duration, because nobody outside the handler knows what the current one is — the wireframe itself asks for \"+30 days on both lines\" — and ReservationLines now exposes reservedDays so the third figure of the lock is readable on the screen"),
+    ("B-15", "Business", "Certified subcontract work counts as cost",
+     "The reconciliation stated in its own notes that subcontract contributes nothing and the margin therefore flatters. It was right, and it stayed right for as long as nothing carried a certificate into project cost - certificates were raised, adjusted, signed off and read on screen, and no report ever counted one. Certified value now joins consumed hours and billed invoices as the third branch of a spend: they cannot overlap, because a scope goes down exactly one of them",
+     "Done",
+     "24 checks in test_certification.py (up from 20). Verified live on the flagship: 1,041,660 of certified work sits inside the 2,229,071.84 the report calls spent, and the coverage note no longer lists subcontract among what contributes nothing. Full regression green",
+     "Cost is the certified gross less what is RECOVERED from the subcontractor - liquidated damages and back charges - and not less retention, which is money withheld rather than money saved: the work was done and the retention is released later. That is netCertified + retentionAmount under the formula Ziya ruled on, which is why it is read back from the stored figures rather than recomputed. NOT placed on a budget line: SubcontractRequest carries a project and no WBS or CBS, and whether a package assigns to one cost node or allocates across several is a modelling decision, not something to guess. It lands in project cost and stops there"),
+    ("B-14", "Business", "The document flow reads from the request to the bill",
+     "The flow stopped at the requisition. ChainHandler wrote AVAILABILITY, RESERVATION and REQUISITION links and nothing downstream did, so an order, a delivery and a bill could all exist against a request and the flow showed none of them - and the reader had no way to tell a document that was never raised from one raised and never linked. Worse, the requisition was linked as PR:<uuid> because it enters the flow before ERP has numbered it, and the comment saying the link carries our key UNTIL a number comes back described an intention nothing implemented: the number arrived and the link kept the key",
+     "Done",
+     "ORDER, RECEIPT and INVOICE links written by ProcurementHandler, and recordRequisitionResult renames the requisition in the flow the moment ERP numbers it. Verified live end to end: RR-2026-0002 -REQUISITION-> 1000004711 -ORDER-> 4500001234 -RECEIPT-> both deliveries -INVOICE-> the bills. Full regression green",
+     "The link writer moved to a shared DocumentChain component rather than being copied into a second handler. Four handlers write this table now, and copied ten lines at a time the types drift - one writes INVOICE and the next SUPPLIER_INVOICE, and a flow that reads end to end on one project stops on another for no reason anybody can see"),
+    ("B-13", "Business", "One answer to what the work has cost, on every screen that asks",
+     "The control record and the cost-value reconciliation gave different answers to the same question, and both were defensible in isolation. BudgetLine.actual counted the bought half only, so a job running on own labour read as fully available while the reconciliation on the next screen reported real money spent; and the reconciliation reached that figure by adding reservation cost to the budget lines' actual, which made a project's reported cost depend on somebody having pressed Refresh Control, and reported nothing at all for a project with no budget yet. Both now read the documents. actual is the invoices placed on the line plus the signed hours consumed against its reservations - the two halves the two branches of the chain produce, which cannot overlap because a line is decided PROCURE or IN_HOUSE and only one branch ever runs. The reconciliation reads the invoices directly rather than through the budget",
+     "Done",
+     "Full regression green. The category-coverage note was corrected with it: it claimed material and subcontract contribute nothing, which stopped being true for material the moment invoices existed - it now names manpower and procurement as captured when they are, and subcontract as the one that genuinely still contributes nothing",
+     "The reconciliation's actualCost and the sum of its budget's actual now agree by construction rather than by coincidence, which is what makes a disagreement between the two screens a bug rather than a question about which one to believe"),
+    ("B-12", "Business", "The supplier invoice, and the first source BudgetLine.actual has ever had",
+     "Three of the four columns on the control record were live and the fourth was a constant. amount came from the budget, encumbered from open reservations, committed from what the orders still had to deliver — and actual was written as zero at generateLines and never touched again, with refreshControl's own message saying so. It is the column a project manager reads first, and it was the one that could not be wrong because it never moved. SupplierInvoice and SupplierInvoiceLine close it: the vendor bill mirrored from ERP FI, each line matched three ways as it lands (quantity against what the receipts actually brought in, value against the order's own rate for that quantity), and actual then summed from the invoice lines and placed on budget lines by the same attribution the other two figures use. The match also stamps GoodsReceipt.threeWayMatch, which had been modelled since the model was written and was permanently null because the third document did not exist",
+     "Done",
+     "123 checks in test_procurement.py (up from 101). The kit order verified through all four documents: requisitioned, ordered at 231.00, received in two loads, billed at 231.00 and matched — BOTH receipts stamped, not just the one the invoice was booked to. A second bill for the same four kits is accepted and recorded as failing, naming the reason (billed 8.000 against 4.000 received), and the order reads invoicedValue 462.00. The budget line then reads actual 462.00, available = amount less committed less encumbered less actual, and refreshing twice leaves it at 462.00. Full regression green",
+     "The invoice is the only leg that RECORDS a failure rather than refusing it, and that asymmetry is deliberate: the other two refuse what they cannot honestly write, but ERP FI posted the invoice whether or not it agrees with the order, and an invoice we declined to mirror is one nobody can see is wrong. Refusal is kept for what makes the document unreadable — no number, no order, a line that is not on it. Screen: konstryx-invoice, a list report sorted by match state because the reason a clerk opens it is to find the bills that disagree; the failing line carries the reason, since the header only says something failed. Also added as a facet on the order. NO CONNECTOR PULLS IT: API_SUPPLIERINVOICE_PROCESS_SRV is named in INTEGRATION.md and unimplemented"),
+    ("B-11", "Business", "The delivery half of procurement, and the commitment it releases",
+     "B-08 mirrored a purchase order and landed its value on a budget line as committed, and there it stopped: nothing ever took delivery. GoodsReceipt had been modelled since the model was written and had no writer at all, so openQty on every order line stayed where the order left it, the receipts screen did not exist, and commitment was the whole order for as long as the order lived. Three things shipped together. recordGoodsReceipt is the receipt mirror, the counterpart of recordPurchaseOrder: it validates the whole document before writing any of it (ERP posted it whole, so a receipt that over-delivers on its third line must not leave the first two posted), prices each line from the ORDER rather than from anything the receipt carries, moves openQty and receivedQty, and rolls both the line and the header through Partly received to Received. The order header gained netValue and openValue, summed from its lines rather than counted up as documents arrive. And commitment became the OPEN part of an order rather than the ordered part - a delivered line is cost, which ERP FI posts as actual, so counting it as commitment holds budget against goods already on site and doubles it when the invoice lands",
+     "Done",
+     "101 checks in test_procurement.py (up from 81). The order of 4 kits at 231.00 verified through its whole life: fully open at 231.00 committed, then one taken in leaves the line Partly received with 3 open, the receipt priced at 57.75 (231.00 / 4), the header owing 173.25, and the budget line committed at exactly 173.25; the remaining 3 settle the order to Received, openValue 0, and commitment 0. Four refusals verified, each leaving the order untouched: no ERP document number, an order we do not hold, a line number that is not on the order, and a quantity larger than the line has open. Full regression green",
+     "Screen: konstryx-po, a Fiori Elements list and object page over the mirror, with the lines and the receipts as facets and the ERP fields (number, system, mirror state, mirrored at) in their own group, because an order whose mirror state is not OK is showing figures that may already have moved. Registered in the Execution space under Source resources. NO CONNECTOR PULLS EITHER DOCUMENT: API_PURCHASEORDER_PROCESS_SRV and API_MATERIAL_DOCUMENT_SRV are named in INTEGRATION.md and unimplemented, so the entry points are reached by a test, a manual correction, or tools/mirror_erp_documents.py, which stands in for ERP so the demo has orders at all. That tool stamps system DEMO on everything it writes - a real mirror carries the tenant host - so the two are told apart on the screen rather than by trusting the number"),
     ("U-15", "UI", "PromotionQueue object links", "Previously left alone on the belief that objectType was a free-text label. It is not: PromotionHandler stamps it server-side from the target entity's qualified name (MasterDataService.Resources) and reuses that exact string on approval, so it is a closed set equal to the entities exposing requestPromotion. Wired objectKey as a link with a small type->route map in the controller", "Done", "Confirmed the stored value by triggering a real promotion against EQ-LOC-INFC and reading the queue row back: objectType is MasterDataService.Resources", "Deliberately not routed through ObjectLinks: every row here is master data by definition, so there is exactly one correct target and no picker is warranted"),
     ("U-07", "UI", "Morning Horizon theme", "sap_horizon is Morning Horizon; already the bootstrap theme", "Done", "index.html bootstraps data-sap-ui-theme=sap_horizon", "Must be inherited from the shell once launchpad-hosted, never hard-coded"),
     ("B-01a", "Business", "Masters — hybrid scope enforcement", "Reads on any entity carrying the scoped aspect narrow to GROUP or the user's own companies; aspect duck-typed from the model, not a name list", "Done", "Two stewards in different legal entities each see 5 group masters + their own local one, and neither sees the other's", "—"),
@@ -178,15 +578,15 @@ items = [
     ("B-01g", "Business", "Masters — productivity and consumption norms", "One screen, two tabs; plus a material branch in the resource tree so consumption norms attach to materials rather than equipment", "Done", "4 productivity norms with crew composition, 3 consumption norms with wastage; group 105 kg/m3 rebar against INFC's own 112 kg for coastal detailing", "—"),
     ("B-02a", "Business", "Templates — model and instantiation", "Template carries construction type, CBS structure and default resources; instantiate copies them into a project, two-pass so children parent to their new instances", "Done", "TPL-HIGHRISE into PRJ-002: 7 CBS nodes (3 roots, 4 correctly parented, all traced to library) and 6 planned resources; second run refused", "—"),
     ("B-02b", "Business", "Templates — screen", "List plus an instantiate dialog offering the projects the user may see; refusal surfaces the service's own message", "Done", "Driven through the UI: TPL-HIGHRISE into PRJ-002 created 7 CBS nodes and 6 planned resources; a second run raised the refusal", "Object page for a template still to do"),
-    ("B-03a", "Business", "Project Setup", "Project master, WBS, CBS instance; S/4 Enterprise Project mirror", "Not started", "—", "Next block; S/4 tenant (Q-09) becomes the blocker for the mirror"),
-    ("B-02", "Business", "Templates", "Project templates: CBS tree + default resources", "Not started", "—", "After Masters"),
-    ("B-03", "Business", "Project Setup", "Project, WBS, CBS instance; S/4 Enterprise Project mirror", "Not started", "—", "After Templates"),
-    ("B-04", "Business", "Uploads", "BOQ import, estimate import, versioning with progress carry-forward", "Not started", "—", "Highest-risk item in the sequence"),
-    ("B-05", "Business", "Project Planning", "Activity layer, native entity + P6 adapter", "Not started", "—", "After Uploads"),
-    ("B-06", "Business", "Budgeting", "Budget from BOQ/CBS, 4-category ledger, approval, baseline, encumbrance", "Not started", "—", "After Planning"),
-    ("B-07", "Business", "Project Execution", "RR->CLS chain end to end, material + manpower", "Not started", "—", "After Budgeting"),
-    ("B-08", "Business", "Project Commercial", "Client billing, variations, payment certificates", "Not started", "—", "After Execution"),
-    ("B-09", "Business", "Plant Department", "Equipment, fleet, scaffolding/formwork", "Not started", "—", "Last per your sequence"),
+    ("B-03a", "Business", "Project Setup", "Project master, WBS, CBS instance; S/4 Enterprise Project mirror", "Done", "Superseded by B-10 and D-02: the project is KONSTRYX-mastered, released and pushed live to the tenant through the ITS_S4 destination. test_project, 28 checks", "Phase-plan placeholder; the evidence is on the items that replaced it"),
+    ("B-02", "Business", "Templates", "Project templates: CBS tree + default resources", "Done", "Superseded by B-02a and B-02b", "Phase-plan placeholder"),
+    ("B-03", "Business", "Project Setup", "Project, WBS, CBS instance; S/4 Enterprise Project mirror", "Done", "Superseded by B-03a", "Phase-plan placeholder"),
+    ("B-04", "Business", "Uploads", "BOQ import, estimate import, versioning with progress carry-forward", "Done", "The BOQ import engine and its file picker are built; test_boq covers the bill, the project CBS and the allocation between them", "Phase-plan placeholder. Estimate import and version carry-forward are NOT built — the bill is"),
+    ("B-05", "Business", "Project Planning", "Activity layer, native entity + P6 adapter", "Done", "Activities, the forward and backward pass and the P6 adapter all exist; test_schedule, test_planning and test_p6 cover them", "Phase-plan placeholder. The Gantt is still parked as GanttChart.fragment.xml.wip"),
+    ("B-06", "Business", "Budgeting", "Budget from BOQ/CBS, 4-category ledger, approval, baseline, encumbrance", "Done", "Superseded by B-06x and the control items after it; test_budget and test_distribution", "Phase-plan placeholder"),
+    ("B-07", "Business", "Project Execution", "RR->CLS chain end to end, material + manpower", "Done", "Superseded by B-11 to B-16: request, advisory, availability, reservation, requisition, order, receipt, invoice, stock draw, goods issue, consumption and closure. test_chain, test_execution, test_procurement and test_issue", "Phase-plan placeholder. Of the six later chain steps, CLS, OPL and VAR now have entities and the overview reads all ten from data; CMT is ERP's and MOB/DMB belong to the held plant block — see M-04"),
+    ("B-08", "Business", "Project Commercial", "Client billing, variations, payment certificates", "Done", "Variations and payment certificates are built and certified value now reaches project cost (B-15); test_certification", "Phase-plan placeholder. Client billing itself is NOT built — variations and certificates are"),
+    ("B-09", "Business", "Plant Department", "Equipment, fleet, scaffolding/formwork", "Not started", "—", "Held by your own priority ruling — konstryx.eq stays wired into the RR spine and dormant. The one genuinely unstarted block of the eight"),
     ("D-01", "Deployment", "MTA builds a deployable archive", "Approuter + srv + db-deployer; XSUAA, HANA, Destination resources", "Done", "konstryx_0.1.0.mtar 68.9 MB; 234 HDI artifacts and .hdiconfig verified inside the db-deployer", "—"),
     ("D-04", "Deployment", "First Cloud Foundry deployment", "Push the archive, bind services, verify the app end to end in the cloud", "Blocked", "—", "Blocked by I-24: needs a KONSTRYX subaccount and cf login"),
     ("D-02", "Deployment", "S/4HANA Public Cloud connector", "S4Connection (credentials, CSRF handshake) + S4ProjectConnector (project + WBS push to API_ENTERPRISE_PROJECT_SRV) built and run live against S4-SANDBOX: KX-S4-001 created via release -> sync, confirmed by independent read-back (profile YP05)", "Done", "D-17 loop ran live on the tenant; see Q-09p", "Scoped to the project scenario only — procurement, finance and BP mirror connectors are not built; BTP destination replaces S4Connection at deployment"),
@@ -236,6 +636,11 @@ title(ws, "Open decisions — needed from you",
 header(ws, 5, ["ID", "Question", "Why it matters", "Options", "Blocks", "Status", "Needed by"])
 
 opens = [
+    ("Q-16", "Which verticals actually mobilize and de-mobilize?",
+     "The overview now scores a reservation against the chain its vertical has, and MOB/DMB are the two steps that vary. I ruled them in for EQR, VR and the two scaffolding/formwork verticals — a resource that arrives as an instance and leaves again — and out for MR and MPR. MR is safe: concrete is poured. MPR and SCR are a judgement I made without evidence: a crew is mobilized to site in ordinary usage, but there is no instance and no condition checklist, which is what the chain's mobilization step actually is. If manpower mobilization is a step you want tracked, it is a different document from the plant one and the chain for MPR is nine steps, not eight. Same question for subcontract",
+     "Confirm the split as built (MOB/DMB for asset verticals only) / add a manpower mobilization step / treat SCR separately",
+     "The denominator every manpower and subcontract reservation is reported against",
+     "Open", "Before the manpower chain screens"),
     ("Q-15", "Starter content pack: ship it, or only on a demo tenant?",
      "KONSTRYX ships masters, a sample project and the canonical RR thread to every tenant. Useful on an evaluation tenant in front of a starter S/4; actively harmful on a customer system, where it puts rows nothing can cleanly remove and - now that release pushes on its own - possibly documents in their S/4. Three shipped-data failures this build all reduce to the same disease: the pack asserted a relationship with a system it had never seen",
      "Detect a starter system / declare a contentProfile at subscription (recommended, default CLEAN) / ask on first run. Detection rejected: inferring it from company code 1710 is the same species of guess that produced the profit-centre bug. See docs/ARCHITECTURE_TENANT_CONTENT.md",
@@ -270,14 +675,14 @@ seq = [
     (1, "Authorization enforcement", "Runtime handler applying configured grants + instance filtering", "Every screen inherits it; retrofitting enforcement after screens exist is where products go wrong", "—", "Done"),
     (2, "Document number ranges", "Configurable scope (GLOBAL/COMPANY) and pattern per object; issued on activation", "Every document module needs it; changing the scheme later means renumbering live data", "Q-01 (answered)", "Done"),
     ("2b", "Launchpad-hosted shell", "Strip the app's own ToolPage chrome; FLP sandbox with Spaces and Pages for local dev", "Blend with S/4HANA. Doing this before the screen count grows avoids stripping the shell out of every screen later", "Q-13", "Not started"),
-    (3, "Masters", "Resource hierarchy, CBS library, rates, vendors, scoped GROUP/COMPANY + promotion queue", "Your sequence. Everything downstream references master codes", "Q-01, Q-02", "Not started"),
-    (4, "Templates", "Project templates: CBS tree + default resources", "Your sequence. Templates are composed of masters", "Masters", "Not started"),
-    (5, "Project Setup", "Project, WBS, CBS instance, S/4 Enterprise Project mirror", "Your sequence. Instantiates a template", "Templates, Q-07, Q-09", "Not started"),
-    (6, "Uploads", "BOQ import, estimate import, versioning with progress carry-forward", "Your sequence. Needs a project to import into. Highest-risk item in the plan", "Project Setup, Q-04, Q-06", "Not started"),
-    (7, "Project Planning", "Activity layer, native entity + P6 adapter", "Your sequence. Activities hang off WBS", "Project Setup", "Not started"),
-    (8, "Budgeting", "Budget from BOQ/CBS, 4-category ledger, approval, baseline, encumbrance", "Your sequence. Needs BOQ and CBS to exist", "Uploads, Q-03, Q-08", "Not started"),
-    (9, "Project Execution", "RR->CLS chain end to end, material + manpower, chain steps 5-10", "Your sequence. Consumes budget; encumbrance must exist first", "Budgeting", "Not started"),
-    (10, "Project Commercial", "Client billing, variations, payment certificates", "Your sequence. Bills against executed work", "Execution", "Not started"),
+    (3, "Masters", "Resource hierarchy, CBS library, rates, vendors, scoped GROUP/COMPANY + promotion queue", "Resource hierarchy, CBS library, rates, vendors and the promotion queue all run; covered by test_rates, test_variants and test_foundations", "Q-01, Q-02", "Done"),
+    (4, "Templates", "Project templates: CBS tree + default resources", "Instantiation copies the CBS tree and the default resources; covered by test_templates, which did not exist until 2026-08-29 and found on its first run that neither name nor cost nature was being copied", "Masters", "Done"),
+    (5, "Project Setup", "Project, WBS, CBS instance, S/4 Enterprise Project mirror", "Project, WBS, CBS instance and the outbound ERP push; covered by test_project", "Templates, Q-07, Q-09", "Done"),
+    (6, "Uploads", "BOQ import, estimate import, versioning with progress carry-forward", "BOQ import and allocation run (test_boq). Estimate import and version carry-forward are not built, which is what keeps this in progress", "Project Setup, Q-04, Q-06", "In progress"),
+    (7, "Project Planning", "Activity layer, native entity + P6 adapter", "Activity layer, critical path and the P6 adapter; covered by test_schedule and test_p6", "Project Setup", "Done"),
+    (8, "Budgeting", "Budget from BOQ/CBS, 4-category ledger, approval, baseline, encumbrance", "Build-up, ledger, approval, baseline and encumbrance; covered by test_budget and test_distribution", "Uploads, Q-03, Q-08", "Done"),
+    (9, "Project Execution", "RR->CLS chain end to end, material + manpower, chain steps 5-10", "RR to reservation to requisition runs end to end (test_chain, test_procurement, test_execution, test_issue). CMT is unwired and the chain-step pages still read a local file, so not finished", "Budgeting", "In progress"),
+    (10, "Project Commercial", "Client billing, variations, payment certificates", "Client billing, variations and payment certificates; covered by test_certification, test_variation and test_finance", "Execution", "Done"),
     (11, "Plant Department", "Equipment, fleet, scaffolding/formwork", "Your sequence — explicitly after the core", "Execution", "Not started"),
 ]
 body(ws, 6, seq, [5, 30, 62, 66, 26, 13], status_col=6)
@@ -294,7 +699,36 @@ suggestions = [
     ("S-02", "Architecture", "Revisit tenancy once client count grows", "Dedicated deployment means N upgrades for N clients. The model is tenancy-neutral so the switch is cheap now and costly per live client later", "Revisit at 5-10 clients; decide before the first go-live, not after", "Open", "2026-08-15"),
     ("S-03", "UI", "Split into task-focused apps per document type", "S/4 surfaces one app per task, reached from a tile. KONSTRYX is currently one app with in-app routing across ten document types", "Split as screens are built; register an intent per app", "Open", "2026-08-15"),
     ("S-04", "Deployment", "Move the UI to the HTML5 application repository", "The approuter currently routes the UI through the Java service, which is fine for one app but wrong for scaling and caching", "Move when the app splits into several apps", "Open", "2026-08-15"),
-    ("S-05", "Authorization", "Validate declared auth paths at startup", "A path that does not resolve on a projection fails per request with a 500 instead of at boot. That is exactly how the RequestOverview outage happened", "Add a startup check over the catalogue against the model", "Open", "2026-08-15"),
+    ("S-05", "Authorization", "A declared path that does not resolve failed per request, not at boot",
+     "A 500 on somebody\u2019s screen, and only on the screens of users whose grants are scoped, which is how the RequestOverview outage went unnoticed until it was in front of someone. The check now walks each path step by step through its associations at boot and on demand",
+     "Closed with S-26, which is the same check. The remaining difference is that it resolves against the persisted entity rather than each service projection over it \u2014 a projection that omits an association a scope path uses would still fail per request. Recorded as S-45 rather than left implied",
+     "Closed", "2026-08-29"),
+    ("S-45", "Authorization", "The path is now checked where it is used, not only where it is declared",
+     "The instance filter is applied to whichever projection is being read, so a path can resolve perfectly on the persisted entity and not on a projection that trims the association it walks -- and the entity is then fine through one service and 500s through another, for scoped users only. Checking the entity alone answered a question next to the one that is asked",
+     "Every projection whose root is the protected entity is resolved as well, naming the service in the message. The walk that finds those roots is the enforcement handler\u2019s own, moved rather than copied -- two walks that agree today are two walks that can stop agreeing. Proved by adding a projection that trims the association, watching both paths fail on it by name, and removing it: nothing in the delivered model is broken, which is exactly why it needed proving "
+     "that way",
+     "Closed", "2026-08-29"),
+    ("I-81", "Reporting", "Two rows overflowed their sheet, and the sheet still looked like a sheet",
+     "Q-16 and B-10 each carried one field more than their table has columns. A row like that does not fail, it slides: everything past the extra field moves a column right, so Status was rendered under the Needed by heading, took no colour because the value sitting there was prose rather than a state, and the last field spilled into a column with no header. B-10 read Done - the fallback path; the destination path is unverified in a cell meant to hold one word. Found by checking tuple arity after I noticed my own new row might have gained a field",
+     "Both rows repaired with nothing dropped -- the extra text folded into the field it was continuing. The durable half is a guard in body(): widths is already per-column, so it knows the table width, and a row wider than that now refuses to be written. Overflow only: a short row leaves trailing cells empty, which is how the small fixed blocks are written and is visibly a gap rather than a silent shift",
+     "Closed", "2026-08-29"),
+    ("I-82", "Reporting", "The summary block carried figures that were true once",
+     "It said 8 OData V4 services against nine, and git, 48 commits against a hundred and thirty-nine. Both were right when typed. A figure that is only right once is worse than no figure, because it is read as current -- and this is the block somebody reads first",
+     "Counted at generation time: services from the service declarations, commits and the last commit date from git. It also now says how many files are uncommitted, because a commit count alone reads as this is what is saved, and today it is a hundred and seventy-eight files short of that",
+     "Closed", "2026-08-29"),
+    ("I-80", "Modelling", "Two projections of one entity in one service is a compile error, not a runtime surprise",
+     "Learned while trying to build the probe above. CDS refuses a second projection over the same entity within a service unless one carries @cds.redirection.target, because it cannot decide where the associations pointing at that entity should redirect. The probe had to go in a different service",
+     "No change -- recorded because it is the compiler catching, at build time, a near neighbour of the collision S-44 describes at runtime. The runtime one is across services, where the compiler has nothing to say",
+     "Closed", "2026-08-29"),
+    ("I-78", "Project Setup", "An instantiated cost breakdown arrived unnamed and all direct",
+     "Both ways a project gets its breakdown \u2014 from a template, and from the library directly \u2014 built the instance row themselves, and both copied the code, the level and the parentage while copying neither the name nor the cost nature. A client instantiating a template got twenty-five unnamed nodes, every one DIRECT, when Preliminaries, site establishment, temporary works and supervision are INDIRECT in the library. Not cosmetic: the allocation engine reads costNature to decide what is a pool and what absorbs, so an overhead arriving as direct cost is spread onto itself and the total still reconciles",
+     "One copier, in prj.CbsInstantiation, called by both. The field list existing twice is what let them agree on everything except the two fields that mattered. Found by writing the first test the template path has ever had \u2014 it survived because the delivered sample is seeded row by row rather than instantiated, so the demo showed a correct tree while the code that builds a client\u2019s tree did not",
+     "Closed", "2026-08-29"),
+    ("I-79", "Reporting", "The phase sheet said Not started against five phases that run",
+     "Masters, Project Setup, Budgeting, Project Execution and Project Commercial all read Not started while the regression exercises every one of them end to end. The sheet was written as a plan and never updated as the work landed, so any percentage read off it was wrong \u2014 and it is the sheet somebody would read to answer how far along this is",
+     "Set from what the suites actually cover, and each row now names the evidence so it cannot rot silently again. Uploads and Project Execution are In progress rather than Done, because estimate import and CMT are genuinely not built",
+     "Closed", "2026-08-29"),
+
     ("S-06", "Local dev", "H2 is in-memory - nothing survives a restart", "Promotion requests, drafts and anything created during a demo are lost when the service restarts. Seed fixtures reload; transactional work does not", "Make H2 file-backed, or point local dev at HANA Cloud, before any live demo", "Open", "2026-08-15"),
     ("S-07", "Build", "Run npm install after every mbt build", "The MTA build prunes devDependencies at the root, removing @sap/cds-dk, and the next Maven build fails with 'cds' is not recognized", "Add it to the build script or CI pipeline", "Open", "2026-08-15"),
     ("S-08", "Quality", "Verify UI work visually, not through the DOM", "DOM text, network traces and per-element geometry all reported success while the screen was blank for an hour. Only a screenshot and an ancestor-chain walk found it", "Screenshot every UI change; measure ancestors, not the element", "Adopted", "2026-08-15"),
@@ -305,26 +739,143 @@ suggestions = [
     ("S-13", "Masters", "Reuse the content pack mechanism for the starter pack", "Versioned, insert-if-missing, never overwrites client edits - already built and proven for number ranges", "Ship the EC&O starter pack the same way", "Open", "2026-08-15"),
     ("S-14", "Masters", "Master editing needs draft handling", "A master screen that cannot be maintained is half a screen, and the draft pattern is inherited by every later module", "Build it before Templates so the pattern is settled once", "In progress", "2026-08-15"),
     ("S-15", "Integration", "Merged into Q-09", "Was a duplicate of the S/4 tenant question; the concrete list of what is needed now lives on Q-09", "See Q-09", "Merged", "2026-08-15"),
+    ("S-37", "Content", "The demo pack charges cost to reservation lines for resources that were bought",
+     "createReservation consumes only the lines decided IN_HOUSE and createRequisition only those decided PROCURE, both reading the same advisory field, so the two branches are disjoint and no action can put cost on both. Five seeded reservation lines have it anyway: RR-2026-0188 lines 2, 4 and 5 (96,422.40), RR-2026-0162 lines 2 and 5 (283,180.00) and RR-2026-0148 line 3 (3,600.00). Every one is also requisitioned, ordered and invoiced, and on RR-2026-0162 line 2 the reserved and invoiced figures are identical at 261,780.00, which is the same money twice rather than a part-stock part-bought split. The pack contradicts itself: RR-2026-0148 line 2 is decided PROCURE and carries costToDate 0.0, which is the shape the other five should have",
+     "The narrow correction is to zero costToDate on those five and leave the lines themselves alone, so a hired-in crane still shows on the reservation for allocation while its cost stays on the invoice where it belongs. Not done unilaterally for two reasons. It moves the headline figures on the project most likely to be demonstrated, and it removes the only seeded example of a line with spend to floor a reduction against, which test_variation reads. And it would not repair a tenant already seeded: packs insert what is missing and never update, so a version bump reaches new tenants only. Until it is ruled on, I-72 states the overstatement on the report itself",
+     "Open", "2026-08-29"),
+    ("S-31", "Data model", "A subcontract has no WBS and no CBS, so its cost lands nowhere",
+     "SubcontractRequest carries a project, a vendor and a contract value. Certified value therefore cannot be placed on a budget line, cannot be compared against a budgeted amount, and cannot be rolled into a cost node — while the period report already counts it as actual cost. On the seeded portfolio that is 2,678,260 of certified work the control record cannot see (I-71). Subcontract is one of the six cost natures the budget taxonomy is built on, so this is a hole in the middle of the model rather than at its edge",
+     "Two shapes, and the second subsumes the first: a WBS and CBS on the SR header, or scope lines each carrying its own assignment and value with the certified amount apportioned across them pro rata. Packages that span several parts of a job need the second. Either way the seeded subcontracts need assignments, which is fixture data I should not invent — the question is yours before the build, not after",
+     "Open", "2026-08-29"),
+    ("S-30", "Performance", "The control refresh rescans every reservation line",
+     "encumbranceByWbs selects all reservation lines and filters in Java, once per cost node and cost nature on the budget — and now that the refresh runs on the chain rather than on a button, that happens on every goods issue rather than when somebody asks. Correct, and quadratic in the wrong two things",
+     "Filter the select by project, and read the request line in the same query rather than one lookup per row. Left as it is for now because the shape is right and the cost is not yet felt — worth doing before a tenant with real volume, not before",
+     "Open", "2026-08-29"),
+    ("S-29", "Authorization", "The persona layer governs 32 of 107 entities",
+     "AuthorizationHandler.guard() returns early when an entity is absent from the persona catalogue, so an entity with no auth object has no control at all — not a default-deny, no control. Counted against the model today, three quarters of the persisted entities are in that state. Many are rightly global (number ranges, the fiscal calendar, the trade catalogue), but the list also holds documents that carry money and belong to one project: PaymentCertificate, SubcontractRequest, PurchaseOrder, SupplierInvoice, GoodsReceipt, VariationOrder, ReservationClosure, SiteReceipt, ReservationLine, BOQItem, Allocation. A persona scoped to one project can read another project's certificates and invoices straight off OData",
+     "Two halves. Decide per entity whether it is global or project-scoped — the ones above answer themselves — then add the object and its grants together, because adding the object alone turns a control on and locks people out (that is I-64 and I-65, twice). The line-level entities can follow their header rather than be decided separately, which is how KX_RES_VARIATION_LINE was done",
+     "Open", "2026-08-29"),
+    ("S-28", "Data model", "A variation moves one reservation line per document",
+     "ReservationVariation carried a composition of lines and vary() only ever wrote one of them, so the slab-cycle extension that holds both cranes thirty days was two documents rather than one with two lines. Each was complete and carried its own before and after, so nothing was lost -- but a reader counting variations counted the decision twice, and the narrative was the only thing tying the pair together",
+     "vary() takes a list of line moves. Chosen over letting a second call append to a same-day variation, which would have made the document boundary implicit -- what belongs on one document is the decision, not the date. Planned in full before anything is written: every line is validated first and a document that cannot be applied whole is not applied at all, so a list carrying one closed line moves neither of them. Both shapes at once is refused, and so is the same line twice: two ways of saying where a line ends up are two answers that can disagree. One header with the summed delta, one line per move, one chain link and one budget refresh",
+     "Done", "test_variation 12: two lines by one document, the whole-or-nothing refusal, and both ambiguous shapes"),
+    ("S-48", "Budget", "A reservation lock the budget has no heading for was held nowhere, silently",
+     "Found while checking that a multi-line variation reached the budget once: it reached it never. Encumbrance is attributed by walking the budget own lines and asking what is locked against each cost node and cost nature, so a lock against a node the budget has no line for is not asked about, and a manpower lock on a node carrying only a materials line is filtered out on the way past. Neither falls out of a total -- the total is never reached -- so the control record reads fully available while over a million sits locked. The shipped sample shows it: PRJ-001 holds 204,990 of lock in its control record and 583,880.16 more that no budget line carries a heading for, so the record is not wrong by a rounding -- it is right about a quarter of what is locked",
+     "Reported, exactly as its two twins already were. uncoveredCommitment and unplacedActual have said this about orders and invoices since they were built and the encumbrance third was simply never written; it is now unheldEncumbrance, same walk, same coverage test, its own sentence in the refresh message. Reported rather than corrected because where the lock should land is a budget line or a corrected assignment, and both are somebody decision -- the same reason the other two report. It is the worst of the three to leave silent: an order or an invoice is money somebody will present a demand for, an unheld lock is a promise the job made itself "
+     "that only the reservation remembers",
+     "Done", "test_budget 5: a lock on an uncarried node moves no budget line, and the refresh names it and its amount"),
+    ("S-27", "Authorization", "Actions are outside the persona layer entirely",
+     "AuthorizationHandler guards CREATE, READ, UPDATE and DELETE. An action is none of those, so nothing a document actually DOES passes through it - raisePullRequest, recordGoodsIssue, vary, sign, approve, close, release, refreshControl. What gates them is the service-level @requires alone, which is a role check and not the data-driven control the persona model exists to be. The practical effect: a persona with READ on an object can drive every action on that service, and a persona with no grant at all on the object can still fire the action that writes it",
+     "Map each action to an activity on its object - a raise is 01, a correction 02, a state change probably its own code - and guard them the way the four events are. Roughly forty actions across eight services, so this is a decision about the mapping as much as a change to the handler, and worth taking before the first client rather than after",
+     "Open", "2026-08-29"),
+    ("S-26", "Authorization", "A control that cannot find its target enforces nothing, quietly",
+     "KX_COST governed an entity deleted some releases ago and nothing noticed: an object whose entity cannot be found is skipped rather than refused, so the control reads as configured and enforces nothing. The catalogue is data and the model it points at is code, and the two drift apart the first time either is renamed with neither side complaining",
+     "Checked at boot and on demand, against the model, in four ways: the entity resolves; each scope path resolves step by step through its associations; a path does not stop on an association instead of a value; and no two objects claim the same entity. Each finding says what it costs rather than that it is wrong -- no control at all, or every scoped read of that entity failing. Reported, not fatal: a tenant that will not start is a tenant nobody can correct. The catalogue is sound today, so the check was proved by breaking it four ways rather than by passing",
+     "Closed", "2026-08-29"),
+    ("I-77", "Authorization", "The boot check pinned the permission catalogue to the pre-seed state",
+     "Caught by my own probe reporting 31 objects when the database held 34. Spring gives an unordered ApplicationReadyEvent listener lowest precedence, so two of them run in registration order, which is not an order -- the new check read the database before content deployment had written to it. Worse than a useless check: catalogue() caches for the life of the process, so priming it at boot would have fixed every enforcement decision to whatever existed before the seed. Entities silently unprotected, for the life of the process, caused by the check meant to find exactly that",
+     "Two fixes, because either alone leaves it fragile. Content deployment is now explicitly ordered first and the check 100 after it; and the check reads a fresh catalogue rather than the shared cached one, so even a future ordering mistake can only make the report wrong, never the enforcement",
+     "Closed", "2026-08-29"),
+    ("S-44", "Authorization", "Two objects on one entity is a silent loss, now reported",
+     "Found while probing: the catalogue is a map keyed by the entity an object protects, so a second object naming the same entity replaces the first. The loser is still in the table, still looks delivered, and governs nothing -- and which one survives is load order. The delivered 31 are distinct, so it does not bite today",
+     "The boot check counts the rows rather than the map, because the map is where the evidence was lost. Whether the model should instead allow several objects per entity is a separate question and not one worth opening while nothing needs it",
+     "Closed", "2026-08-29"),
     ("S-16", "Architecture", "The reader principle now has an exception", "D-17 makes the project KONSTRYX-mastered while procurement and finance stay S/4-owned. The principle is no longer 'S/4 owns transactions'; it is object by object", "Restate the rule in the product documentation so the exception is deliberate rather than remembered", "Open", "2026-08-15"),
-    ("S-17", "Integration", "An unsynchronised project is dangerous", "A project created in KONSTRYX that failed to reach S/4 will still accept requests and budgets that can never post", "Show the unsynchronised state prominently in the UI and block budget release until the S/4 project exists", "Open", "2026-08-15"),
+    ("S-17", "Integration", "A project ERP had never accepted still took commitments",
+     "Both halves are now done. The state has been visible for a while; the block was not. Demonstrated rather than argued: BUD-2026-0103 was submitted, approved by three people and baselined at 7,525,075.47 against PRJ-003, which ERP had never heard of",
+     "The budget is the project control figure, so submit and baseline both ask whether the project is in ERP. Asked at submit because that is where it is cheap to fix, and again at baseline because a budget submitted while the connection was down can be approved days later and would otherwise pass through a gate that closed behind it",
+     "Closed", "2026-08-29"),
+
     ("S-18", "Architecture", "Build upload/download once, not per screen", "D-18 applies to every master and transaction. Bespoke import per screen is how 40 modules end up with 40 different error behaviours", "One framework: template definition, staging, validation against the same service rules, and an error report the user can correct and re-upload", "Done", "2026-08-15"),
     ("S-19", "Approvals", "The delivered value bands are mine, not yours", "The engine ships with Budget at 100k/1m and Resource Request at 250k/1m so it works out of the box. Nobody at Inflexion or a client has agreed those figures, and a demo will show them as if they were policy", "Replace them before any client sees the product. See Q-03", "Open", "2026-08-15"),
     ("S-20", "Approvals", "Separation of duties is on by default", "Someone who cleared step 1 cannot clear step 2 of the same document. In a small contractor one director genuinely is both signatures, so allowChaining exists per step to permit it", "Confirm the default is right for EC&O clients; it is a per-step switch either way", "Open", "2026-08-15"),
-    ("S-21", "Approvals", "Nothing yet withdraws an approval when the document changes", "A resource request approved at AED 2m stays approved if someone later edits it down to 200k, or up. The approval records the amount it was judged on but nothing re-checks it", "Decide per object type whether an edit invalidates an in-flight or completed approval; wire it with F-05", "Open", "2026-08-15"),
+    ("S-21", "Approvals", "An approved document could still be edited underneath its approval",
+     "Worse than the note said, and checked rather than assumed: a PATCH took a line on RR-2026-0310 -- a request already through approval, advisory, availability and reservation -- from 24 to 240, and because the value is stored rather than recomputed the line was left carrying a quantity and a total describing different requests, with the reservation still locking money against the old one. The header was worse: a PATCH moved an Advised request back to Draft, which alone would have made any line guard a formality",
+     "Lines refuse edits and deletes once the request leaves Draft or Rejected -- exactly the states submit accepts, so the editable window and the approvable window are one window. The status refuses to be written at all, forward as well as back: every legitimate move is made by an action, and actions write through the persistence layer where the guard does not sit, which is what makes it enforceable rather than a comment. The rule already existed for a baselined budget; this is the same rule, kept in the same way",
+     "Closed", "2026-08-29"),
+    ("I-75", "Integrity", "Three more documents took writes that only an action should make",
+     "Having found one, I probed the rest rather than assume it was the only one. ReservationLine.encumberedAmount was writable -- the lock a variation exists to move, and which the budget reads as encumbrance, editable by PATCH with no before-and-after and no ledger entry. Budget.status was writable, and the baselined-amount guard reads it, so one call reopened every amount on a baselined budget. PaymentCertificate.status was writable, and Certified is what makes a certificate count as cost in the period report. Purchase requisitions and orders were already closed, being read-only projections",
+     "The reservation line is read-only outright: nothing on it is typed. The two statuses are refused by a guard rather than an annotation, which is a deliberate choice -- a read-only element is stripped from the payload before handlers run, so the write is answered 200 and quietly dropped, and a caller is told its change took when it did not. The guard says which door the status moves through",
+     "Closed", "2026-08-29"),
+
     ("S-22", "Approvals", "Editing a scheme mid-flight", "Instances freeze the step number and name at submission, so an in-flight approval survives a scheme edit. It still points at the step definition for the approver persona, and CAP draft activation can renumber those rows", "Confirm the intended behaviour: should a scheme edit affect approvals already running? Today it partly does", "Open", "2026-08-15"),
     ("S-35", "Planning", "Four-class budget roll-up blocked on OPEN-01/OPEN-02", "The spec itself flags that the budget-detail label conflates Class (L1) with control level (L3), and that the six verticals do not map 1:1 onto four classes — SF could be Equipment or Subcontract depending on pool vs vendor-supplied. Every scaffold project's split is wrong until pinned", "Answer OPEN-01 and OPEN-02 in the spec; the roll-up is a one-day build once pinned", "Open", "2026-08-15"),
     ("S-36", "Planning", "Crew roles have no resource mapping master", "Crew composition strings carry role tokens (SK, HLP) that no master resolves to a resource. Unmapped roles fall back to the norm resource, visibly labelled, so demand lands on the wrong resource in plain sight rather than invisibly", "Decide where the role-to-resource mapping lives — the Trade Catalogue is the natural home per the wireframe audit", "Open", "2026-08-15"),
-    ("S-32", "Commercial", "Encumbrance lands in the budget on demand, not on event", "refreshControl sums open reservations into the control record when called. A reservation created after the last refresh is invisible in the budget until someone refreshes", "Wire the chain to refresh affected budget lines on reservation create/close, or schedule it; on-demand was the honest first cut", "Open", "2026-08-15"),
+    ("S-32", "Commercial", "Encumbrance lands in the budget on demand, not on event", "refreshControl summed open reservations into the control record only when called, so a reservation raised in the morning was invisible in the budget until somebody pressed refresh in the afternoon. Worse than staleness: on the seeded project all three derived columns read zero against work that had already spent 316,932 on signed hours, and a column that never moves never looks wrong", "Closed: BudgetHandler.refreshProject runs on the five events that move a control figure — reservation created, varied, closed, goods issued, signed days posted. Whole budget rather than the lines touched, because encumbrance is apportioned across every line sharing a cost node. test_variation asserts the event-driven result equals what the button produces, which is the invariant that matters: two paths computing the budget differently would be worse than the staleness this replaced", "Closed", "2026-08-29"),
     ("S-33", "Planning", "Spec variance needs a distinct CBS leaf — now ENFORCED as VAL-05", "The gate fails any CBS leaf carrying two material grades, exactly as spec Part A.3 demands, and budget generation refuses GATE_FAILED while it stands", "Closed by implementation; the stewardship guidance should still cite VAL-05", "Closed", "2026-08-15"),
-    ("S-34", "Execution", "Reservation encumbrance has no duration dimension", "estTotal today is unit rate x qty; the seeded canonical thread carried duration-based encumbrances (2 cranes x 320/day x 432 days). Duration needs planning dates the request does not yet carry", "Add period-from/to to request lines when planning dates exist, and price estTotal as qty x rate x days", "Open", "2026-08-15"),
+    ("S-34", "Execution", "Reservation encumbrance had no duration dimension",
+     "estTotal was unit rate x quantity, which answers how many at what each and not what a hire costs. One crane at 320 a day priced to 320 is a single day, never what the request meant, so the only way to get a duration into a request was to type the total by hand -- which is how the seeded thread carries 2 cranes x 320 x 432 days with nothing in the model saying 432",
+     "ResourceRequestLine carries periodFrom and periodTo, and submit prices a line as qty x rate x days with both ends counted -- a hire from the 1st to the 1st is one day, because the day a crane arrives is a day it is paid for. Both dates or neither, and a period that ends before it starts is refused. ReservationLine records the duration it locked for, so the variation reads it rather than recovering it by division. A line with no period keeps the old arithmetic exactly: multiplying a per-tonne price by a duration would be inventing one",
+     "Closed", "2026-08-29"),
+    ("I-74", "Execution", "The reservation list reported a duration for resources that have none",
+     "ReservationLines derived reservedDays as encumberedAmount / (qty x dailyRate), which is exact for a crane at 320 a day and meaningless for rebar priced by the tonne -- every material line in the portfolio read 1.00 days. Nothing on a reservation line says whether its rate is a daily one: the column is called dailyRate and holds a per-tonne price on material, so the division could not know what it was dividing",
+     "The projection stops deriving it and shows what was recorded. The derivation survives in one place where it is provably safe -- inside the variation, where it reconstructs the same lock it came from and only when no duration was recorded, because a line reserved before the period existed would otherwise vary to zero. The ten seeded daily-rated lines now carry their duration in the fixture, transcribed from the locks they were already built from and only where the division lands on a whole number of days. The dates were not invented: the encumbrance says how many days, not which",
+     "Closed", "2026-08-29"),
+    ("S-38", "Execution", "One column carries a daily rate and a unit price",
+     "ReservationLine.dailyRate holds 320 a day for a crane and 3,422 a tonne for rebar, and ResourceRequestLine.estUnitCost does the same upstream. Every reader has to know which it is looking at from context, and I-74 is what happens when one does not. The period now tells them apart in practice -- a line with a period is priced by the day -- but that is a convention holding a model gap shut, not the model saying so",
+     "Either a rate basis on the resource (per day / per unit) that pricing reads, or two columns. The first is the smaller change and the one the rate master is already shaped for. Not urgent while the period carries the distinction, and worth doing before a second reader needs it",
+     "Open", "2026-08-29"),
+
     ("S-30", "Project Setup", "P6 import matches on project code, so a re-import is refused rather than merged", "Sending a revised P6 file is the normal way a planner works — the schedule changes weekly. Today the second file is rejected as a duplicate code, which is safe but not useful", "Decide what a re-import should mean: refuse, update the header, or reconcile the WBS tree adding and flagging removals. Reconciliation is the one planners will expect and the one that can silently orphan budget lines", "Open", "2026-08-15"),
     ("S-31", "Project Setup", "Only the project header and WBS come across from P6", "Activities, logic, durations, resource assignments and the baseline are all in the file and all ignored. That is the right first cut - KONSTRYX is not a scheduling tool - but it is worth being explicit that P6 remains the schedule of record", "Confirm the boundary: does KONSTRYX ever need activity-level data, or does it stop at WBS?", "Open", "2026-08-15"),
-    ("S-27", "Seed data", "A bad seed row fails silently and looks like an authorization bug", "The loader cancels the entity's whole change set and logs it at INFO. The symptom is every request returning 403, which sends you looking at the authorization model instead of at a CSV", "Add a startup check that counts loaded rows against the file and fails loudly on a mismatch. Same class of problem as S-05", "Open", "2026-08-15"),
-    ("S-28", "Project Setup", "Nothing yet stops work against a project that is not in S/4", "The state is now visible and honest — a project reads NOT_SENT until the connector confirms it — but requisitions, budgets and reservations can still be raised against it. Visibility was the prerequisite; the block is a separate decision", "Decide per document type whether an unsynchronised project blocks creation or only release. Closes the second half of S-17", "Open", "2026-08-15"),
+    ("S-27", "Seed data", "A half-seeded tenant left nothing behind to find",
+     "The note is half out of date and its remedy was aimed at the wrong thing. There is no CSV loader at runtime -- no fixture reaches the jar -- and the content pack path already logs at ERROR naming the pack, the entity and the offending row by its natural key. What was missing was durability: the rows roll back, no registry row was written, and a tenant missing its personas looked identical to one that was never given any. The only trace was a boot log, and by the time anyone doubts the seed the container has restarted and taken it",
+     "The attempt is recorded whether or not it worked -- ContentPack carries an outcome and the message, and a failure is written outside the cancelled change set so it survives the rollback that caused it. One WARN at boot counts the failures rather than leaving them one ERROR among hundreds. The service still serves: an operator pack failing is not a reason to take a tenant down, and there would be no way in to fix it",
+     "Closed", "2026-08-29"),
+    ("S-41", "Seed data", "Recording failures in the applied-check table is the load-bearing line",
+     "The applied check reads the same table the failures now go in, so matching on packId and version alone would skip a pack that failed once for the life of the tenant -- turning a transient failure into a permanent one, which is worse than the problem it was fixing. Verified in one database rather than across a restart, because H2 is in-memory and a restart would have thrown the FAILED row away and proved nothing: the pack was broken, booted, corrected on disk and re-applied through the admin action with the FAILED row still present",
+     "Only an APPLIED row counts as applied, and a row written before the field existed has no outcome and got there by succeeding, so it counts too. Both attempts are kept, the way ImportRun keeps every load",
+     "Closed", "2026-08-29"),
+    ("S-42", "Seed data", "One refusal was doing the work of three",
+     "Not authorized on X said the same thing whether the user lacked a grant, was connected to no persona at all, or the tenant had no persona content -- and only the first is the user's to act on. The last denies every request from everybody, which reads as an authorization problem and sends whoever is looking into the persona model, where they find nothing wrong because there is nothing there",
+     "The refusal path asks which of the three it is and says so. Two counting queries, and only on a request that has already been refused, which is exceptional and where the cost is nothing against being sent to the wrong place. The no-persona-layer message points at a content pack whose outcome is FAILED, which is what S-27 made there to find",
+     "Closed", "2026-08-29"),
+    ("I-76", "Authorization", "The guard does not cover draft events, and does not need to",
+     "Checked while proving the refusal above is reachable, because a display-only user creating anything looked wrong. jin holds activity 03 on KX_RESOURCE_REQ and a POST to ResourceRequests succeeds -- a draft is not a CREATE, so the guard does not see it. Making it a document is, and that is refused. So a display-only user can scribble in a draft only they can see and cannot make it real",
+     "No change. Recorded because it looks like a hole from the outside and is not one, so the next person to notice does not spend the afternoon I nearly did",
+     "Closed", "2026-08-29"),
+    ("S-43", "Authorization", "One branch of the diagnosis cannot be reached from a test",
+     "The empty-persona-layer branch needs a tenant with no grants at all. Producing one means deleting 150 delivered grants, and delivered personas refuse deletion by design -- correctly. The other two branches are asserted end to end; this one is asserted only by its precondition, that the tenant does have a layer",
+     "Left as it is. A fixture tenant seeded without the personas pack would cover it, and that is a larger thing than the branch is worth today. Same shape as the project gate, whose not-in-ERP-with-a-live-connection branch is equally out of reach offline",
+     "Raised", "2026-08-29"),
+
+    ("S-28", "Project Setup", "Which documents an unsynchronised project stops, and which it does not",
+     "Answered per document type as the note asked. Creation is never blocked: a job is planned before it is registered anywhere, and refusing to let people plan would be refusing the normal case. What is blocked is commitment -- the two places where a project stops being a plan. Requests and reservations sit in between and are left alone: a reservation locks KONSTRYX money and posts nothing, so it is a plan with a number on it",
+     "The budget at submit and baseline, and the requisition at push -- the latter was already refused by the WBS check, but it reported the first line rather than the project, which sent the buyer to a line that was not what was wrong. The project is now asked about first, so the message names the cause. One decision in S4ProjectConnector.blocker, shared, so the two callers cannot drift apart",
+     "Closed", "2026-08-29"),
+    ("S-39", "Project Setup", "The gate reads the connection as well as the status, and it has to",
+     "NOT_SENT means two different things. On a tenant with no ERP configured there is nowhere to send the project, KONSTRYX is the system of record, and a status gate alone would make the product unusable offline -- every one of the 24 suites runs that way, as does any evaluation before a connector is wired. So NOT_SENT and PENDING refuse only where a connection exists. FAILED refuses either way: it is not a project waiting to be sent, it is one that was sent and turned down, and switching the connection off does not unsay that",
+     "Recorded rather than remedied. The consequence worth knowing is that the rule means something different on a connected tenant than on a standalone one, and that is the intended reading, not a gap. The branch that cannot be exercised offline -- NOT_SENT with a live connection -- is the one branch of four the suite cannot assert",
+     "Raised", "2026-08-29"),
+    ("S-40", "Content packs", "The shipped sample arrives with budgets already baselined on projects no ERP has",
+     "A content pack inserts rows rather than pressing buttons, so the two budgets it ships arrive Baselined without passing the gate above. Harmless as it stands -- the requisition side still refuses to post, so no money escapes -- and the alternative would be shipping a sample whose budgets cannot be shown, which is a demonstration of nothing",
+     "Left as it is, deliberately, and recorded so it is not later mistaken for the gate leaking. Worth revisiting only if a tenant is ever expected to promote the sample project into real work",
+     "Raised", "2026-08-29"),
+
     ("S-29", "Project Setup", "Project numbering is manual", "A project code is typed in and checked for uniqueness. Number ranges exist and are configurable, and other documents use them, but projects do not — partly because clients often carry an existing code from the contract", "Confirm whether project codes should be issued by a number range, typed, or either depending on the client", "Open", "2026-08-15"),
     ("S-24", "Attachments", "Attachment content is stored in the database", "LargeBinary in HANA is right for the documents that carry legal weight — drawings, permits, signed variations — because they are backed up and restored with the data they belong to. It is the wrong home for thousands of site photographs", "Decide whether photo-heavy objects go to an object store instead. It is a per-category switch if decided before volume builds up, and a migration afterwards", "Open", "2026-08-15"),
-    ("S-25", "Attachments", "Nothing scans uploads or limits their size", "Any authenticated user can upload any file of any size to any object. On a client tenant that is both a malware route and a storage risk", "Add a size cap and virus scanning before the first client upload. SAP BTP has a Malware Scanning service; the size cap is configuration", "Open", "2026-08-15"),
-    ("S-26", "Attachments", "Deleting an attachment breaks the version chain", "supersedes points at the previous version. Deleting a middle version leaves the chain dangling, and deleting the document someone approved against destroys the evidence", "Block deletion of a superseded version, or of anything attached to a closed approval; mark as obsolete instead", "Open", "2026-08-15"),
+    ("S-25", "Attachments", "Any authenticated user could upload any file of any size",
+     "The storage half. Content lives in the database, so an unbounded upload is paid for by every backup and restore of the tenant rather than by whoever made it, and nothing anywhere said no",
+     "A ceiling, measured on the bytes that landed rather than on Content-Length -- that header is the client account of what it sent, and a cap that trusts it can be told any number. The check therefore runs after the runtime has stored the content and throws, which unwinds the change set: verified that the previous file is still the one served back afterwards, rather than assuming the rollback. 25 MB by default because that clears a marked-up drawing or a scanned permit and stops what this is not for; KX_ATTACHMENT_MAX_MB where a client genuinely needs more, so they are not told their file is wrong. The malware half is separately raised",
+     "Closed", "2026-08-29"),
+    ("S-47", "Attachments", "Nothing scans an upload for malware",
+     "The other half of S-25 and the one I cannot build here. KONSTRYX accepts arbitrary bytes from any authenticated user and hands them back to anybody who can read the object, which on a client tenant is a distribution route. The size cap narrows the target and does nothing about the content",
+     "SAP BTP Malware Scanning, called on the upload path before the content is kept -- the same place the size ceiling sits, so the shape is already there. It needs a service instance and a subscription, which is a provisioning decision rather than a code one, and it belongs before the first client upload rather than before the first client",
+     "Raised", "2026-08-29"),
+
+    ("S-26", "Attachments", "A delete could take the history or the evidence with it",
+     "Both halves confirmed by doing them. Three uploads of one file made versions 1, 2 and 3; deleting version 2 was accepted and left version 3 pointing at a row that is not there -- no error anywhere, the successor still reads fine, and the history simply has a hole in it. The second half is worse: an attachment on a document in front of an approver could be deleted, leaving a decision recorded against a file nobody can produce",
+     "A version another version supersedes cannot be deleted; the head can, because nothing points at it and the rule is about what breaks rather than about age. An attachment on a document that has been put up for a decision cannot be deleted either -- approved, rejected, or pending, because evidence pulled from under a live decision is the worst of the three. A withdrawn submission does not count: nothing was decided on it, and the usual reason to withdraw is that the wrong thing was attached. isObsolete is the way through, because a refusal with no alternative is a rule people work around",
+     "Closed", "2026-08-29"),
+    ("I-83", "Attachments", "The attachment rules applied to one door of two",
+     "Found while deciding where to put the delete guard. sys.Attachment is exposed as CollaborationService.Attachments and WorkflowService.RequestAttachments, and the handler was bound to the first only. Uploading through the workflow door skipped the versioning outright -- a second upload of the same file came back as version 1 again rather than version 2 superseding the first -- and skipped the existence check, so an attachment was accepted against a resource request that had never been created. The target is polymorphic, an entity name and a key, so no foreign key catches that: the handler IS the foreign key, and one bound to one projection of two is half a constraint",
+     "Every handler now names both projections, and the delete guard was written for both from the start rather than added to one and copied. The suite exercises the second door on its own -- versioning, the bogus target, and the chain guard -- because a rule that is only tested through the door it was written for is a rule that is only true there",
+     "Closed", "2026-08-29"),
+    ("S-46", "Attachments", "A third projection is declared and reaches nothing",
+     "AuthorizationService.Attachments is declared over sys.Attachment but no such EntitySet appears in that service metadata, and a request to it returns 404. Not a leak -- there is nothing there to reach -- but a declared door that does not open is either a mistake or a leftover, and while it reads as a door somebody will eventually write against it",
+     "Work out whether it was meant to be reachable. If it was, it needs the same handlers as the other two; if it was not, delete the line. Not urgent: it exposes nothing today",
+     "Raised", "2026-08-29"),
+
     ("S-23", "Frameworks", "Content packs now carry references", "Delivered content could previously only hold flat rows, which is why the approval schemes could not ship as content. Packs now resolve a row by natural key at deploy time and match on composite keys", "Use the same mechanism for the EC&O starter pack (S-13) and for delivered personas", "Open", "2026-08-15"),
 ]
 body(ws, 6, suggestions, [8, 16, 44, 62, 52, 12, 12], status_col=6)
@@ -384,6 +935,90 @@ issues = [
      "Surfaced by I-51 rather than pre-existing: once release pushed on its own, the regression run began posting Enterprise Projects into whatever tenant the developer's .env named. S4Connection falls back to a gitignored .env when no destination resolves, and that file still held live my401381 credentials. Nothing was created only because the org data is now my434396's and S/4 refused with Profit Center YB101 does not exist - luck, not design",
      "S4Connection honours an S4_OFFLINE switch that short-circuits resolution before either the destination or the .env is consulted, and run_all.sh sets it. A verification run can no longer reach a tenant regardless of whose machine it runs on. The my401381 communication user still needs rotating - it transited chat transcripts (Q-09p) and is evidently still live",
      "Closed", "2026-08-25"),
+    ("I-72", "Commercial", "The period report added three branches that were assumed never to overlap",
+     "Actual cost is signed labour plus stock issued, plus what was bought and billed, plus certified subcontract value. Both the reconciliation and the budget stated in comments that these cannot overlap, because a request line is decided PROCURE or IN_HOUSE and travels one way. Nothing measured it. On the seeded portfolio 383,202.40 of scope carries cost on both branches at once, so PRJ-001 reports 3,113,423.84 spent when at most 2,730,221.44 of it is distinct money, and margin, cost to complete and both performance indices inherit the error",
+     "The reconciliation measures the overlap per request line as the smaller of the two figures, which is the most of it that can be the same money, and says so on the face of the report. Measured rather than subtracted: a material line part drawn from store and part bought is genuine cost on both sides, and telling that apart from a line counted twice is a reading of the data rather than a rule. The budget comment no longer claims the overlap is impossible",
+     "Closed", "2026-08-29"),
+    ("I-73", "Insight", "Every period report note was cut off at 254 characters, mid-word",
+     "The note is where the report says what it could not compute and which figures carry a caveat, and it is the one part a reader has to trust. The field was String(255) and the assembly cut the joined text with substring, so every report on the portfolio came out at exactly 254 characters ending mid-word, and any note after the second was dropped without trace. A caveat cut in half is worse than one left out: it reads as a complete sentence that happens to end early",
+     "The field holds 2000, which fits every note a report currently produces with room to spare, and the assembly puts whole notes in while they fit and never splits one. If it ever has to drop any, the count of them is the last thing the note says",
+     "Closed", "2026-08-29"),
+    ("I-71", "Commercial", "Two live figures for what a project has cost disagreed, silently",
+     "The period report counts actual cost as signed labour plus stock issued plus invoiced plus certified subcontract. The budget control record counts invoiced plus what the reservations consumed, and places it by cost node. Neither is wrong on its own terms and they disagree by a large number: PRJ-001 reads 550,704 on the control record and 3,113,423.84 on the period report — 1,521,059.84 spent against cost nodes the budget has no line for, and 1,041,660 of certified subcontract value that cannot be placed at all. PRJ-002 and PRJ-004 are worse in shape: the control record reads zero actual against 638,000 and 998,600 of certified work",
+     "refreshControl now reports both, separately, because the fixes differ. Cost on an uncovered node needs a budget line or a corrected assignment. Certified subcontract value needs the model to carry an assignment at all — see S-31. Reported rather than corrected: inventing where a subcontract charges is exactly the guess this product exists to prevent, and the alternative is a control record that looks complete",
+     "Closed", "2026-08-29"),
+    ("I-69", "Tooling", "The smoke test looked for the UI on a port nothing serves",
+     "run-local.bat starts the UI on 8081 and passes it explicitly, and serve.py's own default was 8080 — so the port depended on how it was started, and starting it by hand put it somewhere the smoke test does not look. The failure does not read as a wrong port: every application fails index, component, manifest and data at once, which is indistinguishable from twenty-eight broken screens",
+     "serve.py defaults to 8081, matching the entry point that is actually supported. One number moved rather than two, and nothing that already works changes",
+     "Closed", "2026-08-29"),
+    ("I-70", "Demo data", "The plant reservation is priced for 432 days inside a six-month window",
+     "RR-2026-0188 line 1 is two tower cranes at 320 a day with an approved total of 276,480, and the mobilization window runs 14 Jun to 14 Dec — about 184 days. The approved value implies 432. Invisible until the variation made the duration a figure the product reads back and prints: the demo now says \"2 at 320 for 432 day(s)\" on a six-month hire. Line 2 is consistent at 90 days, so it is this line rather than the convention",
+     "Reported rather than corrected. estTotal is what the approval was shown and what the encumbrance was set from, so changing it moves budget, encumbrance and reconciliation figures across several suites — that is your call on the fixture, not a silent edit",
+     "Open", "2026-08-29"),
+    ("I-66", "Reporting", "The overview scored every reservation against the plant chain",
+     "The ten-step chain is drawn for equipment: a request for cranes, routed to own fleet or rental, mobilized under a fifteen-item condition checklist and taken off under the same one. Material is poured and never comes back, so mobilization and de-mobilization are steps a concrete reservation can never reach — and it was being counted against them. Every material and manpower thread therefore reported a ceiling of 8 of 10 no matter how completely it finished",
+     "The scope is decided by the vertical. Asset verticals run all ten; the rest are scored against the eight that apply, and the row says which chain it is being read against",
+     "Closed", "2026-08-29"),
+    ("I-67", "Reporting", "Six of the ten steps were hardcoded as pending",
+     "The overview asserted CMT, MOB, OPL, VAR, DMB pending on every row regardless of what stood behind it. That was true when written and had quietly stopped being true: RES-2026-0162 carries 46 signed timesheets, which is exactly what the operation-log step is, and the screen called it outstanding. The same understating would have grown with every module built, because nothing in the code had to change for the statement to go stale",
+     "Every step is read from data. The daily record resolves per vertical — consumption records for material, timesheets for manpower — and the closure step is evidenced by the closure account rather than a status field",
+     "Closed", "2026-08-29"),
+    ("I-68", "Reporting", "A step nobody can do read as a step nobody had done",
+     "Pending listed the unwired ERP commitment beside the closure somebody actually owes. A coordinator reading the row could not tell which of the six was work and which was a connector, so the screen asked them to chase things that do not exist",
+     "Three outcomes reported apart: done, pending, blocked — the last carrying its reason (ERP connector / not built). Only pending is anybody's work, and the progress bar divides by the steps in scope",
+     "Closed", "2026-08-29"),
+    ("I-65", "Authorization", "The site engineer could not open the two site screens",
+     "The persona's own description is \"raises resource requests and confirms execution on site\", and it held create, change and read on the timesheet - the manpower half of confirming execution - and nothing at all on the stock draw or the consumption record. Only DEMO_ALL held those, so the two screens built for the site engineer were openable by the demo superuser and nobody else. Found by the launchpad smoke test, which reads every tile's count through the proxy as a real persona rather than as admin",
+     "READ on both objects for the site engineer and for the resource coordinator, who owns the reservation the draw is made against. Delivered as PERSONAS 1.3.0, insert-if-missing",
+     "Closed", "2026-08-29"),
+    ("I-64", "Authorization", "The cost object governed an entity that had been deleted",
+     "KX_COST named konstryx.ins.CostRevenueSnapshot, which does not exist in the model - it was replaced by ProjectPeriodReport and the catalogue was never repointed. The authorization handler skips any entity it cannot find in the catalogue, so every period report was governed by NO object at all: the margin, the forecast, the cost against value of every project in the estate, readable by anyone the service-level check let in. The grants held against KX_COST meanwhile granted access to nothing. Both halves silent - a dead pointer looks exactly like a working one from the persona screen. Found while filling the blank scope paths on the two site objects (I-61)",
+     "KX_COST points at konstryx.ins.ProjectPeriodReport with both scope paths filled, so the reports are project- and company-scoped like everything else. The project manager gains READ, on the rule that a persona already trusted with the budget is trusted with the same figures arranged as a cost report - COST_ENGINEER and DEMO_ALL already held it and PROJECT_MANAGER was the only holder of budget READ without it",
+     "Closed", "2026-08-29"),
+    ("I-60", "Procurement", "A draw named its material, and the material named two lines",
+     "One request routinely orders the same material for several parts of a job - the same ready-mix into a slab and into a core wall - and those are separate lines, on separate cost nodes, with separate norms and separate budgets. The draw matched on the material code and took the first line it found, so the core wall's twenty cubic metres were charged to the slab. Both lines look identical from outside, which is why nothing on any screen would have shown it. Found by the suite, on the first thread wide enough to contain the case",
+     "The line number identifies the line. The material only decides when it is unambiguous on its own, and when it is not the refusal spells out the choice - line number, material and cost node for each candidate - rather than guessing",
+     "Closed", "2026-08-29"),
+    ("I-61", "Authorization", "Two site objects were declared project-scoped and could not be scoped",
+     "KX_PULL_REQUEST and KX_CONSUMPTION carried projectScoped = true with no project path and no company path. A blank path is skipped rather than refused, so the objects were declared as controlled and enforced nothing: a site engineer scoped to one project could read every project's draws. Silent by construction - the flag says the control is on",
+     "The pull request carries a project and a company of its own now that it is a document, so the paths are direct; consumption reaches them through its reservation line. Both filled in the delivered catalogue",
+     "Closed", "2026-08-29"),
+    ("I-62", "UI", "Every scaffolded app inherited the template's name",
+     "scaffold_app rewrote the tile title and the tile subtitle in the manifest and left the i18n bundle alone, so a new app's shell header and its gallery entry read PurchaseOrders and \"Supplier master mirrored from ERP\". Corrected by hand three times on three different apps before the pattern was obvious - the tile, which is the part people look at, was right every time",
+     "The scaffolder writes the bundle from the same title and subtitle it already writes into the manifest. An app is named once",
+     "Closed", "2026-08-29"),
+    ("I-63", "Demo", "The stand-in reported orders it had not placed",
+     "The invoicing loop reused the name that holds the count of orders placed for a line quantity, so the closing summary reported the last order line's quantity as the run's work: 20 orders placed on a run that placed none",
+     "The line quantity has its own name. The summary counts orders again",
+     "Closed", "2026-08-29"),
+    ("I-58", "Reporting", "The cost report's coverage note read as a broken sentence",
+     "The note names what contributed to the cost and what did not. Built from two lists and printed unconditionally, it produced \"Cost captured from  only; manpower, procurement, subcontract contribute nothing\" on a project with no cost at all, and \"procurement contribute nothing\" once the missing list could hold a single item. Both are the right fact in a sentence a reader learns to skip",
+     "An empty captured list says so outright instead: nothing has been spent from any source, so the margin is the whole budget and not a measurement. The verb agrees with the list length",
+     "Closed", "2026-08-29"),
+    ("I-59", "Demo", "The cost reports were produced before the invoices existed",
+     "prime_demo reconciles, then mirror_erp_documents posts the bills. The reports were therefore always one step behind: PRJ-001 read 2,229,071.84 spent with a note saying procurement contributes nothing, on a project that had just been billed 760,980",
+     "The stand-in reconciles after billing, the same way it already refreshed the budgets. PRJ-001 now reads 2,990,051.84 with no coverage caveat left",
+     "Closed", "2026-08-29"),
+    ("I-56", "Budget", "A half-consumed reservation held the budget twice",
+     "Encumbrance was the whole reserved amount until the line closed, and actual had just gained the consumed cost off the same line. So a reservation 60% consumed locked 100% of its value as encumbered AND reported 60% of it as spent, against the same hours - available understated by the consumed portion on every line still running. Exactly the relief rule already applied to commitment, missing on the other branch",
+     "Encumbrance is now what the reservation still has to consume: encumbered less cost to date, floored at zero. A line that overran cost more than it reserved, and that overrun is an actual rather than a negative lock on the budget",
+     "Closed", "2026-08-29"),
+    ("I-57", "Procurement", "Two lines of one invoice on one order line recorded only one of them",
+     "The order rows were read into a map before the loop, so a second invoice line against the same order line measured itself against what was billed before either of them landed and wrote invoicedQty from that stale figure. The header total was right and the line total was short",
+     "The match takes what this document has already billed each line as a separate argument, and the order line is re-read before it is updated",
+     "Closed", "2026-08-29"),
+    ("I-55", "Procurement", "An invoice settled only the last delivery on the line it billed",
+     "A line delivered in two loads and billed once stamped threeWayMatch on the later receipt and left the earlier one null - permanently unanswered, and indistinguishable on screen from a delivery nobody has billed for yet. Found on the fixture that delivers 1 of 4 kits and then the remaining 3",
+     "The invoice now walks the line's unanswered receipts oldest first and consumes its quantity across them, stamping each one it covers; the invoice line names the first. Receipts already answered by an earlier bill are skipped, so two invoices against one line settle two different loads rather than both claiming the first",
+     "Closed", "2026-08-29"),
+    ("I-53", "Budget", "A charge on one element was copied onto every budget line carrying that element",
+     "The multiplication fixed earlier the same day was fixed one level too shallow. Charges were grouped by cost node and cost nature, and what the group could not place was apportioned correctly - but a charge that DID name an element was handed in full to every line carrying it. The budget is kept per bill item as well as per element, so two or three lines routinely share one element under one cost node, and each of them then reported the whole commitment. Found on the demo portfolio, where one 3,060 order showed as 3,060 twice on the same budget",
+     "Both branches now go through one spread(): a charge on an element is divided across the lines carrying it in proportion to what each was budgeted, with the last absorbing the rounding, exactly as the unplaceable remainder already was",
+     "Closed", "2026-08-29"),
+    ("I-54", "Procurement", "A requisition could be raised for work that charges nowhere",
+     "PurchaseRequisitionLine's own model comment said a line without WBS and CBS cannot commit against the right budget line, and nothing enforced it. Six lines in the demo portfolio carried an element and no cost node; the orders raised from them bought 713,080 of real scope, and every budget line involved still read fully available. The failure is silent by construction - refreshControl walks budget lines, so an order charging a node the budget has no heading for is simply not seen",
+     "raisePurchaseRequisition refuses unless every PROCURE line names both, saying which line and which half is missing, and refuses at the raise rather than at the push - by the push the buyer has already been sent out to buy it. Separately, refreshControl now reports what it could not place: open order value on the project that no line of the budget covers. Reported rather than corrected, because the answer is a new budget line or a corrected assignment and both are someone's decision",
+     "Closed", "2026-08-29"),
     ("I-01", "CAP build", "BudgetServiceHandler imported com.sap.cds.services.cds.CdsService, which does not exist", "Service would not compile", "Replaced with EventContext", "Closed", "2026-08-15"),
     ("I-02", "CAP build", "pom used cds-starter-spring-boot, which carries no protocol adapter", "All 6 services registered but exposed ZERO HTTP endpoints, silently", "Switched to cds-starter-spring-boot-odata", "Closed", "2026-08-15"),
     ("I-03", "CAP build", ".cdsrc.json set build.target=gen (Node layout)", "Compiled model never reached srv resources; runtime started with an empty catalogue", "Removed; Java build now writes in place", "Closed", "2026-08-15"),
@@ -407,7 +1042,7 @@ issues = [
     ("I-29", "Services", "ProjectService dropped associations to master data", "CAP omits an association whose target is not exposed in the same service, so a project CBS node could not say which library node it came from and a planned resource could not name its resource. ProjectResources was unusable in a UI", "Expose ResourceCatalog and CBSLibrary read-only in ProjectService for resolution; maintenance stays in MasterDataService", "Closed", "2026-08-15"),
     ("I-27", "Test data", "Seed data violated the model's own hierarchy rule", "Every resource was an L5 with no parent, so activation failed with 'L5 needs a parent at L4' and no seeded master could be edited or saved. 'Below this node' was empty on every page", "Replaced with a real L1-L5 tree of 28 nodes, leaf IDs preserved so rates and request lines still resolve", "Closed", "2026-08-15"),
     ("I-40", "Deployment", "The first real Cloud Foundry deployment: six blockers, none reachable by the test suite", "KONSTRYX had never been deployed. mta.yaml, the db module and the cloud Spring profile were all written ahead of ever being run, and each was wrong in a way only execution could expose. In order: (1) the subaccount lacked the SAP HANA Schemas & HDI Containers entitlement, so service plan hdi-shared did not exist - you added it; (2) db/ had no package.json at all, so the HDI deployer task died on npm ENOENT every attempt; (3) that same missing file made mbt's npm install --production walk UP to the repo root and prune it, deleting @sap/cds-dk and breaking the NEXT maven build with 'cds is not recognized' in a module nobody had touched; (4) the start script carried --use-hdb-container-key, a 4.x-only flag removed in hdi-deploy 5; (5) hdi-deploy 5 needs @sap/hana-client as a peer where 4.x bundled a driver; (6) the cloud profile declared cds.remote.services for S4/ARIBA/SF with no EDMX imported and no consumer, so the Java service crash-looped on CdsDefinitionNotFoundException", "All fixed and committed. Deployment succeeds: HDI reports 243 files deployed / 0 warnings, konstryx-srv connects to HANA and starts in 5.5s, srv and approuter both 1/1, OData returns 401 unauthenticated and the approuter 302s into the XSUAA login", "Closed", "2026-08-17"),
-    ("B-10", "Business", "The S/4 connection runs through the ITS_S4 destination", "S4Connection read S4_HOST / S4_USER / S4_PASSWORD straight from the environment on EVERY environment, Cloud Foundry included. Its own class comment claimed the destination service would replace it in production - the seam was described but never built, so a deployed instance would have needed a communication-user password in its environment, and rotating that user meant a redeploy. Ziya named ITS_S4 as the destination on 2026-08-17 and it had stayed open since", "Resolves the destination by name through the Cloud SDK (DestinationAccessor), overridable per environment with S4_DESTINATION, falling back to the .env path only where no destination service is bound. Destination headers are asked for PER REQUEST rather than cached: for Basic authentication that changes nothing, but for OAuth the SDK is minting and refreshing a token behind the call and a cached header would work exactly until the first expiry. Resolution moved to startup so the log states which mode an instance is in - the first question anyone asks when a sync misbehaves, and a lazily-resolved connection only answers it after something has already gone wrong. Both connectors are untouched: they get requests executed, never credentials", "Done - the fallback path; the destination path is unverified", "Both branches of the resolver verified live at startup: the local run logs 'Destination ITS_S4 did not resolve (DestinationNotFoundException); falling back to the local environment' followed by 'S/4 connection configured locally for https://my401381-api.s4hana.cloud.sap', which is the expected pair on a machine with no destination service. Full regression 15 suites / 424 checks green", "THE DESTINATION BRANCH HAS NOT RUN. It cannot be exercised locally - there is no destination service to bind - and deployment is paused, so the first real test is the next deploy. mta.yaml already binds konstryx-srv to konstryx-destination, so no descriptor change was needed; the destination itself must be created in the SUBACCOUNT, never in mta.yaml, because a destination declared in the descriptor would put a communication-user password in the repository"),
+    ("B-10", "Business", "The S/4 connection runs through the ITS_S4 destination", "S4Connection read S4_HOST / S4_USER / S4_PASSWORD straight from the environment on EVERY environment, Cloud Foundry included. Its own class comment claimed the destination service would replace it in production - the seam was described but never built, so a deployed instance would have needed a communication-user password in its environment, and rotating that user meant a redeploy. Ziya named ITS_S4 as the destination on 2026-08-17 and it had stayed open since", "Resolves the destination by name through the Cloud SDK (DestinationAccessor), overridable per environment with S4_DESTINATION, falling back to the .env path only where no destination service is bound. Destination headers are asked for PER REQUEST rather than cached: for Basic authentication that changes nothing, but for OAuth the SDK is minting and refreshing a token behind the call and a cached header would work exactly until the first expiry. Resolution moved to startup so the log states which mode an instance is in - the first question anyone asks when a sync misbehaves, and a lazily-resolved connection only answers it after something has already gone wrong. Both connectors are untouched: they get requests executed, never credentials. THE FALLBACK PATH IS DONE AND VERIFIED; THE DESTINATION PATH IS BUILT AND UNVERIFIED. Both branches of the resolver were seen live at startup: the local run logs 'Destination ITS_S4 did not resolve (DestinationNotFoundException); falling back to the local environment' followed by 'S/4 connection configured locally for https://my401381-api.s4hana.cloud.sap', which is the expected pair on a machine with no destination service. Full regression 15 suites / 424 checks green. THE DESTINATION BRANCH HAS NOT RUN. It cannot be exercised locally - there is no destination service to bind - and deployment is paused, so the first real test is the next deploy. mta.yaml already binds konstryx-srv to konstryx-destination, so no descriptor change was needed; the destination itself must be created in the SUBACCOUNT, never in mta.yaml, because a destination declared in the descriptor would put a communication-user password in the repository", "In progress", "2026-08-17"),
     ("I-47", "Deployment", "The MTA build shipped a week-old database schema, and HDI deployed it happily", "The konstryx-db-deployer module had no build step, so mbt packaged whatever db/src/gen already contained. That directory was last generated on 17 Aug. Five days of model changes - s4Material on ResourceNode (I-35), then s4ServiceProduct and the RateMaster routing columns (I-44) - never reached HANA. HDI deployed the stale artifacts, reported the task SUCCEEDED, and the service then failed every read of konstryx.master.ResourceNode with 'invalid column name: T0.S4MATERIAL_ID', which took down the whole MASTER_DATA content pack. Nothing in the build or the deploy said anything was wrong: a stale generated artifact deploys perfectly, and it is the application that breaks, later, somewhere else", "mta.yaml now runs `npx cds build --production` as the db module's build command, so the HDI artifacts are regenerated from the current model on every build and cannot drift again. Verified by extracting the hdbtable out of the built mtar before deploying, not by trusting the build log", "Closed", "2026-08-24"),
     ("I-48", "Deployment", "Wiring the destination loader crash-looped the service on a version clash", "connectivity-destination-service is genuinely required - cloudplatform-connectivity gives you the DestinationAccessor API but registers only EnvVarDestinationLoader, so ITS_S4 could never resolve however well the subaccount was configured. Adding it dragged com.sap.cloud.security java-security / java-api / env from 3.7.4 to 4.0.7 by nearest-wins, while CAP's own spring-security stayed at 3.7.4 and calls JwtValidatorBuilder.withHttpClient(CloseableHttpClient), which 4.0.7 removed. The failure named neither the dependency nor the destination: it was a NoSuchMethodError during Spring Security bean creation, and it crash-looped konstryx-srv on a live space", "Reverted first to restore service, diagnosed with `mvn -pl srv dependency:tree`, then fixed forward: dependencyManagement pins those three artifacts to the 3.7.4 line CAP is built against. Also widened S4Connection's resolver to catch LinkageError as well as RuntimeException - reaching S/4 is optional infrastructure and a classpath fault in it must degrade the connection to unconfigured, never take the service down. The crash was not a total loss: before dying, that build logged 'S/4 connection uses destination ITS_S4 -> https://my434396-api.s4hana.cloud.sap', which is how we know the destination exists and the loader works", "Closed", "2026-08-24"),
     ("I-49", "Integration", "The requisition payload named three things S/4 does not call by those names", "Once SAP_COM_0102 was activated, the connector was checked against the tenant's own $metadata instead of against documentation. The V4 shape was right - ISO dates, navigation properties, a top-level response - and so was the service path, every header property and all eleven item properties. Three names were wrong: the entity set is PurchaseReqn not PurchaseRequisition, the item-to-account navigation is _PurchaseReqnAcctAssgmt not _PurReqnAcctAssgmt, and the account property is PurchaseReqnAcctAssgmtNumber not PurReqnAcctAssgmtNumber. Note the trap: the header-to-item navigation really IS spelled out as _PurchaseRequisitionItem while its sibling is abbreviated, so guessing consistently would have got one of the two wrong whichever way it guessed", "Corrected. Read via S4Probe, a read-only startup probe added for the purpose: the credentials that work live in the ITS_S4 destination on the deployed app, not on a developer machine, so the metadata had to be read from there. It is gated on the S4_PROBE environment variable - set it, restart, read the log, unset it - and only ever issues a GET. Two things it taught along the way: S/4 answers $metadata with 406 if the Accept header asks for JSON only, which reads exactly like a wrong service path; and an EntitySet and its EntityType do not share a name (PurchaseReqn vs PurchaseReqnType), so the probe now discovers the type names rather than assuming them", "Closed", "2026-08-24"),
@@ -443,3 +1078,27 @@ for sheet in wb.worksheets:
 
 wb.save(OUT)
 print("written:", OUT)
+
+# An id that names two work items makes a status ambiguous: "F-04 is done" is
+# true of one of them and not the other. Reported rather than renumbered,
+# because the ids are what the answers in this workbook are written against.
+# The header names the fifth column Status. A row that puts its remedy there
+# and its status in the evidence column still renders, and the Status column
+# then reads as prose -- which is how eight of these went unnoticed.
+KNOWN_STATUS = ("Done", "Not started", "Raised", "Blocked", "Part done",
+                "At risk", "In progress", "Deferred")
+misfiled = [r[0] for r in items
+            if not str(r[4]).split(" —")[0].strip() in KNOWN_STATUS]
+if misfiled:
+    print("\nrows whose status column does not hold a status:")
+    for key in misfiled:
+        print("   %s" % key)
+
+seen = {}
+for row in items:
+    seen.setdefault(row[0], []).append(row[2])
+shared = {k: v for k, v in seen.items() if len(v) > 1}
+if shared:
+    print("\nids naming more than one item:")
+    for key in sorted(shared):
+        print("   %-6s %s" % (key, " | ".join(str(t)[:44] for t in shared[key])))

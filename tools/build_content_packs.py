@@ -228,12 +228,36 @@ PACKS = [
     },
     {
         "packId": "PERSONAS",
+        # 1.5.0 carries the same four grants down to the variation's lines.
+        # The header says a reservation moved and the line says by how much,
+        # so governing one and not the other leaves the money readable to
+        # anyone the header is closed to.
+        #
+        # 1.4.0 opens the reservation variation to the coordinator who raises
+        # it and to the two personas accountable for what it costs. Whoever
+        # holds a reservation holds what moved it: granting the variation more
+        # narrowly than the document it varies leaves a reservation whose own
+        # history is invisible to the person answering for it.
+        #
+        # 1.3.0 gives the site engineer and the resource coordinator READ on
+        # the stock draw and the consumption record. The persona's own
+        # description is "raises resource requests and confirms execution on
+        # site", and it held the manpower half of confirming execution and
+        # nothing of the material half — so the two screens that exist for it
+        # were openable by the demo superuser alone.
+        #
+        # 1.2.0 gives the project manager READ on the cost position. The object
+        # it governs pointed at an entity that had been deleted, so it granted
+        # nothing to anyone and the period reports were governed by no object
+        # at all; pointing it at the report that exists turns the control on,
+        # and a persona already trusted with the budget is trusted with the
+        # same figures arranged as a cost report.
         # 1.1.0 gives the master-data steward display access to the vendor and
         # material mirrors. A rate now names the vendor whose contract it
         # belongs to and the service product it is procured against, and the
         # persona that maintains rates could see neither. Read only — both are
         # S/4 mirrors and DM-01 says a mirror is not ours to edit.
-        "version": "1.1.0",
+        "version": "1.5.0",
         "sequence": 30,
         "description": (
             "Persona vocabulary and its grants against the delivered "
@@ -319,7 +343,19 @@ PACKS = [
     },
     {
         "packId": "DEMO_PROJECT",
-        "version": "1.1.0",
+        # 1.2.0 adds RR-2026-0340, the one material request drawn from our own
+        # store rather than bought. A pack is replayed by version and applied
+        # insert-if-missing, so a tenant already holding 1.1.0 gains the new
+        # request and keeps everything it has edited.
+        #
+        # 1.3.0 records the duration behind each daily-rated reservation line.
+        # Nothing is added: the figures were already in the locks and were
+        # being recovered by dividing, which works for a crane at 320 a day
+        # and answers a meaningless one for rebar priced by the tonne. Only
+        # the ten lines whose lock divides to a whole number of days carry it.
+        # NOTE insert-if-missing means a tenant already holding 1.2.0 keeps its
+        # rows as they are — this reaches a new installation only.
+        "version": "1.3.0",
         "sequence": 50,
         "description": (
             "Two projects and the canonical EQR thread end to end, plus a "
