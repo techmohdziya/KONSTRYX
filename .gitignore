@@ -38,3 +38,9 @@ mta-op-*/
 app/konstryx-ui/dist/
 test/verify/runner.out
 __pycache__/
+
+# Jars kept aside during the OneDrive recovery. Build output, not source:
+# `mvn clean install` reproduces srv/target/konstryx-srv-exec.jar from the
+# tree in under a minute, and a 71 MB binary in the history cannot be removed
+# once it is in one.
+_recovered/
