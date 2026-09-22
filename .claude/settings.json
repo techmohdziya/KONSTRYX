@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cf logs *)",
+      "Bash(cf apps)",
+      "Bash(cf target)",
+      "Bash(npm view *)",
+      "Bash(tasklist)",
+      "Bash(tasklist *)",
+      "mcp__Claude_Browser__preview_logs",
+      "mcp__Claude_Browser__preview_list",
+      "mcp__Claude_Browser__read_network_requests",
+      "mcp__Claude_Browser__read_console_messages",
+      "mcp__Claude_Browser__get_page_text",
+      "mcp__Claude_Browser__read_page",
+      "mcp__inspo__get_screen",
+      "mcp__inspo__recommend",
+      "mcp__plugin_sapui5_ui5-tooling__get_api_reference",
+      "mcp__terminal__read_terminal"
+    ]
+  }
+}
