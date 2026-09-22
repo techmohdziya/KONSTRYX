@@ -61,6 +61,16 @@ service SubcontractService @(path:'/subcontract') {
       ) returns String;
     };
 
+  /**
+   * The awarded scope and the claims measured against it.
+   *
+   * Reached from an application via $expand=lines, and readable in their own
+   * right because "what has been claimed against this package to date" is a
+   * question asked across applications rather than within one.
+   */
+  entity SubBOQLines             as projection on scr.SubBOQLine;
+  entity PaymentApplicationLines as projection on scr.PaymentApplicationLine;
+
   entity CertAdjustmentLines as projection on scr.CertAdjustmentLine;
   entity LDCalculationSteps  as projection on scr.LDCalculationStep;
   entity BackChargeLines     as projection on scr.BackChargeLine;

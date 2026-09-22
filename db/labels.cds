@@ -14,6 +14,7 @@
 using { konstryx.admin } from './admin';
 using { konstryx.apr } from './apr';
 using { konstryx.auth } from './auth';
+using { konstryx.bil } from './bil';
 using { konstryx.bud } from './bud';
 using { konstryx.eq } from './eq';
 using { konstryx.fin } from './fin';
@@ -1103,6 +1104,110 @@ annotate konstryx.prj.ProjectResource with {
   plannedQty @title : 'Planned quantity';
   uom        @title : 'Unit of measure';
   buildUp    @title : 'Build-up';
+}
+
+annotate konstryx.bil.PaymentApplication with {
+  boq                @title : 'Bill of quantities';
+  seq                @title : 'Application number';
+  seqOf              @title : 'Of';
+  periodName         @title : 'Period';
+  periodStart        @title : 'Period from';
+  periodEnd          @title : 'Period to';
+  previousApplication @title : 'Previous application';
+  proposedGross      @title : 'Proposed';
+  qsReviewedGross    @title : 'QS reviewed';
+  submittedGross     @title : 'Submitted';
+  approvedGross      @title : 'Approved';
+  retentionPct       @title : 'Retention %';
+  retentionAmount    @title : 'Retention';
+  advanceRecovery    @title : 'Advance recovered';
+  advanceOutstanding @title : 'Advance outstanding';
+  otherDeductions    @title : 'Other deductions';
+  netPayable         @title : 'Net payable';
+  ccy                @title : 'Currency';
+  submittedOn        @title : 'Submitted on';
+  dueOn              @title : 'Due on';
+  lines              @title : 'Lines';
+  certificates       @title : 'Certificates';
+}
+
+annotate konstryx.bil.PaymentApplicationLine with {
+  parent        @title : 'Application';
+  lineNo        @title : 'Line';
+  boqItem       @title : 'Bill item';
+  variationLine @title : 'Variation line';
+  itemNo        @title : 'Item';
+  description   @title : 'Description';
+  uom           @title : 'Unit';
+  rate          @title : 'Rate';
+  contractQty   @title : 'Contract quantity';
+  priorQty      @title : 'Prior applications';
+  proposedQty   @title : 'Proposed quantity';
+  proposedValue @title : 'Proposed value';
+  qsQty         @title : 'QS quantity';
+  qsValue       @title : 'QS value';
+  approvedQty   @title : 'Approved quantity';
+  approvedValue @title : 'Approved value';
+  cumQty        @title : 'Cumulative quantity';
+  cumPct        @title : 'Cumulative %';
+  adjustmentReason @title : 'Reason';
+}
+
+annotate konstryx.bil.PaymentCertificate with {
+  application     @title : 'Application';
+  certSeq         @title : 'Certificate number';
+  claimedGross    @title : 'Claimed';
+  certifiedGross  @title : 'Certified';
+  adjustment      @title : 'Adjustment';
+  retentionAmount @title : 'Retention';
+  advanceRecovery @title : 'Advance recovered';
+  netCertified    @title : 'Net certified';
+  certifiedOn     @title : 'Certified on';
+  certifiedBy     @title : 'Certified by';
+  adjustments     @title : 'Adjustments';
+  settledAmount   @title : 'Settled';
+  settledOn       @title : 'Settled on';
+}
+
+annotate konstryx.bil.CertAdjustment with {
+  certificate     @title : 'Certificate';
+  applicationLine @title : 'Application line';
+  itemNo          @title : 'Item';
+  description     @title : 'Description';
+  claimed         @title : 'Claimed';
+  certified       @title : 'Certified';
+  adjustment      @title : 'Adjustment';
+  reasoning       @title : 'Reasoning';
+}
+
+annotate konstryx.scr.SubBOQLine with {
+  scr           @title : 'Subcontract';
+  lineNo        @title : 'Line';
+  mainBoqItemNo @title : 'Main bill item';
+  wbsCode       @title : 'WBS';
+  description   @title : 'Description';
+  uom           @title : 'Unit';
+  contractQty   @title : 'Contract quantity';
+  scRate        @title : 'Subcontract rate';
+  contractValue @title : 'Contract value';
+}
+
+annotate konstryx.scr.PaymentApplicationLine with {
+  parent         @title : 'Application';
+  subBoqLine     @title : 'Sub-BOQ line';
+  lineNo         @title : 'Line';
+  description    @title : 'Description';
+  uom            @title : 'Unit';
+  scRate         @title : 'Subcontract rate';
+  contractQty    @title : 'Contract quantity';
+  priorQty       @title : 'Prior applications';
+  claimedQty     @title : 'Claimed quantity';
+  claimedValue   @title : 'Claimed value';
+  certifiedQty   @title : 'Certified quantity';
+  certifiedValue @title : 'Certified value';
+  cumQty         @title : 'Cumulative quantity';
+  cumPct         @title : 'Cumulative %';
+  adjustmentReason @title : 'Reason';
 }
 
 annotate konstryx.scr.SubcontractRequest with {

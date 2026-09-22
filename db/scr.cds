@@ -32,13 +32,76 @@ entity SubcontractRequest : cuid, managed, common.documented {
   applications     : Composition of many PaymentApplication on applications.scr = $self;
 }
 
+/**
+ * The awarded scope, line by line: the Sub-BOQ.
+ *
+ * The winning bidder's breakdown, promoted at award to be the contractual one
+ * (CLAUDE.md, SCR scope rule 4). Every application measures against these
+ * lines and nothing else, which is what makes a claim checkable — a lump sum
+ * against a package can only be argued about, not verified.
+ */
+entity SubBOQLine : cuid {
+  scr          : Association to SubcontractRequest;
+  lineNo       : Integer;
+  /** The main bill item this scope sits under, where it maps to one. */
+  mainBoqItemNo : String(40);
+  wbsCode      : String(40);
+  description  : String(255);
+  uom          : String(10);
+  contractQty  : Decimal(15,3);
+  /** The subcontractor's own rate, which is not the main bill's rate. */
+  scRate       : Decimal(15,2);
+  contractValue : Decimal(15,2);
+}
+
 /** PA: one subcontractor payment application against the SR. */
 entity PaymentApplication : cuid, managed {
   scr           : Association to SubcontractRequest;
   paNo          : String(20);   // "PA-006"
   claimedAmount : Decimal(15,2);
   status        : String(20);
+  periodName    : String(40);
+  /**
+   * The application before this one, so a line's prior cumulative is read
+   * from the chain rather than restated by whoever is claiming.
+   */
+  previousApplication : Association to PaymentApplication;
+  lines         : Composition of many PaymentApplicationLine on lines.parent = $self;
   certificates  : Composition of many PaymentCertificate on certificates.pa = $self;
+}
+
+/**
+ * One Sub-BOQ line on one application: what was claimed for it, against what
+ * every application before this one already established.
+ *
+ * The breakup that was missing. A payment application carried a single
+ * claimedAmount, so the certificate could record that 590,000 was claimed and
+ * 580,000 certified and nothing could say which of the package's lines the
+ * 10,000 came off, or what had been claimed for them last month.
+ */
+entity PaymentApplicationLine : cuid {
+  parent       : Association to PaymentApplication;
+  subBoqLine   : Association to SubBOQLine;
+  lineNo       : Integer;
+
+  /** The contract terms as they stood when this claim was made. */
+  description  : String(255);
+  uom          : String(10);
+  scRate       : Decimal(15,2);
+  contractQty  : Decimal(15,3);
+
+  /** Cumulative through every earlier application in the chain. */
+  priorQty     : Decimal(15,3);
+  /** This period's claim. */
+  claimedQty   : Decimal(15,3);
+  claimedValue : Decimal(15,2);
+  /** What the QS and Engineer made of it. */
+  certifiedQty   : Decimal(15,3);
+  certifiedValue : Decimal(15,2);
+  /** Prior plus claimed, and that against the awarded quantity. */
+  cumQty       : Decimal(15,3);
+  cumPct       : Decimal(5,2);
+  adjustmentReason : String(500);
 }
 
 /**

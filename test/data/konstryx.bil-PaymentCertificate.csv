@@ -1,0 +1,2 @@
+ID;docNo;project_ID;company_ID;status;raisedBy;raisedOn;application_ID;certSeq;claimedGross;certifiedGross;adjustment;retentionAmount;advanceRecovery;netCertified;certifiedOn;certifiedBy;settledAmount;settledOn
+79000000-0000-0000-0000-000000000013;IPC-C-013;30000000-0000-0000-0000-000000000001;20000000-0000-0000-0000-000000000001;Certified;M. Sinclair - Mott MacDonald;2026-04-12;77000000-0000-0000-0000-000000000013;13;2099440.00;2075600.00;-23840.00;207560.00;0.00;1868040.00;2026-04-12;M. Sinclair - Mott MacDonald;;
