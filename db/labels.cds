@@ -834,9 +834,38 @@ annotate konstryx.mat.GoodsReceipt with {
   grDoc         @title : 'Goods receipt document';
   po            @title : 'Purchase order';
   poLineNo      @title : 'PO line number';
+  poLine        @title : 'PO line';
   grQty         @title : 'Goods receipt quantity';
+  grValue       @title : 'Goods receipt value';
   datePosted    @title : 'Date posted';
   threeWayMatch @title : 'Three-way match';
+  matchVariance @title : 'Match variance';
+}
+
+annotate konstryx.mat.SupplierInvoice with {
+  invoiceNo   @title : 'Invoice number';
+  vendor      @title : 'Vendor';
+  po          @title : 'Purchase order';
+  project     @title : 'Project';
+  company     @title : 'Company';
+  postingDate @title : 'Posting date';
+  netAmount   @title : 'Net amount';
+  status      @title : 'Status';
+  matched     @title : 'Matched';
+  lines       @title : 'Lines';
+}
+
+annotate konstryx.mat.SupplierInvoiceLine with {
+  parent       @title : 'Invoice';
+  lineNo       @title : 'Line';
+  poLine       @title : 'PO line';
+  poLineNo     @title : 'PO line number';
+  goodsReceipt @title : 'Goods receipt';
+  description  @title : 'Description';
+  qty          @title : 'Quantity';
+  netAmount    @title : 'Net amount';
+  matched      @title : 'Matched';
+  variance     @title : 'Variance';
 }
 
 annotate konstryx.mat.RfqEvent with {

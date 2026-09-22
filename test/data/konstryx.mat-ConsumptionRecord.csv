@@ -1,0 +1,4 @@
+ID;reservationLine_ID;recordDate;diaryOutputQty;theoreticalQty;actualQty;wastageAllowance;rateApplied;variance;variancePct;result;recordedBy;note
+6A000000-0000-0000-0000-000000000701;56000000-0000-0000-0000-000000000141;2026-05-24;160.000;17920.000;18200.000;716.800;112.0000;280.000;1.56;Within allowance;Daud Patel · Site Engineer;Raft pour R1 - coastal detailing norm
+6A000000-0000-0000-0000-000000000702;56000000-0000-0000-0000-000000000141;2026-06-03;150.000;16800.000;17500.000;672.000;112.0000;700.000;4.17;Over allowance;Daud Patel · Site Engineer;Raft pour R2 - offcuts not returned to yard
+6A000000-0000-0000-0000-000000000703;56000000-0000-0000-0000-000000000141;2026-06-10;130.000;14560.000;15300.000;582.400;112.0000;740.000;5.08;Over allowance;Daud Patel · Site Engineer;Pile cap group PC-12 - heavy lapping
