@@ -42,6 +42,10 @@ annotate service.PeriodReports with @(
     { $Type : 'UI.DataField', Value : costVariance,      Label : 'Cost variance' },
     { $Type : 'UI.DataField', Value : cpi,               Label : 'CPI',
       Criticality : cpiCriticality },
+    // Beside CPI rather than instead of it. CPI is earned revenue over cost and
+    // carries the contract's margin inside it; this is the same work priced at
+    // what it was budgeted to cost, so performance and margin read apart.
+    { $Type : 'UI.DataField', Value : costCPI,           Label : 'Cost CPI' },
     { $Type : 'UI.DataField', Value : forecastCost,      Label : 'Forecast cost' },
     { $Type : 'UI.DataField', Value : forecastMargin,    Label : 'Forecast margin',
       Criticality : marginCriticality },
@@ -69,6 +73,8 @@ annotate service.PeriodReports with @(
       { $Type : 'UI.DataField', Value : costVariance,    Label : 'Cost variance' },
       { $Type : 'UI.DataField', Value : cpi,             Label : 'Cost performance index',
         Criticality : cpiCriticality },
+      { $Type : 'UI.DataField', Value : earnedCost,      Label : 'Earned cost (budgeted cost of work done)' },
+      { $Type : 'UI.DataField', Value : costCPI,         Label : 'Cost CPI (earned cost / spent)' },
       { $Type : 'UI.DataField', Value : plannedValue,    Label : 'Planned value' },
       { $Type : 'UI.DataField', Value : scheduleVariance, Label : 'Schedule variance' },
       { $Type : 'UI.DataField', Value : spi,             Label : 'Schedule performance index' },
@@ -150,6 +156,8 @@ annotate service.PeriodReports with {
   costVariance      @title : 'Cost variance';
   scheduleVariance  @title : 'Schedule variance';
   cpi               @title : 'Cost performance index';
+  earnedCost        @title : 'Earned cost';
+  costCPI           @title : 'Cost performance index (cost basis)';
   spi               @title : 'Schedule performance index';
   costToDate        @title : 'Cost to date';
   signedLabourCost  @title : 'Signed labour cost';

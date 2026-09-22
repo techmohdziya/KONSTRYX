@@ -69,6 +69,8 @@ public class ReconcileHandler implements EventHandler {
     private static final String E_BOQ_ITEM = "konstryx.prj.BOQItem";
     private static final String E_VO = "konstryx.vo.VariationOrder";
     private static final String E_VO_LINE = "konstryx.vo.VariationLine";
+    private static final String E_BUDGET = "konstryx.bud.Budget";
+    private static final String E_BUDGET_LINE = "konstryx.bud.BudgetLine";
     private static final String E_PHASE = "konstryx.bud.BudgetPhase";
     private static final String E_WBS = "konstryx.prj.WBSElement";
     private static final String E_TIMESHEET = "konstryx.mpr.TimesheetEntry";
@@ -174,6 +176,34 @@ public class ReconcileHandler implements EventHandler {
         }
         r.put("earnedValue", earnedValue);
         r.put("percentComplete", pct(earnedValue, adjustedValue, 2));
+
+        // ---------------------------------------------------------- earned cost
+        // The same work priced at what it was budgeted to cost. A budget line
+        // carries its BOQ item where the cost mapping gave it one, so the
+        // budgeted cost of work performed is that line's amount at the item's
+        // own measured percentage.
+        BigDecimal earnedCost = BigDecimal.ZERO;
+        BigDecimal costedScope = BigDecimal.ZERO;
+        boolean anyCosted = false;
+        for (Row budget : rowsWhere(E_BUDGET, "project_ID", projectId)) {
+            for (Row line : rowsWhere(E_BUDGET_LINE, "budget_ID", str(budget.get("ID")))) {
+                String itemId = str(line.get("boqItem_ID"));
+                if (itemId == null) {
+                    continue;
+                }
+                Row item = one(E_BOQ_ITEM, "ID", itemId);
+                if (item == null) {
+                    continue;
+                }
+                anyCosted = true;
+                BigDecimal amount = orZero(dec(line.get("amount")));
+                costedScope = costedScope.add(amount);
+                earnedCost = earnedCost.add(amount
+                        .multiply(orZero(dec(item.get("cumDonePct"))))
+                        .divide(HUNDRED, 2, RoundingMode.HALF_UP));
+            }
+        }
+        r.put("earnedCost", anyCosted ? earnedCost : null);
         if (totalItems > 0 && measuredItems < totalItems) {
             caveats.add(String.format(
                     "%d of %d bill items carry no measured quantity, so the earned value "
@@ -224,6 +254,34 @@ public class ReconcileHandler implements EventHandler {
                 ? earnedValue.divide(actualCost, 4, RoundingMode.HALF_UP)
                 : null;
         r.put("cpi", cpi);
+
+        // The index with the margin taken out of it, which is the one a cost
+        // report is actually asking about.
+        BigDecimal costCPI = anyCosted && actualCost.signum() > 0 && earnedCost.signum() > 0
+                ? earnedCost.divide(actualCost, 4, RoundingMode.HALF_UP)
+                : null;
+        r.put("costCPI", costCPI);
+        if (!anyCosted) {
+            caveats.add("no budget line carries a bill item, so no work can be priced at "
+                    + "what it was budgeted to cost and there is no cost CPI");
+        }
+
+        // A budget far below the bill it prices is the usual reason a revenue
+        // index looks impossible, and it is a finding about the budget rather
+        // than about the site. Said here because the two indices disagreeing by
+        // this much is the first thing a reader will ask about.
+        if (contractValue.signum() > 0 && costedScope.signum() > 0) {
+            BigDecimal impliedMargin = pct(contractValue.subtract(budgetTotalOf(projectId)),
+                    contractValue, 1);
+            if (impliedMargin != null && impliedMargin.compareTo(new BigDecimal("40")) > 0) {
+                caveats.add(String.format(
+                        "the budget is only %s%% of the bill, an implied margin of %s%% - "
+                                + "the budget does not cover the whole priced scope, which "
+                                + "is why the revenue index reads far above the cost one",
+                        pct(budgetTotalOf(projectId), contractValue, 1).toPlainString(),
+                        impliedMargin.toPlainString()));
+            }
+        }
         if (actualCost.signum() == 0) {
             caveats.add("no cost is booked against this project, so there is no cost "
                     + "index and no forecast");
@@ -372,6 +430,15 @@ public class ReconcileHandler implements EventHandler {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /** Everything this project's budgets add up to. */
+    private BigDecimal budgetTotalOf(String projectId) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Row budget : rowsWhere(E_BUDGET, "project_ID", projectId)) {
+            total = total.add(orZero(dec(budget.get("totalAmount"))));
+        }
+        return total;
+    }
 
     /** The period of this company's calendar that contains the date. */
     private Row periodOn(String companyId, LocalDate onDate) {

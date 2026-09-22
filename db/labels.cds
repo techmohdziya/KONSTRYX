@@ -332,7 +332,9 @@ annotate konstryx.ins.ProjectPeriodReport with {
   actualCost          @title : 'Actual cost';
   costVariance        @title : 'Cost variance';
   scheduleVariance    @title : 'Schedule variance';
+  earnedCost          @title : 'Earned cost';
   cpi                 @title : 'CPI (earned / spent)';
+  costCPI             @title : 'Cost CPI (earned cost / spent)';
   spi                 @title : 'SPI (earned / planned)';
   costToDate          @title : 'Cost to date';
   signedLabourCost    @title : 'Signed labour cost';

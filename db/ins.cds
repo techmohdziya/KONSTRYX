@@ -67,10 +67,36 @@ entity ProjectPeriodReport : cuid, managed {
   /** What that work has actually cost. */
   actualCost     : Decimal(15,2);
 
+  /**
+   * The same measured work priced at what it was budgeted to cost, rather
+   * than at what it was sold for.
+   *
+   * Earned value is revenue and actual cost is cost, so an index of one
+   * against the other is an index of the margin as much as of performance -
+   * on a job sold at a 20 % margin it reads 1.25 before anything has gone
+   * either right or wrong. This is the like-for-like figure: budgeted cost of
+   * the work performed, against what that work actually cost, which is the
+   * comparison that says whether the job is building to its estimate.
+   *
+   * Null where the bill's items are not costed - a budget line carries a BOQ
+   * item only where the cost mapping gave it one, and work whose cost was
+   * never estimated cannot have earned any of it.
+   */
+  earnedCost     : Decimal(15,2);
+
   costVariance     : Decimal(15,2);   // EV - AC
   scheduleVariance : Decimal(15,2);   // EV - PV; null while PV is
   /** EV / AC. Above 1 is earning more than it spends. */
   cpi            : Decimal(9,4);
+  /**
+   * Earned cost / actual cost: the index with the margin taken out of it.
+   *
+   * Below 1 means the work performed cost more than it was budgeted to. This
+   * is the number to argue about on a cost report; cpi above is the one to
+   * quote on a revenue one, and a reader given only the first would read the
+   * contract's margin as the site's performance.
+   */
+  costCPI        : Decimal(9,4);
   /** EV / PV. Null while PV is. */
   spi            : Decimal(9,4);
 
