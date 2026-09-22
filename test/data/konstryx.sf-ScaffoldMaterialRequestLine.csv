@@ -1,0 +1,3 @@
+ID;line_ID;elementType;bookingStart;bookingEnd;sourceType;vendor_ID;ratePerDayUnit;returnedQty;returnCondition
+5B000000-0000-0000-0000-000000004031;51000000-0000-0000-0000-000000004031;Standard frame system - access scaffold;2026-07-15;2026-10-12;OWN_YARD;;0.85;;
+5B000000-0000-0000-0000-000000004032;51000000-0000-0000-0000-000000004032;Standard frame system - loading bay;2026-07-15;2026-09-08;RENTAL;60000000-0000-0000-0000-000000000003;1.10;;

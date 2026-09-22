@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "konstryx",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "C:\\Users\\Ziya\\OneDrive - Inflexion Infotech Consultancy LLC\\PMO Inflexion's files - INFZ\\Products\\konstrux\\Konstrucx\\Development_Phase\\Development_Phase\\KONSTRYX DEV\\run-local.bat"
+      ],
+      "port": 8081
+    }
+  ]
+}

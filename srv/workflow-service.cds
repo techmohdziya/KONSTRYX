@@ -6,6 +6,7 @@
 using { konstryx.wf } from '../db/wf';
 using { konstryx.eq } from '../db/eq';
 using { konstryx.mpr } from '../db/mpr';
+using { konstryx.sf } from '../db/sf';
 using { konstryx.prj } from '../db/prj';
 using { konstryx.sys } from '../db/sys';
 using { konstryx.master } from '../db/master';
@@ -78,6 +79,12 @@ service WorkflowService @(path:'/workflow') {
 
   // EQR vertical extension — reached from a line via $expand=equipment
   entity EquipmentRequestLines as projection on eq.EquipmentRequestLine;
+
+  // SF vertical extension — reached from a line via $expand=scaffoldDesign
+  // or $expand=scaffoldMaterial. A line populates exactly one, per its
+  // verticalType (SF_DESIGN or SF_MATERIAL).
+  entity ScaffoldDesignRequestLines   as projection on sf.ScaffoldDesignRequestLine;
+  entity ScaffoldMaterialRequestLines as projection on sf.ScaffoldMaterialRequestLine;
 
   // MPR vertical extension — reached from a line via $expand=manpower.
   // Timesheets are exposed in their own right as well as under the line: the

@@ -25,6 +25,7 @@ using { konstryx.mpr } from './mpr';
 using { konstryx.nr } from './nr';
 using { konstryx.prj } from './prj';
 using { konstryx.scr } from './scr';
+using { konstryx.sf } from './sf';
 using { konstryx.sys } from './sys';
 using { konstryx.wf } from './wf';
 
@@ -1151,6 +1152,27 @@ annotate konstryx.scr.CertSignOff with {
   name      @title : 'Name';
   decision  @title : 'Decision';
   decidedOn @title : 'Decided on';
+}
+
+annotate konstryx.sf.ScaffoldDesignRequestLine with {
+  line        @title : 'Line';
+  deliverable @title : 'Deliverable';
+  loadClass   @title : 'Load class';
+  engineer    @title : 'Engineer';
+  dueDate     @title : 'Due date';
+  approvedOn  @title : 'Approved on';
+}
+
+annotate konstryx.sf.ScaffoldMaterialRequestLine with {
+  line            @title : 'Line';
+  elementType     @title : 'Element type';
+  bookingStart    @title : 'Booking start';
+  bookingEnd      @title : 'Booking end';
+  sourceType      @title : 'Source type';
+  vendor          @title : 'Vendor';
+  ratePerDayUnit  @title : 'Rate per unit-day';
+  returnedQty     @title : 'Returned quantity';
+  returnCondition @title : 'Return condition';
 }
 
 annotate konstryx.sys.ContentPack with {
