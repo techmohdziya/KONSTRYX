@@ -33,7 +33,8 @@ modules:
       JBP_CONFIG_SAP_MACHINE_JRE: '{ jre: { version: 17.+ } }'
     build-parameters:
       builder: custom
-      commands: [ "mvn clean package -DskipTests" ]
+      commands:
+        - "mvn clean package -DskipTests"
       build-result: target/*-exec.jar
     provides:
       # The approuter needs the service's route to forward to it.
@@ -61,7 +62,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-absence-reason
@@ -72,7 +74,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-approval
@@ -83,7 +86,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-approval-scheme
@@ -94,7 +98,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-consumption
@@ -105,7 +110,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-crew
@@ -116,7 +122,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-engagement
@@ -127,7 +134,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-gang
@@ -138,12 +146,25 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-holiday-calendar
     type: html5
     path: app/konstryx-holiday-calendar
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms:
+        []
+      build-result: dist
+
+  - name: konstryx-payment-application
+    type: html5
+    path: app/konstryx-payment-application
     build-parameters:
       builder: custom
       commands:
@@ -160,7 +181,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-pull
@@ -171,7 +193,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-resvariation
@@ -182,7 +205,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-roster
@@ -193,7 +217,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-sc-worker
@@ -204,7 +229,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-shift-pattern
@@ -215,7 +241,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-trade
@@ -226,7 +253,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-ui
@@ -237,7 +265,8 @@ modules:
       commands:
         - npm ci
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-boq
@@ -248,7 +277,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-budget
@@ -259,7 +289,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-exchange-rate
@@ -270,7 +301,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-material
@@ -281,7 +313,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-payment-certificate
@@ -292,7 +325,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-productivity
@@ -303,7 +337,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-project
@@ -314,7 +349,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-requisition
@@ -325,7 +361,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-reservation
@@ -336,7 +373,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-resource
@@ -347,7 +385,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-resource-request
@@ -358,7 +397,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-timesheet
@@ -369,7 +409,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-user-assignment
@@ -380,7 +421,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-vendor
@@ -391,7 +433,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-customer
@@ -402,7 +445,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-report
@@ -413,7 +457,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-cbs
@@ -424,7 +469,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-consumption-rate
@@ -435,7 +481,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-productivity-rate
@@ -446,7 +493,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-rate
@@ -457,7 +505,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-cashflow
@@ -468,7 +517,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-worker
@@ -479,7 +529,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-worker-push
@@ -490,7 +541,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-workfront
@@ -501,7 +553,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-po
@@ -512,7 +565,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-invoice
@@ -523,7 +577,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-project360
@@ -534,7 +589,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   - name: konstryx-variation
@@ -545,7 +601,8 @@ modules:
       commands:
         - npm install
         - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
-      supported-platforms: []
+      supported-platforms:
+        []
       build-result: dist
 
   # Building the app is not the same as shipping it. A type: html5 module only
@@ -604,6 +661,10 @@ modules:
         - name: konstryx-holiday-calendar
           artifacts:
             - konstryx-holiday-calendar.zip
+          target-path: resources/
+        - name: konstryx-payment-application
+          artifacts:
+            - konstryx-payment-application.zip
           target-path: resources/
         - name: konstryx-persona
           artifacts:
@@ -844,7 +905,8 @@ modules:
     # the wrong directory again.
     build-parameters:
       builder: custom
-      commands: [ "npx cds build .. --production" ]
+      commands:
+        - "npx cds build .. --production"
     requires:
       - name: konstryx-db
 

@@ -7,11 +7,13 @@
     "@sap/cds": "^9.9.3"
   },
   "devDependencies": {
-    "@sap/cds-dk": "^9"
+    "@sap/cds-dk": "^9",
+    "@cap-js/sqlite": "^3"
   },
   "scripts": {
     "build": "cds build",
-    "watch": "cds watch"
+    "watch": "cds watch",
+    "start": "cds-serve"
   },
   "cds": {
     "requires": {
@@ -89,6 +91,8 @@
     "app/konstryx-sc-worker",
     "app/konstryx-engagement",
     "app/konstryx-roster",
-    "app/konstryx-trade"
-  ]
+    "app/konstryx-trade",
+    "app/konstryx-payment-application"
+  ],
+  "type": "module"
 }

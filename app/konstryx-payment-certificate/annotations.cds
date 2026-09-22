@@ -43,6 +43,18 @@ annotate service.PaymentCertificates with @(
   UI.Facets : [
     { $Type : 'UI.ReferenceFacet', ID : 'Details', Label : 'Details',
       Target : '@UI.FieldGroup#Details' },
+    /**
+     * What is actually being certified, line by line.
+     *
+     * Reached through the application because that is where the measurement
+     * belongs: the certificate is a decision about a claim, and the claim is
+     * the thing with quantities on it. Without this the screen could say that
+     * 590,000 was claimed and 580,000 certified and offer no way to see which
+     * of the package's four lines the 10,000 came off, or what had been
+     * claimed for them before.
+     */
+    { $Type : 'UI.ReferenceFacet', ID : 'ClaimLines', Label : 'Measured lines',
+      Target : 'pa/lines/@UI.LineItem' },
     { $Type : 'UI.ReferenceFacet', ID : 'Adjustments', Label : 'Adjustments',
       Target : 'adjustments/@UI.LineItem' },
     { $Type : 'UI.ReferenceFacet', ID : 'LDSteps', Label : 'Liquidated Damages',
@@ -125,5 +137,46 @@ annotate service.CertAdjustmentLines with @(
     { $Type : 'UI.DataField', Value : deltaQty, Label : 'Delta' },
     { $Type : 'UI.DataField', Value : uom, Label : 'UoM' },
     { $Type : 'UI.DataField', Value : reason, Label : 'Reason' },
+  ],
+);
+
+/**
+ * The Sub-BOQ lines a subcontract claim is measured on — wireframe v13,
+ * operations.html · pa-detail-sc.
+ *
+ * Prior, this period, cumulative: the three columns that turn a claimed
+ * amount into something a quantity surveyor can check. Certified sits beside
+ * claimed rather than replacing it, because the difference between them is
+ * what the certificate is for.
+ */
+annotate service.PaymentApplicationLines with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : lineNo,         Label : 'Line' },
+    { $Type : 'UI.DataField', Value : description,    Label : 'Description' },
+    { $Type : 'UI.DataField', Value : uom,            Label : 'Unit' },
+    { $Type : 'UI.DataField', Value : scRate,         Label : 'SC rate' },
+    { $Type : 'UI.DataField', Value : contractQty,    Label : 'Contract qty' },
+    { $Type : 'UI.DataField', Value : priorQty,       Label : 'Prior PA qty' },
+    { $Type : 'UI.DataField', Value : claimedQty,     Label : 'This PA qty' },
+    { $Type : 'UI.DataField', Value : claimedValue,   Label : 'This PA value' },
+    { $Type : 'UI.DataField', Value : certifiedQty,   Label : 'Certified qty' },
+    { $Type : 'UI.DataField', Value : certifiedValue, Label : 'Certified value' },
+    { $Type : 'UI.DataField', Value : cumQty,         Label : 'Cumulative qty' },
+    { $Type : 'UI.DataField', Value : cumPct,         Label : 'Cum %' },
+    { $Type : 'UI.DataField', Value : adjustmentReason, Label : 'Reason' },
+  ],
+);
+
+/** The awarded scope the claims are measured against. */
+annotate service.SubBOQLines with @(
+  UI.LineItem : [
+    { $Type : 'UI.DataField', Value : lineNo,        Label : 'Line' },
+    { $Type : 'UI.DataField', Value : mainBoqItemNo, Label : 'Main bill item' },
+    { $Type : 'UI.DataField', Value : wbsCode,       Label : 'WBS' },
+    { $Type : 'UI.DataField', Value : description,   Label : 'Description' },
+    { $Type : 'UI.DataField', Value : uom,           Label : 'Unit' },
+    { $Type : 'UI.DataField', Value : contractQty,   Label : 'Contract qty' },
+    { $Type : 'UI.DataField', Value : scRate,        Label : 'SC rate' },
+    { $Type : 'UI.DataField', Value : contractValue, Label : 'Contract value' },
   ],
 );
