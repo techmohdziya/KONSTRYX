@@ -10,7 +10,7 @@
     "type": "Object",
     "data": {
       "request": {
-        "url": "/odata/v4/project/Booklet?$apply=aggregate(adjustedValue with sum as contractTotal,earnedValue with sum as earnedTotal,actualCost with sum as spentTotal,forecastMargin with sum as marginTotal)",
+        "url": "/odata/v4/project/Booklet?$apply={parameters>/flt/value}aggregate(adjustedValue with sum as contractTotal,earnedValue with sum as earnedTotal,actualCost with sum as spentTotal,forecastMargin with sum as marginTotal)",
         "withCredentials": true
       },
       "path": "/value/0"
@@ -21,14 +21,18 @@
       "subTitle": "Adjusted value less forecast cost",
       "unitOfMeasurement": "AED",
       "mainIndicator": {
-        "number": "{marginTotal}",
+        "number": "{= format.float(${marginTotal}, {decimals: 2, groupingEnabled: true}) }",
         "unit": "AED",
-        "state": "Good",
-        "scale": ""
+        "state": "Good"
       }
     },
-    "content": {
-      "groups": []
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
+        }
+      }
     }
   }
 }

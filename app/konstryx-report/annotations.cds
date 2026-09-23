@@ -237,9 +237,9 @@ annotate service.PeriodReports with @(
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Planned, earned and spent',
     ChartType           : #Column,
-    Dimensions          : [ projectCode ],
+    Dimensions          : [ projectName ],
     DimensionAttributes : [
-      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectName, Role : #Category },
     ],
     DynamicMeasures     : [
       '@Analytics.AggregatedProperty#pvTotal',
@@ -256,9 +256,9 @@ annotate service.PeriodReports with @(
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Earned cost against actual',
     ChartType           : #Column,
-    Dimensions          : [ projectCode ],
+    Dimensions          : [ projectName ],
     DimensionAttributes : [
-      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectName, Role : #Category },
     ],
     DynamicMeasures     : [
       '@Analytics.AggregatedProperty#ecTotal',
@@ -269,4 +269,5 @@ annotate service.PeriodReports with @(
 
 annotate service.PeriodReports with {
   projectCode @title : 'Project';
+  projectName @title : 'Project name';
 }

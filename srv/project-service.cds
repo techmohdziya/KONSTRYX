@@ -524,12 +524,20 @@ service ProjectService @(path:'/project') {
       { $Type : 'Aggregation.AggregatablePropertyType', Property : earnedCost },
       { $Type : 'Aggregation.AggregatablePropertyType', Property : forecastMargin },
     ],
-    GroupableProperties : [ projectCode, periodName, companyCcy_code ],
+    GroupableProperties : [ projectCode, projectName, periodName, companyCcy_code ],
   }
   @readonly entity PeriodReports as projection on ins.ProjectPeriodReport {
     *,
-    /** The code as a groupable column, so a chart can categorise on it. */
+    /**
+     * The code and the name as groupable columns of their own.
+     *
+     * A chart categorised on the key labels its columns with UUIDs, and one
+     * categorised on the code makes a reader translate PRJ-004 into a job in
+     * their head. The name is what people call the project, so it is what the
+     * axis says.
+     */
     project.code as projectCode : String(24),
+    project.name as projectName : String(150),
     /**
      * Colour for the margin and for the cost index, computed here rather than
      * on the screen.
@@ -591,7 +599,7 @@ service ProjectService @(path:'/project') {
       { $Type : 'Aggregation.AggregatablePropertyType', Property : costVariance },
       { $Type : 'Aggregation.AggregatablePropertyType', Property : forecastMargin },
     ],
-    GroupableProperties : [ projectCode, periodName, companyCcy_code ],
+    GroupableProperties : [ projectCode, projectName, periodName, companyCcy_code ],
   }
   @readonly entity Booklet as projection on ins.ProjectPeriodReport {
     *,

@@ -10,7 +10,7 @@
     "type": "List",
     "data": {
       "request": {
-        "url": "/odata/v4/project/WorkFronts?$filter=state eq 'QUIET'&$orderby=driftPct",
+        "url": "/odata/v4/project/WorkFronts?$filter=state eq 'QUIET'{parameters>/flt/value}&$orderby=driftPct",
         "withCredentials": true
       },
       "path": "/value"
@@ -23,10 +23,18 @@
       "maxItems": 6,
       "item": {
         "title": "{activityName}",
-        "description": "{projectCode} \u00b7 last worked {lastWorkedOn}",
+        "description": "{projectName} \u00b7 last worked {lastWorkedOn}",
         "info": {
-          "value": "{driftPct}%",
+          "value": "{= format.float(${driftPct}, {decimals: 2}) }%",
           "state": "Warning"
+        }
+      }
+    },
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
         }
       }
     }

@@ -10,7 +10,7 @@
     "type": "List",
     "data": {
       "request": {
-        "url": "/odata/v4/project/WorkFronts?$filter=state eq 'OVERDUE'&$orderby=driftPct",
+        "url": "/odata/v4/project/WorkFronts?$filter=state eq 'OVERDUE'{parameters>/flt/value}&$orderby=driftPct",
         "withCredentials": true
       },
       "path": "/value"
@@ -23,10 +23,18 @@
       "maxItems": 6,
       "item": {
         "title": "{activityName}",
-        "description": "{projectCode} \u00b7 {wbsCode} \u00b7 {percentDone}% done",
+        "description": "{projectName} \u00b7 {wbsCode} \u00b7 {= format.float(${percentDone}, {decimals: 2}) }% done",
         "info": {
-          "value": "{driftPct}%",
+          "value": "{= format.float(${driftPct}, {decimals: 2}) }%",
           "state": "Error"
+        }
+      }
+    },
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
         }
       }
     }

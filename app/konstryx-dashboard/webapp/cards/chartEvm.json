@@ -10,7 +10,7 @@
     "type": "Analytical",
     "data": {
       "request": {
-        "url": "/odata/v4/project/PeriodReports?$apply=groupby((projectCode),aggregate(plannedValue with sum as pv,earnedValue with sum as ev,actualCost with sum as ac))",
+        "url": "/odata/v4/project/PeriodReports?$apply={parameters>/flt/value}groupby((projectName),aggregate(plannedValue with sum as pv,earnedValue with sum as ev,actualCost with sum as ac))",
         "withCredentials": true
       },
       "path": "/value"
@@ -38,7 +38,7 @@
       "dimensions": [
         {
           "name": "Project",
-          "value": "{projectCode}"
+          "value": "{projectName}"
         }
       ],
       "feeds": [
@@ -70,6 +70,14 @@
         },
         "title": {
           "visible": false
+        }
+      }
+    },
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
         }
       }
     }

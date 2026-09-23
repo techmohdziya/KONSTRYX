@@ -10,7 +10,7 @@
     "type": "Table",
     "data": {
       "request": {
-        "url": "/odata/v4/project/ProjectOverviews?$orderby=code",
+        "url": "/odata/v4/project/ProjectOverviews?$orderby=code{parameters>/flt/value}",
         "withCredentials": true
       },
       "path": "/value"
@@ -24,7 +24,7 @@
         "columns": [
           {
             "title": "Project",
-            "value": "{code}"
+            "value": "{name}"
           },
           {
             "title": "Stage",
@@ -32,11 +32,11 @@
           },
           {
             "title": "Complete",
-            "value": "{percentComplete}%"
+            "value": "{= format.float(${percentComplete}, {decimals: 2}) }%"
           },
           {
             "title": "Budget used",
-            "value": "{budgetUsedPct}%",
+            "value": "{= format.float(${budgetUsedPct}, {decimals: 2}) }%",
             "state": "{= ${budgetCriticality} === 1 ? 'Error' : ${budgetCriticality} === 2 ? 'Warning' : 'Success'}"
           },
           {
@@ -45,6 +45,14 @@
             "state": "{= ${slipCriticality} === 1 ? 'Error' : ${slipCriticality} === 2 ? 'Warning' : 'Success'}"
           }
         ]
+      }
+    },
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
+        }
       }
     }
   }

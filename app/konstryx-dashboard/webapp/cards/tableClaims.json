@@ -10,14 +10,14 @@
     "type": "Table",
     "data": {
       "request": {
-        "url": "/odata/v4/billing/PaymentApplications?$filter=IsActiveEntity eq true&$orderby=seq desc",
+        "url": "/odata/v4/billing/PaymentApplications?$filter=IsActiveEntity eq true{parameters>/flt/value}&$orderby=seq desc",
         "withCredentials": true
       },
       "path": "/value"
     },
     "header": {
       "title": "Client applications",
-      "subTitle": "Claimed, certified and still owed"
+      "subTitle": "Claimed, reviewed and approved"
     },
     "content": {
       "row": {
@@ -32,17 +32,25 @@
           },
           {
             "title": "Proposed",
-            "value": "{proposedGross}"
+            "value": "{= format.float(${proposedGross}, {decimals: 2, groupingEnabled: true}) }"
           },
           {
             "title": "Approved",
-            "value": "{approvedGross}"
+            "value": "{= format.float(${approvedGross}, {decimals: 2, groupingEnabled: true}) }"
           },
           {
             "title": "Stage",
             "value": "{status}"
           }
         ]
+      }
+    },
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
+        }
       }
     }
   }

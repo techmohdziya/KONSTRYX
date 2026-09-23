@@ -10,7 +10,7 @@
     "type": "Object",
     "data": {
       "request": {
-        "url": "/odata/v4/project/Booklet?$apply=aggregate(adjustedValue with sum as contractTotal,earnedValue with sum as earnedTotal,actualCost with sum as spentTotal,forecastMargin with sum as marginTotal)",
+        "url": "/odata/v4/project/Booklet?$apply={parameters>/flt/value}aggregate(adjustedValue with sum as contractTotal,earnedValue with sum as earnedTotal,actualCost with sum as spentTotal,forecastMargin with sum as marginTotal)",
         "withCredentials": true
       },
       "path": "/value/0"
@@ -21,14 +21,18 @@
       "subTitle": "Booked to date",
       "unitOfMeasurement": "AED",
       "mainIndicator": {
-        "number": "{spentTotal}",
+        "number": "{= format.float(${spentTotal}, {decimals: 2, groupingEnabled: true}) }",
         "unit": "AED",
-        "state": "Critical",
-        "scale": ""
+        "state": "Critical"
       }
     },
-    "content": {
-      "groups": []
+    "configuration": {
+      "parameters": {
+        "flt": {
+          "value": "",
+          "type": "string"
+        }
+      }
     }
   }
 }

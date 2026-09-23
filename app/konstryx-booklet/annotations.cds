@@ -107,9 +107,9 @@ annotate service.Booklet with @(
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Planned against recognised',
     ChartType           : #Column,
-    Dimensions          : [ projectCode ],
+    Dimensions          : [ projectName ],
     DimensionAttributes : [
-      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectName, Role : #Category },
     ],
     DynamicMeasures     : [
       '@Analytics.AggregatedProperty#plannedRevenue',
@@ -123,9 +123,9 @@ annotate service.Booklet with @(
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Forecast margin by project',
     ChartType           : #Bar,
-    Dimensions          : [ projectCode ],
+    Dimensions          : [ projectName ],
     DimensionAttributes : [
-      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectName, Role : #Category },
     ],
     DynamicMeasures     : [ '@Analytics.AggregatedProperty#marginTotal' ],
   },
