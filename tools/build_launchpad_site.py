@@ -9,7 +9,7 @@ up. This file is the site, and it is emitted twice from one definition:
       the Work Zone site, shipped by the MTA once the launchpad service is
       entitled on the subaccount.
 
-  app/launchpad/webapp/appconfig/fioriSandboxConfig.json
+  app/launchpad/appconfig/fioriSandboxConfig.json
       the same spaces and pages running locally. The UI server maps
       /appconfig/fioriSandboxConfig.json onto this file, which is where the
       sandbox bootstrap looks, and merges it over its
@@ -41,7 +41,12 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_DIR = os.path.join(ROOT, "app")
 CDM_OUT = os.path.join(ROOT, "launchpad-content")
-LOCAL_OUT = os.path.join(APP_DIR, "launchpad", "webapp", "appconfig")
+# Beside webapp rather than inside it. The sandbox bootstrap asks for
+# appconfig/fioriSandboxConfig.json relative to the app root, not to the
+# page - it fetched /launchpad/appconfig/... and got a 404, then fell back
+# to its own "Sample Space", so the launchpad showed three demo tiles and
+# none of the product's forty-seven.
+LOCAL_OUT = os.path.join(APP_DIR, "launchpad", "appconfig")
 
 # Every app, in the space and section it belongs to, with the count that goes
 # on the face of its tile. Anything not listed is left out of the site
@@ -284,9 +289,16 @@ def build():
                     "deviceTypes": {"desktop": True, "tablet": True, "phone": True},
                 },
                 "sap.ui5": {"componentName": app_id},
+                # webapp, not the app folder. Component.js and manifest.json
+                # are served one level down, so "/konstryx-project" pointed
+                # the loader at a directory holding neither and every tile in
+                # the launchpad opened "App could not be started because the
+                # SAP UI5 component could not be loaded". The manifest is read
+                # rather than skipped, which is how a Fiori Elements app finds
+                # its own data source and targets.
                 "sap.platform.runtime": {"componentProperties": {
-                    "url": "/" + app,
-                    "manifest": False,
+                    "url": "/" + app + "/webapp",
+                    "manifest": True,
                 }},
                 "sap.cloud": {"public": True, "service": "konstryx.app"},
             }
@@ -305,7 +317,14 @@ def build():
                                         "phone": True},
                     },
                     "sap.flp": {
-                        "target": {"appId": app_id, "inboundId": inbound_key},
+                        # A plain page opens as a URL. Pointed at an appId the
+                        # launchpad looks for a UI5 component that does not
+                        # exist, and refuses to start it.
+                        "target": ({"type": "URL",
+                                    "url": "/" + app + "/webapp/index.html"}
+                                   if is_url_app
+                                   else {"appId": app_id,
+                                         "inboundId": inbound_key}),
                         "numberUnit": unit,
                         # The service's own count, refreshed while the page is
                         # open. A tile that disagrees with the list it opens is
@@ -315,6 +334,11 @@ def build():
                     },
                 },
             }
+
+            # A page has no component to register, and an application entry
+            # claiming one would have the launchpad try to load it anyway.
+            if is_url_app:
+                applications.pop(app_id, None)
 
             inbounds[app_id + "-" + inbound_key] = {
                 "semanticObject": inbound["semanticObject"],
@@ -421,13 +445,34 @@ def main():
             "enableSearch": False,
         }}}},
         "services": {
+            # The sandbox's own siteData, in its own shape.
+            #
+            # This is not the Work Zone CDM above with a different indent. The
+            # local adapter reads spaces out of menus.main.menuEntries and
+            # never looks at a "spaces" entity, and it expects site.payload to
+            # carry groupsOrder and the ushell config - written the Work Zone
+            # way, with a spaces map and a spaceOrder, it threw on an undefined
+            # string before the shell was drawn and the launchpad rendered a
+            # blank page. The shape below is the sandbox's own default site,
+            # with this product's spaces, pages and apps in place of the
+            # samples.
+            #
+            # _version matters: the adapter branches on it, and without one it
+            # cannot tell which CDM it was handed.
             "CommonDataModel": {"adapter": {"config": {"siteData": {
+                "_version": "3.1.0",
                 "site": {
                     "identification": {"id": "konstryx-site",
                                        "title": "KONSTRYX"},
-                    "payload": {"spaceOrder": [e["id"] for e in menu_entries]},
+                    "payload": {
+                        "groupsOrder": [],
+                        "config": {"ushellConfig": {"renderers": {"fiori2": {
+                            "componentData": {"config": {
+                                "enableSearch": False}}}}}},
+                    },
                 },
-                "spaces": spaces_of(menu_entries, pages),
+                "catalogs": {},
+                "systemAliases": {},
                 "pages": pages,
                 "applications": applications,
                 "visualizations": visualizations,
@@ -436,10 +481,13 @@ def main():
                     "payload": {"menuEntries": menu_entries},
                 }},
             }}}},
-            "NavTargetResolution": {"config": {
-                "enableClientSideTargetResolution": True}},
-            "ClientSideTargetResolution": {"adapter": {"config": {
-                "inbounds": inbounds}}},
+            # No hand-built inbound table here. The sandbox derives its
+            # navigation targets from the applications above -
+            # crossNavigation.inbounds on each one - and a second copy of the
+            # same intents under ClientSideTargetResolution made the shell
+            # throw before it drew anything: a blank page, and in the console
+            # only "Cannot read properties of undefined (reading 'replace')".
+            # One source of truth for an intent, and it is the app's manifest.
         },
     }
     io.open(os.path.join(LOCAL_OUT, "fioriSandboxConfig.json"), "w",
@@ -453,7 +501,7 @@ def main():
               % (entry["title"], tiles, ", ".join(titles)))
     print("\n  %d space(s), %d app(s)" % (len(menu_entries), len(applications)))
     print("  launchpad-content/CommonDataModel.json")
-    print("  app/launchpad/webapp/appconfig/fioriSandboxConfig.json")
+    print("  app/launchpad/appconfig/fioriSandboxConfig.json")
 
 
 main()

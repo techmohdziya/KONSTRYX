@@ -18,82 +18,31 @@
       "adapter": {
         "config": {
           "siteData": {
+            "_version": "3.1.0",
             "site": {
               "identification": {
                 "id": "konstryx-site",
                 "title": "KONSTRYX"
               },
               "payload": {
-                "spaceOrder": [
-                  "konstryx-planning",
-                  "konstryx-execution",
-                  "konstryx-commercial",
-                  "konstryx-master"
-                ]
-              }
-            },
-            "spaces": {
-              "konstryx-planning": {
-                "identification": {
-                  "id": "konstryx-planning",
-                  "title": "Planning",
-                  "description": "The project, what it is worth, and what it may spend",
-                  "entityType": "space"
-                },
-                "payload": {
-                  "pages": [
-                    {
-                      "id": "konstryx-planning-page"
+                "groupsOrder": [],
+                "config": {
+                  "ushellConfig": {
+                    "renderers": {
+                      "fiori2": {
+                        "componentData": {
+                          "config": {
+                            "enableSearch": false
+                          }
+                        }
+                      }
                     }
-                  ]
-                }
-              },
-              "konstryx-execution": {
-                "identification": {
-                  "id": "konstryx-execution",
-                  "title": "Execution",
-                  "description": "Sourcing the work, and recording what was done",
-                  "entityType": "space"
-                },
-                "payload": {
-                  "pages": [
-                    {
-                      "id": "konstryx-execution-page"
-                    }
-                  ]
-                }
-              },
-              "konstryx-commercial": {
-                "identification": {
-                  "id": "konstryx-commercial",
-                  "title": "Commercial",
-                  "description": "Certifying and paying for the work, and what it is making",
-                  "entityType": "space"
-                },
-                "payload": {
-                  "pages": [
-                    {
-                      "id": "konstryx-commercial-page"
-                    }
-                  ]
-                }
-              },
-              "konstryx-master": {
-                "identification": {
-                  "id": "konstryx-master",
-                  "title": "Master Data",
-                  "description": "The catalogues every document draws on",
-                  "entityType": "space"
-                },
-                "payload": {
-                  "pages": [
-                    {
-                      "id": "konstryx-master-page"
-                    }
-                  ]
+                  }
                 }
               }
             },
+            "catalogs": {},
+            "systemAliases": {},
             "pages": {
               "konstryx-planning-page": {
                 "identification": {
@@ -557,55 +506,6 @@
               }
             },
             "applications": {
-              "konstryx.dashboard": {
-                "sap.app": {
-                  "id": "konstryx.dashboard",
-                  "title": "Project Controller Overview",
-                  "subTitle": "KPIs, curves and what needs a human",
-                  "applicationVersion": {
-                    "version": "1.0.0"
-                  },
-                  "crossNavigation": {
-                    "inbounds": {
-                      "display": {
-                        "semanticObject": "KonstryxDashboard",
-                        "action": "display",
-                        "signature": {
-                          "parameters": {},
-                          "additionalParameters": "allowed"
-                        }
-                      }
-                    }
-                  }
-                },
-                "sap.flp": {
-                  "type": "application"
-                },
-                "sap.ui": {
-                  "technology": "UI5",
-                  "icons": {
-                    "icon": "sap-icon://business-objects-experience"
-                  },
-                  "deviceTypes": {
-                    "desktop": true,
-                    "tablet": true,
-                    "phone": true
-                  }
-                },
-                "sap.ui5": {
-                  "componentName": "konstryx.dashboard"
-                },
-                "sap.platform.runtime": {
-                  "componentProperties": {
-                    "url": "/konstryx-dashboard",
-                    "manifest": false
-                  }
-                },
-                "sap.cloud": {
-                  "public": true,
-                  "service": "konstryx.app"
-                }
-              },
               "konstryxproject360": {
                 "sap.app": {
                   "id": "konstryxproject360",
@@ -646,8 +546,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-project360",
-                    "manifest": false
+                    "url": "/konstryx-project360/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -695,8 +595,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-project",
-                    "manifest": false
+                    "url": "/konstryx-project/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -744,8 +644,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-boq",
-                    "manifest": false
+                    "url": "/konstryx-boq/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -793,8 +693,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-budget",
-                    "manifest": false
+                    "url": "/konstryx-budget/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -842,8 +742,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-approval",
-                    "manifest": false
+                    "url": "/konstryx-approval/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -891,8 +791,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-gang",
-                    "manifest": false
+                    "url": "/konstryx-gang/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -940,8 +840,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-absence",
-                    "manifest": false
+                    "url": "/konstryx-absence/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -989,8 +889,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-workfront",
-                    "manifest": false
+                    "url": "/konstryx-workfront/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1038,8 +938,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-resource-request",
-                    "manifest": false
+                    "url": "/konstryx-resource-request/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1087,8 +987,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-requisition",
-                    "manifest": false
+                    "url": "/konstryx-requisition/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1136,8 +1036,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-po",
-                    "manifest": false
+                    "url": "/konstryx-po/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1185,8 +1085,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-invoice",
-                    "manifest": false
+                    "url": "/konstryx-invoice/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1234,8 +1134,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-reservation",
-                    "manifest": false
+                    "url": "/konstryx-reservation/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1283,8 +1183,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-resvariation",
-                    "manifest": false
+                    "url": "/konstryx-resvariation/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1332,8 +1232,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-pull",
-                    "manifest": false
+                    "url": "/konstryx-pull/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1381,8 +1281,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-consumption",
-                    "manifest": false
+                    "url": "/konstryx-consumption/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1430,8 +1330,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-timesheet",
-                    "manifest": false
+                    "url": "/konstryx-timesheet/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1479,8 +1379,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-productivity",
-                    "manifest": false
+                    "url": "/konstryx-productivity/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1528,8 +1428,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-variation",
-                    "manifest": false
+                    "url": "/konstryx-variation/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1577,8 +1477,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-payment-certificate",
-                    "manifest": false
+                    "url": "/konstryx-payment-certificate/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1626,8 +1526,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-payment-application",
-                    "manifest": false
+                    "url": "/konstryx-payment-application/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1675,8 +1575,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-report",
-                    "manifest": false
+                    "url": "/konstryx-report/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1724,8 +1624,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-booklet",
-                    "manifest": false
+                    "url": "/konstryx-booklet/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1773,8 +1673,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-cashflow",
-                    "manifest": false
+                    "url": "/konstryx-cashflow/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1822,8 +1722,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-resource",
-                    "manifest": false
+                    "url": "/konstryx-resource/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1871,8 +1771,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-material",
-                    "manifest": false
+                    "url": "/konstryx-material/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1920,8 +1820,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-vendor",
-                    "manifest": false
+                    "url": "/konstryx-vendor/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -1969,8 +1869,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-customer",
-                    "manifest": false
+                    "url": "/konstryx-customer/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2018,8 +1918,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-cbs",
-                    "manifest": false
+                    "url": "/konstryx-cbs/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2067,8 +1967,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-productivity-rate",
-                    "manifest": false
+                    "url": "/konstryx-productivity-rate/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2116,8 +2016,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-consumption-rate",
-                    "manifest": false
+                    "url": "/konstryx-consumption-rate/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2165,8 +2065,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-rate",
-                    "manifest": false
+                    "url": "/konstryx-rate/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2214,8 +2114,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-exchange-rate",
-                    "manifest": false
+                    "url": "/konstryx-exchange-rate/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2263,8 +2163,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-persona",
-                    "manifest": false
+                    "url": "/konstryx-persona/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2312,8 +2212,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-user-assignment",
-                    "manifest": false
+                    "url": "/konstryx-user-assignment/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2361,8 +2261,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-approval-scheme",
-                    "manifest": false
+                    "url": "/konstryx-approval-scheme/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2410,8 +2310,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-trade",
-                    "manifest": false
+                    "url": "/konstryx-trade/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2459,8 +2359,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-shift-pattern",
-                    "manifest": false
+                    "url": "/konstryx-shift-pattern/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2508,8 +2408,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-holiday-calendar",
-                    "manifest": false
+                    "url": "/konstryx-holiday-calendar/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2557,8 +2457,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-crew",
-                    "manifest": false
+                    "url": "/konstryx-crew/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2606,8 +2506,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-absence-reason",
-                    "manifest": false
+                    "url": "/konstryx-absence-reason/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2655,8 +2555,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-worker",
-                    "manifest": false
+                    "url": "/konstryx-worker/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2704,8 +2604,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-sc-worker",
-                    "manifest": false
+                    "url": "/konstryx-sc-worker/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2753,8 +2653,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-engagement",
-                    "manifest": false
+                    "url": "/konstryx-engagement/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2802,8 +2702,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-roster",
-                    "manifest": false
+                    "url": "/konstryx-roster/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2851,8 +2751,8 @@
                 },
                 "sap.platform.runtime": {
                   "componentProperties": {
-                    "url": "/konstryx-worker-push",
-                    "manifest": false
+                    "url": "/konstryx-worker-push/webapp",
+                    "manifest": true
                   }
                 },
                 "sap.cloud": {
@@ -2882,8 +2782,8 @@
                   },
                   "sap.flp": {
                     "target": {
-                      "appId": "konstryx.dashboard",
-                      "inboundId": "display"
+                      "type": "URL",
+                      "url": "/konstryx-dashboard/webapp/index.html"
                     },
                     "numberUnit": "projects",
                     "indicatorDataSource": {
@@ -4413,676 +4313,6 @@
                     }
                   ]
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "NavTargetResolution": {
-      "config": {
-        "enableClientSideTargetResolution": true
-      }
-    },
-    "ClientSideTargetResolution": {
-      "adapter": {
-        "config": {
-          "inbounds": {
-            "konstryx.dashboard-display": {
-              "semanticObject": "KonstryxDashboard",
-              "action": "display",
-              "title": "Project Controller Overview",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "URL",
-                "url": "/konstryx-dashboard/"
-              }
-            },
-            "konstryxproject360-KonstryxProject360-display": {
-              "semanticObject": "KonstryxProject360",
-              "action": "display",
-              "title": "Project 360",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxproject360",
-                "url": "/konstryx-project360"
-              }
-            },
-            "konstryxproject-KonstryxProject-display": {
-              "semanticObject": "KonstryxProject",
-              "action": "display",
-              "title": "Projects",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxproject",
-                "url": "/konstryx-project"
-              }
-            },
-            "konstryxboq-KonstryxBOQ-display": {
-              "semanticObject": "KonstryxBOQ",
-              "action": "display",
-              "title": "Bills of Quantities",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxboq",
-                "url": "/konstryx-boq"
-              }
-            },
-            "konstryxbudget-KonstryxBudget-display": {
-              "semanticObject": "KonstryxBudget",
-              "action": "display",
-              "title": "Budgets",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxbudget",
-                "url": "/konstryx-budget"
-              }
-            },
-            "konstryxapproval-KonstryxApproval-display": {
-              "semanticObject": "KonstryxApproval",
-              "action": "display",
-              "title": "My Approvals",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxapproval",
-                "url": "/konstryx-approval"
-              }
-            },
-            "konstryxgang-KonstryxGang-display": {
-              "semanticObject": "KonstryxGang",
-              "action": "display",
-              "title": "Gangs",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxgang",
-                "url": "/konstryx-gang"
-              }
-            },
-            "konstryxabsence-KonstryxAbsence-display": {
-              "semanticObject": "KonstryxAbsence",
-              "action": "display",
-              "title": "Availability",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxabsence",
-                "url": "/konstryx-absence"
-              }
-            },
-            "konstryxworkfront-KonstryxWorkFront-display": {
-              "semanticObject": "KonstryxWorkFront",
-              "action": "display",
-              "title": "Today's Work Front",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxworkfront",
-                "url": "/konstryx-workfront"
-              }
-            },
-            "konstryxresourcerequest-KonstryxResourceRequest-display": {
-              "semanticObject": "KonstryxResourceRequest",
-              "action": "display",
-              "title": "Resource Requests",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxresourcerequest",
-                "url": "/konstryx-resource-request"
-              }
-            },
-            "konstryxrequisition-KonstryxPurchaseRequisition-display": {
-              "semanticObject": "KonstryxPurchaseRequisition",
-              "action": "display",
-              "title": "Purchase Requisitions",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxrequisition",
-                "url": "/konstryx-requisition"
-              }
-            },
-            "konstryxpo-KonstryxPurchaseOrder-display": {
-              "semanticObject": "KonstryxPurchaseOrder",
-              "action": "display",
-              "title": "Purchase Orders",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxpo",
-                "url": "/konstryx-po"
-              }
-            },
-            "konstryxinvoice-KonstryxSupplierInvoice-display": {
-              "semanticObject": "KonstryxSupplierInvoice",
-              "action": "display",
-              "title": "Supplier Invoices",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxinvoice",
-                "url": "/konstryx-invoice"
-              }
-            },
-            "konstryxreservation-KonstryxReservation-display": {
-              "semanticObject": "KonstryxReservation",
-              "action": "display",
-              "title": "Reservations",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxreservation",
-                "url": "/konstryx-reservation"
-              }
-            },
-            "konstryxresvariation-KonstryxReservationVariation-display": {
-              "semanticObject": "KonstryxReservationVariation",
-              "action": "display",
-              "title": "Reservation Variations",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxresvariation",
-                "url": "/konstryx-resvariation"
-              }
-            },
-            "konstryxpull-KonstryxPullRequest-display": {
-              "semanticObject": "KonstryxPullRequest",
-              "action": "display",
-              "title": "Stock Draws",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxpull",
-                "url": "/konstryx-pull"
-              }
-            },
-            "konstryxconsumption-KonstryxConsumption-display": {
-              "semanticObject": "KonstryxConsumption",
-              "action": "display",
-              "title": "Material Consumption",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxconsumption",
-                "url": "/konstryx-consumption"
-              }
-            },
-            "konstryxtimesheet-KonstryxTimesheet-display": {
-              "semanticObject": "KonstryxTimesheet",
-              "action": "display",
-              "title": "Daily Logs",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxtimesheet",
-                "url": "/konstryx-timesheet"
-              }
-            },
-            "konstryxproductivity-KonstryxProductivity-display": {
-              "semanticObject": "KonstryxProductivity",
-              "action": "display",
-              "title": "Productivity",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxproductivity",
-                "url": "/konstryx-productivity"
-              }
-            },
-            "konstryxvariation-KonstryxVariation-display": {
-              "semanticObject": "KonstryxVariation",
-              "action": "display",
-              "title": "Variation Orders",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxvariation",
-                "url": "/konstryx-variation"
-              }
-            },
-            "konstryxpaymentcertificate-KonstryxPaymentCertificate-display": {
-              "semanticObject": "KonstryxPaymentCertificate",
-              "action": "display",
-              "title": "Payment Certificates",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxpaymentcertificate",
-                "url": "/konstryx-payment-certificate"
-              }
-            },
-            "konstryxpaymentapplication-KonstryxPaymentApplication-display": {
-              "semanticObject": "KonstryxPaymentApplication",
-              "action": "display",
-              "title": "Payment Applications",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxpaymentapplication",
-                "url": "/konstryx-payment-application"
-              }
-            },
-            "konstryxreport-KonstryxReport-display": {
-              "semanticObject": "KonstryxReport",
-              "action": "display",
-              "title": "Cost Value Reconciliation",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxreport",
-                "url": "/konstryx-report"
-              }
-            },
-            "konstryxbooklet-KonstryxBooklet-display": {
-              "semanticObject": "KonstryxBooklet",
-              "action": "display",
-              "title": "Project Financial Booklet",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxbooklet",
-                "url": "/konstryx-booklet"
-              }
-            },
-            "konstryxcashflow-KonstryxCashflow-display": {
-              "semanticObject": "KonstryxCashflow",
-              "action": "display",
-              "title": "Project Cashflow",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxcashflow",
-                "url": "/konstryx-cashflow"
-              }
-            },
-            "konstryxresource-KonstryxResource-display": {
-              "semanticObject": "KonstryxResource",
-              "action": "display",
-              "title": "Resources",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxresource",
-                "url": "/konstryx-resource"
-              }
-            },
-            "konstryxmaterial-KonstryxMaterial-display": {
-              "semanticObject": "KonstryxMaterial",
-              "action": "display",
-              "title": "Materials",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxmaterial",
-                "url": "/konstryx-material"
-              }
-            },
-            "konstryxvendor-KonstryxVendor-display": {
-              "semanticObject": "KonstryxVendor",
-              "action": "display",
-              "title": "Vendors",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxvendor",
-                "url": "/konstryx-vendor"
-              }
-            },
-            "konstryxcustomer-KonstryxCustomer-display": {
-              "semanticObject": "KonstryxCustomer",
-              "action": "display",
-              "title": "Customers",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxcustomer",
-                "url": "/konstryx-customer"
-              }
-            },
-            "konstryxcbs-KonstryxCBS-display": {
-              "semanticObject": "KonstryxCBS",
-              "action": "display",
-              "title": "Cost Breakdown Library",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxcbs",
-                "url": "/konstryx-cbs"
-              }
-            },
-            "konstryxproductivityrate-KonstryxProductivityRate-display": {
-              "semanticObject": "KonstryxProductivityRate",
-              "action": "display",
-              "title": "Productivity Norms",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxproductivityrate",
-                "url": "/konstryx-productivity-rate"
-              }
-            },
-            "konstryxconsumptionrate-KonstryxConsumptionRate-display": {
-              "semanticObject": "KonstryxConsumptionRate",
-              "action": "display",
-              "title": "Consumption Norms",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxconsumptionrate",
-                "url": "/konstryx-consumption-rate"
-              }
-            },
-            "konstryxrate-KonstryxRate-display": {
-              "semanticObject": "KonstryxRate",
-              "action": "display",
-              "title": "Rate Master",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxrate",
-                "url": "/konstryx-rate"
-              }
-            },
-            "konstryxexchangerate-KonstryxExchangeRate-display": {
-              "semanticObject": "KonstryxExchangeRate",
-              "action": "display",
-              "title": "Exchange Rates",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxexchangerate",
-                "url": "/konstryx-exchange-rate"
-              }
-            },
-            "konstryxpersona-KonstryxPersona-display": {
-              "semanticObject": "KonstryxPersona",
-              "action": "display",
-              "title": "Personas",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxpersona",
-                "url": "/konstryx-persona"
-              }
-            },
-            "konstryxuserassignment-KonstryxUserAssignment-display": {
-              "semanticObject": "KonstryxUserAssignment",
-              "action": "display",
-              "title": "User Assignments",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxuserassignment",
-                "url": "/konstryx-user-assignment"
-              }
-            },
-            "konstryxapprovalscheme-KonstryxApprovalScheme-display": {
-              "semanticObject": "KonstryxApprovalScheme",
-              "action": "display",
-              "title": "Approval Schemes",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxapprovalscheme",
-                "url": "/konstryx-approval-scheme"
-              }
-            },
-            "konstryxtrade-KonstryxTrade-display": {
-              "semanticObject": "KonstryxTrade",
-              "action": "display",
-              "title": "Trades",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxtrade",
-                "url": "/konstryx-trade"
-              }
-            },
-            "konstryxshiftpattern-KonstryxShiftPattern-display": {
-              "semanticObject": "KonstryxShiftPattern",
-              "action": "display",
-              "title": "Shift Patterns",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxshiftpattern",
-                "url": "/konstryx-shift-pattern"
-              }
-            },
-            "konstryxholidaycalendar-KonstryxHolidayCalendar-display": {
-              "semanticObject": "KonstryxHolidayCalendar",
-              "action": "display",
-              "title": "Holiday Calendars",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxholidaycalendar",
-                "url": "/konstryx-holiday-calendar"
-              }
-            },
-            "konstryxcrew-KonstryxCrew-display": {
-              "semanticObject": "KonstryxCrew",
-              "action": "display",
-              "title": "Crew Templates",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxcrew",
-                "url": "/konstryx-crew"
-              }
-            },
-            "konstryxabsencereason-KonstryxAbsenceReason-display": {
-              "semanticObject": "KonstryxAbsenceReason",
-              "action": "display",
-              "title": "Absence Reasons",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxabsencereason",
-                "url": "/konstryx-absence-reason"
-              }
-            },
-            "konstryxworker-KonstryxWorker-display": {
-              "semanticObject": "KonstryxWorker",
-              "action": "display",
-              "title": "Workers",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxworker",
-                "url": "/konstryx-worker"
-              }
-            },
-            "konstryxscworker-KonstryxScWorker-display": {
-              "semanticObject": "KonstryxScWorker",
-              "action": "display",
-              "title": "Subcontract Workers",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxscworker",
-                "url": "/konstryx-sc-worker"
-              }
-            },
-            "konstryxengagement-KonstryxEngagement-display": {
-              "semanticObject": "KonstryxEngagement",
-              "action": "display",
-              "title": "Engagements",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxengagement",
-                "url": "/konstryx-engagement"
-              }
-            },
-            "konstryxroster-KonstryxRoster-display": {
-              "semanticObject": "KonstryxRoster",
-              "action": "display",
-              "title": "Roster Upload",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxroster",
-                "url": "/konstryx-roster"
-              }
-            },
-            "konstryxworkerpush-KonstryxWorkerPush-display": {
-              "semanticObject": "KonstryxWorkerPush",
-              "action": "display",
-              "title": "Work Agreements",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=konstryxworkerpush",
-                "url": "/konstryx-worker-push"
               }
             }
           }
