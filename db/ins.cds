@@ -99,6 +99,17 @@ entity ProjectPeriodReport : cuid, managed {
   costCPI        : Decimal(9,4);
   /** EV / PV. Null while PV is. */
   spi            : Decimal(9,4);
+  /**
+   * Earned cost / planned value: the schedule index with the margin out of it.
+   *
+   * spi above divides revenue-priced earned value by a cost-priced planned
+   * value, so on any job sold at a margin it reads high before anything has
+   * happened - and on one whose budget covers only part of the priced scope it
+   * reads absurdly high. This is the like-for-like pair: budgeted cost of the
+   * work performed against the budgeted cost of the work planned, which is the
+   * comparison that says whether the job is where its own budget expected it.
+   */
+  costSPI        : Decimal(9,4);
 
   // ----------------------------------------------------- cost to complete
 

@@ -358,6 +358,25 @@ public class ReconcileHandler implements EventHandler {
             // index, and 0.0000 would report one.
             r.put("spi", plannedValue.signum() > 0 && earnedValue.signum() > 0
                     ? earnedValue.divide(plannedValue, 4, RoundingMode.HALF_UP) : null);
+            // The like-for-like pair, on the same rule as costCPI: cost against
+            // cost. spi divides revenue by cost and reads high on any job sold
+            // at a margin, before anything has gone right or wrong.
+            r.put("costSPI", plannedValue.signum() > 0 && anyCosted && earnedCost.signum() > 0
+                    ? earnedCost.divide(plannedValue, 4, RoundingMode.HALF_UP) : null);
+            // The two halves of that index can cover different scopes. Earned
+            // cost only counts budget lines the cost mapping tied to a bill
+            // item; planned value counts the whole phased budget. Where the
+            // first is a small part of the second the index is arithmetically
+            // right and reads far worse than the job is, so it says so.
+            BigDecimal budgetTotal = budgetTotalOf(projectId);
+            if (anyCosted && budgetTotal.signum() > 0
+                    && costedScope.compareTo(budgetTotal.multiply(new BigDecimal("0.75"))) < 0) {
+                caveats.add(String.format(
+                        "earned cost covers only %s%% of the budget - the rest carries no "
+                                + "bill item - while planned value covers all of it, so the "
+                                + "cost schedule index compares unlike scopes and reads low",
+                        pct(costedScope, budgetTotal, 1).toPlainString()));
+            }
             if (envelopePhases > 0) {
                 caveats.add(String.format(
                         "%d of %d phase rows behind the planned value are even spreads "

@@ -96,7 +96,9 @@ public class BudgetPhasingHandler implements EventHandler {
         // Activities, once, grouped by the WBS they sit on. A line resolves its
         // own WBS against this rather than querying per line.
         Map<String, List<Row>> activitiesByWbs = new LinkedHashMap<>();
+        List<Row> allActivities = new ArrayList<>();
         for (Row activity : rowsWhere(E_ACTIVITY, "project_ID", projectId)) {
+            allActivities.add(activity);
             String wbs = str(activity.get("wbs_ID"));
             if (wbs != null) {
                 activitiesByWbs.computeIfAbsent(wbs, k -> new ArrayList<>()).add(activity);
@@ -116,7 +118,7 @@ public class BudgetPhasingHandler implements EventHandler {
             List<Row> activities = activitiesByWbs.getOrDefault(str(line.get("wbs_ID")), List.of());
 
             Map<Row, BigDecimal> weights = activities.isEmpty()
-                    ? envelopeWeights(periods, projectStart, projectEnd)
+                    ? envelopeWeights(periods, allActivities, projectStart, projectEnd)
                     : programmeWeights(periods, activities);
             String basis = activities.isEmpty() ? BASIS_ENVELOPE : BASIS_PROGRAMME;
 
@@ -178,8 +180,31 @@ public class BudgetPhasingHandler implements EventHandler {
         return weights;
     }
 
-    /** Even across the project's own dates, for a line no activity claims. */
-    private Map<Row, BigDecimal> envelopeWeights(List<Row> periods, LocalDate start, LocalDate end) {
+    /**
+     * For a line no activity claims: the shape of the project's own programme.
+     *
+     * Preliminaries, site establishment and the general lines are the ones
+     * that land here, and none of them is spent evenly. They follow the job -
+     * heaviest when the most work is running, tailing off as it finishes - so
+     * spreading them over the whole programme's day curve puts them nearer the
+     * months they are actually incurred than a flat line ever does.
+     *
+     * The line is still flagged ENVELOPE, because the flag answers a different
+     * question: not how the money was spread, but whether anything traced it
+     * to dated work. Nothing did, and a reader deciding how much of a planned
+     * value to believe needs to know that whatever curve it was given.
+     *
+     * Falls back to the project's contract dates only where there is no
+     * programme at all to take a shape from.
+     */
+    private Map<Row, BigDecimal> envelopeWeights(List<Row> periods, List<Row> allActivities,
+            LocalDate start, LocalDate end) {
+        if (!allActivities.isEmpty()) {
+            Map<Row, BigDecimal> shaped = programmeWeights(periods, allActivities);
+            if (!shaped.isEmpty()) {
+                return shaped;
+            }
+        }
         Map<Row, BigDecimal> weights = new LinkedHashMap<>();
         if (start == null || end == null) {
             return weights;

@@ -78,6 +78,7 @@ annotate service.PeriodReports with @(
       { $Type : 'UI.DataField', Value : plannedValue,    Label : 'Planned value' },
       { $Type : 'UI.DataField', Value : scheduleVariance, Label : 'Schedule variance' },
       { $Type : 'UI.DataField', Value : spi,             Label : 'Schedule performance index' },
+      { $Type : 'UI.DataField', Value : costSPI,         Label : 'Cost SPI (earned cost / planned)' },
     ],
   },
 
@@ -158,6 +159,7 @@ annotate service.PeriodReports with {
   cpi               @title : 'Cost performance index';
   earnedCost        @title : 'Earned cost';
   costCPI           @title : 'Cost performance index (cost basis)';
+  costSPI           @title : 'Schedule performance index (cost basis)';
   spi               @title : 'Schedule performance index';
   costToDate        @title : 'Cost to date';
   signedLabourCost  @title : 'Signed labour cost';

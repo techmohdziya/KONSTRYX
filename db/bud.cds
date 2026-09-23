@@ -95,10 +95,14 @@ entity BudgetPhase : cuid {
    *
    * PROGRAMME  the line's CBS is mapped to WBS elements that carry activities,
    *            and the amount follows those activities' working days.
-   * ENVELOPE   nothing maps it to any dated work, so it is spread evenly
-   *            across the project's own dates. Flagged rather than silent: a
-   *            curve built from envelopes is a straight line pretending to be
-   *            a forecast, and the reader has to know which lines are which.
+   * ENVELOPE   nothing maps it to any dated work, so it takes the shape of the
+   *            project's programme as a whole - the preliminaries and general
+   *            lines that land here follow the job rather than a calendar, and
+   *            a flat spread put them in months the site was barely running.
+   *            Flagged rather than silent even so: the flag answers whether
+   *            anything traced the line to dated work, not how it was spread,
+   *            and a reader deciding how much of a planned value to believe
+   *            needs to know that nothing did.
    */
   basis      : String(12) enum { PROGRAMME; ENVELOPE; };
 }

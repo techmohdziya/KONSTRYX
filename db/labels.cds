@@ -337,6 +337,7 @@ annotate konstryx.ins.ProjectPeriodReport with {
   cpi                 @title : 'CPI (earned / spent)';
   costCPI             @title : 'Cost CPI (earned cost / spent)';
   spi                 @title : 'SPI (earned / planned)';
+  costSPI             @title : 'Cost SPI (earned cost / planned)';
   costToDate          @title : 'Cost to date';
   signedLabourCost    @title : 'Signed labour cost';
   stockIssuedCost     @title : 'Stock issued cost';
