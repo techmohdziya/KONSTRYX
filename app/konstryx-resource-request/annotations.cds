@@ -18,7 +18,7 @@ annotate service.ResourceRequests with @(
   },
 
   /** State, vertical and need-by date are how a coordinator narrows the list. */
-  UI.SelectionFields : [ status, verticalType, needBy ],
+  UI.SelectionFields : [ projectCode, status, verticalType, needBy ],
 
   UI.LineItem : [
     { $Type : 'UI.DataField', Value : docNo,        Label : 'Request' },
@@ -315,3 +315,9 @@ annotate service.RequestAttachments with {
   fileSize    @readonly;
   version     @readonly;
 };
+
+/** The project as a person names it, not as the service keys it. */
+annotate service.ResourceRequests with {
+  projectCode @title : 'Project';
+  projectName @title : 'Project name';
+}

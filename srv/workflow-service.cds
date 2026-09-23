@@ -17,7 +17,16 @@ service WorkflowService @(path:'/workflow') {
   // so associations must be told which of the two to redirect to
   @cds.redirection.target
   @odata.draft.enabled
-  entity ResourceRequests as projection on wf.ResourceRequest
+  entity ResourceRequests as projection on wf.ResourceRequest {
+    *,
+    /**
+     * The project as a person names it, beside the key the service joins on.
+     * A filter bar offering project_ID asks a site engineer to recognise a
+     * UUID; the key still filters, this is what the field shows.
+     */
+    project.code as projectCode : String(24),
+    project.name as projectName : String(150),
+  }
     actions {
       /**
        * Prices any unpriced line from the rate master and hands the request to

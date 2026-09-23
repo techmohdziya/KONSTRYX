@@ -148,6 +148,15 @@
           }
         }
       }
+    },
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ListReport.ListReportController": {
+            "controllerName": "konstryxresourcerequest.ext.ListReportExt"
+          }
+        }
+      }
     }
   },
   "sap.fiori": {
