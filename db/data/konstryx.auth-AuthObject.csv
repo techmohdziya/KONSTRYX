@@ -30,3 +30,5 @@ ID;code;name;module_ID;entityName;projectScoped;projectPath;companyPath
 71000000-0000-0000-0000-000000000042;KX_TIMESHEET;Timesheet;70000000-0000-0000-0000-000000000008;konstryx.mpr.TimesheetEntry;true;manpowerLine.line.parent.project.code;manpowerLine.line.parent.company.code
 71000000-0000-0000-0000-000000000032;KX_RES_VARIATION;Reservation Variation;70000000-0000-0000-0000-000000000003;konstryx.wf.ReservationVariation;true;project.code;company.code
 71000000-0000-0000-0000-000000000033;KX_RES_VARIATION_LINE;Reservation Variation Line;70000000-0000-0000-0000-000000000003;konstryx.wf.ReservationVariationLine;true;variation.project.code;variation.company.code
+71000000-0000-0000-0000-000000000063;KX_CASHFLOW;Project Cashflow;70000000-0000-0000-0000-000000000002;konstryx.ins.ProjectCashflow;true;project.code;project.company.code
+71000000-0000-0000-0000-000000000064;KX_WORK_FRONT;Work Front;70000000-0000-0000-0000-000000000001;konstryx.ins.WorkFront;true;project.code;project.company.code

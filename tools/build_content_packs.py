@@ -229,6 +229,8 @@ PACKS = [
     {
         "packId": "PERSONAS",
         # 1.5.0 carries the same four grants down to the variation's lines.
+        # 1.6.0 adds display on the cashflow and the work front, which were
+        # readable by anyone because no auth object named them.
         # The header says a reservation moved and the line says by how much,
         # so governing one and not the other leaves the money readable to
         # anyone the header is closed to.
@@ -257,7 +259,7 @@ PACKS = [
         # belongs to and the service product it is procured against, and the
         # persona that maintains rates could see neither. Read only — both are
         # S/4 mirrors and DM-01 says a mirror is not ours to edit.
-        "version": "1.5.0",
+        "version": "1.6.0",
         "sequence": 30,
         "description": (
             "Persona vocabulary and its grants against the delivered "
