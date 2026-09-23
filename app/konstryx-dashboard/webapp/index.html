@@ -151,17 +151,16 @@
 				/*
 					A tile opens the worklist it counts.
 
-					The state it counted travels as a query parameter, which the
-					target's filter bar picks up where the property is one of its
-					SelectionFields - work fronts filter on state, so an Overdue
-					tile lands on the overdue ones. The project travels the same
-					way. Where a target does not take the parameter it is ignored
-					and the reader lands on the unfiltered list, which is still
-					the list they asked for.
+					The state it counted travels as a query parameter. A Fiori
+					Elements app ignores query parameters it has not been told
+					about, so the target has to read them: the work front list
+					carries a controller extension that does, and lands on the
+					overdue ones. The others take the reader to the unfiltered
+					list until they carry the same extension.
 
 					Intent-based navigation would be the SAP-native route and
-					needs a launchpad to resolve the intent; these apps are served
-					standalone, so the link is a plain one.
+					needs a launchpad to resolve the intent; these apps are
+					served standalone, so the link is a plain one.
 				*/
 				function navigateTo(sApp, mParams) {
 					var p = Object.keys(mParams || {}).filter(function (k) { return mParams[k]; })
@@ -182,20 +181,20 @@
 					});
 				}
 
-				function currentProjectId() { return mProjectIds[oProject.data("key") || ""] || ""; }
+				function currentProjectCode() { return oProject.data("key") || ""; }
 
 				var oTiles = new HBox({ renderType: "Bare", items: [
 					miniTile("Overdue", "overdue", "work fronts", "Error", function () {
-						navigateTo("konstryx-workfront", { state: "OVERDUE", project_ID: currentProjectId() });
+						navigateTo("konstryx-workfront", { state: "OVERDUE", projectCode: currentProjectCode() });
 					}),
 					miniTile("Untouched", "quiet", "no day this week", "Critical", function () {
-						navigateTo("konstryx-workfront", { state: "QUIET", project_ID: currentProjectId() });
+						navigateTo("konstryx-workfront", { state: "QUIET", projectCode: currentProjectCode() });
 					}),
 					miniTile("Open", "requests", "resource requests", "Neutral", function () {
 						navigateTo("konstryx-resource-request", {});
 					}),
 					miniTile("Unanswered", "claims", "client claims", "Neutral", function () {
-						navigateTo("konstryx-payment-application", { project_ID: currentProjectId() });
+						navigateTo("konstryx-payment-application", { projectCode: currentProjectCode() });
 					})
 				]});
 				oTiles.setModel(oTileModel, "tiles");
