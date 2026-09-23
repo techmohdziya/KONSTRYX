@@ -559,8 +559,37 @@ service ProjectService @(path:'/project') {
    * happened to load last. The reconciliation and the booklet ask different
    * questions of the same rows and are entitled to different screens.
    */
+  /**
+   * Aggregation, declared, which is what turns a list into an analysis.
+   *
+   * A chart in Fiori Elements is not a rendering choice - the framework asks
+   * the service to group and total on its behalf, and refuses to draw
+   * anything unless the service says which properties it may group by and
+   * which it may add up. Without this the booklet is a table with a chart
+   * annotation nobody reads.
+   */
+  @Aggregation.ApplySupported : {
+    $Type : 'Aggregation.ApplySupportedType',
+    AggregatableProperties : [
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : adjustedValue },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : plannedValue },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : earnedValue },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : actualCost },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : costVariance },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : forecastMargin },
+    ],
+    GroupableProperties : [ projectCode, periodName, companyCcy_code ],
+  }
   @readonly entity Booklet as projection on ins.ProjectPeriodReport {
     *,
+    /**
+     * The project code as a column of its own, which is what the chart groups
+     * by. Grouping on the key would label every column with a UUID, and a
+     * chart whose categories differ only in their last character is not one
+     * anybody can read.
+     */
+    project.code as projectCode : String(24),
+    project.name as projectName : String(150),
     case
       when forecastMarginPct is null then 0
       when forecastMarginPct <  0    then 1

@@ -31,7 +31,7 @@ annotate service.Booklet with @(
    * one - "the margin" with no period on it is not a figure anybody can act
    * on - then the project and the currency the figures are stated in.
    */
-  UI.SelectionFields : [ periodName, project_ID, companyCcy_code ],
+  UI.SelectionFields : [ periodName, projectCode, companyCcy_code ],
 
   /**
    * The margin overview, in the order the question is asked: what we planned
@@ -60,43 +60,74 @@ annotate service.Booklet with @(
   ],
 
   /**
-   * The same figures as a picture, which is how a portfolio is read.
+   * The measures, declared as aggregations rather than columns.
    *
-   * Planned against recognised, per project, in one column pair each. A reader
-   * scanning five projects for the one that has stopped earning finds it here
-   * in a second and in the table in a minute.
+   * A chart measure is a total the service computes, not a field the table
+   * happens to show, so each one names the property it sums and the method it
+   * sums it by. Without these the chart has nothing to draw and Fiori Elements
+   * renders an empty frame.
    */
-  UI.Chart #Margin : {
+  Analytics.AggregatedProperty #plannedRevenue : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'plannedRevenue',
+    AggregatableProperty : adjustedValue,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Planned revenue',
+  },
+  Analytics.AggregatedProperty #recognisedRevenue : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'recognisedRevenue',
+    AggregatableProperty : earnedValue,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Recognised revenue',
+  },
+  Analytics.AggregatedProperty #recognisedCost : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'recognisedCost',
+    AggregatableProperty : actualCost,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Recognised cost',
+  },
+  Analytics.AggregatedProperty #marginTotal : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'marginTotal',
+    AggregatableProperty : forecastMargin,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Forecast margin',
+  },
+
+  /**
+   * The chart the page opens on: planned revenue against what has actually
+   * been recognised and spent, one column group per project.
+   *
+   * A reader scanning five projects for the one that has stopped earning sees
+   * it here before reading a single number.
+   */
+  UI.Chart #alpChart : {
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Planned against recognised',
     ChartType           : #Column,
-    Dimensions          : [ project_ID ],
+    Dimensions          : [ projectCode ],
     DimensionAttributes : [
-      { $Type : 'UI.ChartDimensionAttributeType', Dimension : project_ID,
-        Role : #Category },
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
     ],
-    Measures            : [ adjustedValue, earnedValue, actualCost ],
-    MeasureAttributes   : [
-      { $Type : 'UI.ChartMeasureAttributeType', Measure : adjustedValue, Role : #Axis1 },
-      { $Type : 'UI.ChartMeasureAttributeType', Measure : earnedValue,   Role : #Axis1 },
-      { $Type : 'UI.ChartMeasureAttributeType', Measure : actualCost,    Role : #Axis1 },
+    DynamicMeasures     : [
+      '@Analytics.AggregatedProperty#plannedRevenue',
+      '@Analytics.AggregatedProperty#recognisedRevenue',
+      '@Analytics.AggregatedProperty#recognisedCost',
     ],
   },
 
   /** The margin on its own, which is the column a review actually stops on. */
-  UI.Chart #MarginTrend : {
+  UI.Chart #marginChart : {
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Forecast margin by project',
     ChartType           : #Bar,
-    Dimensions          : [ project_ID ],
+    Dimensions          : [ projectCode ],
     DimensionAttributes : [
-      { $Type : 'UI.ChartDimensionAttributeType', Dimension : project_ID,
-        Role : #Category },
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
     ],
-    Measures            : [ forecastMargin ],
-    MeasureAttributes   : [
-      { $Type : 'UI.ChartMeasureAttributeType', Measure : forecastMargin, Role : #Axis1 },
-    ],
+    DynamicMeasures     : [ '@Analytics.AggregatedProperty#marginTotal' ],
   },
 
   /**
@@ -156,3 +187,9 @@ annotate service.Booklet with @(
     ],
   },
 );
+
+/** The two columns the projection adds, named for a reader rather than a developer. */
+annotate service.Booklet with {
+  projectCode @title : 'Project';
+  projectName @title : 'Project name';
+}
