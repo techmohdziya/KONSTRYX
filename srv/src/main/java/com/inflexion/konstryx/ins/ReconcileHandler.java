@@ -89,9 +89,19 @@ public class ReconcileHandler implements EventHandler {
 
     @On(event = "reconcile", entity = "ProjectService.Projects")
     public void onReconcile(EventContext context) {
-        Row project = targetOf(context);
-        String projectId = str(project.get("ID"));
         LocalDate onDate = date(context.get("onDate"));
+        context.put("result", reconcile(targetOf(context), onDate));
+        context.setCompleted();
+    }
+
+    /**
+     * The measurement itself, callable without an event.
+     *
+     * Split from the action for the same reason as the phasing: the startup
+     * warm-up already holds the project and has no request to bind to.
+     */
+    public String reconcile(Row project, LocalDate onDate) {
+        String projectId = str(project.get("ID"));
         if (onDate == null) {
             onDate = LocalDate.now();
         }
@@ -418,15 +428,14 @@ public class ReconcileHandler implements EventHandler {
                 .and(x.get("period_ID").eq(periodId))));
         db.run(Insert.into(E_REPORT).entry(r));
 
-        context.put("result", String.format(
+        return String.format(
                 "%s reconciled for %s: worth %s, earned %s, spent %s%s.",
                 project.get("code"), period.get("name"),
                 adjustedValue.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                 earnedValue.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                 actualCost.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                 forecastMargin == null ? "" : ", forecast margin "
-                        + forecastMargin.setScale(2, RoundingMode.HALF_UP).toPlainString()));
-        context.setCompleted();
+                        + forecastMargin.setScale(2, RoundingMode.HALF_UP).toPlainString());
     }
 
     // ---------------------------------------------------------------- helpers

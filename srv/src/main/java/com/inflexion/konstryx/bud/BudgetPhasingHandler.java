@@ -60,7 +60,18 @@ public class BudgetPhasingHandler implements EventHandler {
 
     @On(event = "phaseBudget", entity = "BudgetService.Budgets")
     public void onPhaseBudget(EventContext context) {
-        Row budget = targetOf(context);
+        context.put("result", phase(targetOf(context)));
+        context.setCompleted();
+    }
+
+    /**
+     * The work itself, callable without an event.
+     *
+     * Split from the action so a caller that already holds the budget - the
+     * startup warm-up, a test - does not have to synthesise a request context
+     * to reach it. The action is now nothing but the binding.
+     */
+    public String phase(Row budget) {
         String budgetId = str(budget.get("ID"));
         String projectId = str(budget.get("project_ID"));
         if (projectId == null) {
@@ -138,8 +149,7 @@ public class BudgetPhasingHandler implements EventHandler {
                 unphased == 0 ? "" : String.format(
                         ", %d line(s) left unphased - their work falls outside every "
                                 + "defined fiscal period", unphased));
-        context.put("result", message);
-        context.setCompleted();
+        return message;
     }
 
     /**
