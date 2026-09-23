@@ -194,23 +194,36 @@ public class ReconcileHandler implements EventHandler {
         // own measured percentage.
         BigDecimal earnedCost = BigDecimal.ZERO;
         BigDecimal costedScope = BigDecimal.ZERO;
+        BigDecimal projectPct = pct(earnedValue, adjustedValue, 2);
         boolean anyCosted = false;
         for (Row budget : rowsWhere(E_BUDGET, "project_ID", projectId)) {
             for (Row line : rowsWhere(E_BUDGET_LINE, "budget_ID", str(budget.get("ID")))) {
-                String itemId = str(line.get("boqItem_ID"));
-                if (itemId == null) {
-                    continue;
-                }
-                Row item = one(E_BOQ_ITEM, "ID", itemId);
-                if (item == null) {
-                    continue;
-                }
-                anyCosted = true;
                 BigDecimal amount = orZero(dec(line.get("amount")));
+                if (amount.signum() == 0) {
+                    continue;
+                }
+                String itemId = str(line.get("boqItem_ID"));
+                Row item = itemId == null ? null : one(E_BOQ_ITEM, "ID", itemId);
+
+                // A line the cost mapping tied to a bill item earns at that
+                // item's own measured percentage, which is the better figure
+                // because somebody measured it.
+                //
+                // A line with no bill item earns at the project's percentage
+                // instead. Preliminaries, site establishment and the general
+                // lines are the ones without one, and they are incurred as the
+                // job runs rather than against any single item. Counting them
+                // as earning nothing was the alternative, and it made the cost
+                // index read 0.25 on a job spending to its budget - a number
+                // that says the site is failing when what failed is the
+                // mapping.
+                anyCosted = true;
                 costedScope = costedScope.add(amount);
-                earnedCost = earnedCost.add(amount
-                        .multiply(orZero(dec(item.get("cumDonePct"))))
-                        .divide(HUNDRED, 2, RoundingMode.HALF_UP));
+                BigDecimal at = item != null
+                        ? orZero(dec(item.get("cumDonePct")))
+                        : orZero(projectPct);
+                earnedCost = earnedCost.add(
+                        amount.multiply(at).divide(HUNDRED, 2, RoundingMode.HALF_UP));
             }
         }
         r.put("earnedCost", anyCosted ? earnedCost : null);

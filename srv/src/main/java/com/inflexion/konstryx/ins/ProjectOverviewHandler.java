@@ -12,6 +12,7 @@ import com.sap.cds.services.handler.annotations.HandlerOrder;
 import com.sap.cds.services.handler.annotations.ServiceName;
 import com.sap.cds.services.persistence.PersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -67,6 +68,8 @@ public class ProjectOverviewHandler implements EventHandler {
     private static final String E_TIMESHEET = "konstryx.mpr.TimesheetEntry";
     private static final String E_REQUISITION = "konstryx.mat.PurchaseRequisition";
     private static final String E_PAYMENT_CERT = "konstryx.scr.PaymentCertificate";
+    private static final String E_REPORT = "konstryx.ins.ProjectPeriodReport";
+    private static final String E_PERIOD = "konstryx.fin.FiscalPeriod";
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
@@ -80,11 +83,25 @@ public class ProjectOverviewHandler implements EventHandler {
     @Autowired
     private PersistenceService db;
 
+    /**
+     * The projects, read through the application service rather than the
+     * database, so the authorization layer narrows them to the ones this
+     * reader may see.
+     *
+     * Read straight from persistence, this page listed five jobs while every
+     * other screen in the product listed three, because those screens go
+     * through the service and this one did not. A summary that shows a reader
+     * a project they cannot open is worse than one that omits it.
+     */
+    @Autowired
+    @Qualifier("ProjectService")
+    private CqnService projects;
+
     @Before(event = CqnService.EVENT_READ, entity = "ProjectService.ProjectOverviews")
     @HandlerOrder(HandlerOrder.EARLY)
     public void refresh(CdsReadEventContext context) {
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (Row project : db.run(Select.from(E_PROJECT))) {
+        for (Row project : projects.run(Select.from("ProjectService.Projects"))) {
             rows.add(overviewOf(project));
         }
         // Replaced wholesale rather than merged: a project deleted since the
@@ -238,45 +255,38 @@ public class ProjectOverviewHandler implements EventHandler {
 
         // ------------------------------------------------------------ the EVM
         //
-        // Earned value against the budget, using the programme's own progress.
-        // This is a derivation, not a measurement — a signed period report is
-        // what would make it one, and konstryx.ins.ProjectPeriodReport has no
-        // rows yet. Said so in `note` rather than presented as if a quantity
-        // surveyor had agreed it.
-        BigDecimal earnedValue = null;
-        BigDecimal cpi = null;
-        if (percentComplete != null && budgetTotal.signum() > 0) {
-            earnedValue = budgetTotal.multiply(percentComplete)
-                    .divide(HUNDRED, 2, RoundingMode.HALF_UP);
-            if (actual.signum() > 0) {
-                cpi = earnedValue.divide(actual, 4, RoundingMode.HALF_UP);
-            }
-        }
+        // Read from the reconciliation, not computed a second time.
+        //
+        // This used to derive its own earned value from the programme, which
+        // gave a project two of them: the overview said 13.2m from activity
+        // progress and the period report said 18.8m from measured quantities,
+        // with a margin of 28 % beside one of 15 %. Both were arrived at
+        // honestly and only one can be true, and a summary that disagrees with
+        // the screen a reader opens next to check it is the one thing this
+        // page must never do.
+        //
+        // So the measurement is the reconciliation's, and this reports it. The
+        // programme still supplies percent complete below, which is a
+        // different question - how far through the work is the job, rather
+        // than what has it earned.
+        Row latest = latestReportOf(projectId);
+        BigDecimal earnedValue = latest == null ? null : dec(latest.get("earnedValue"));
+        BigDecimal cpi = latest == null ? null : dec(latest.get("cpi"));
+        BigDecimal forecastMargin = latest == null ? null : dec(latest.get("forecastMargin"));
+        BigDecimal forecastMarginPct = latest == null ? null : dec(latest.get("forecastMarginPct"));
+
         o.put("earnedValue", earnedValue);
-        o.put("actualCost", actual);
+        o.put("actualCost", latest == null ? actual : orZero(dec(latest.get("actualCost"))));
         o.put("cpi", cpi);
-
-        // Forecast at the rate the job is currently converting money into work:
-        // the classic BAC/CPI. Without a CPI there is no basis for a forecast,
-        // and the budget itself is not one — that is the plan, not the outcome.
-        BigDecimal forecastMargin = null;
-        if (cpi != null && cpi.signum() > 0) {
-            BigDecimal forecastCost = budgetTotal.divide(cpi, 2, RoundingMode.HALF_UP);
-            forecastMargin = contractValue.subtract(forecastCost);
-        }
         o.put("forecastMargin", forecastMargin);
-        o.put("forecastMarginPct", forecastMargin == null ? null
-                : pct(forecastMargin, contractValue, 2));
+        o.put("forecastMarginPct", forecastMarginPct);
+        o.put("measuredPeriod", latest == null
+                ? "Not reconciled"
+                : truncate(str(latest.get("periodName")), 40));
 
-        if (earnedValue == null) {
-            caveats.add("earned value needs both a budget and a programme");
-        } else if (cpi == null) {
-            caveats.add("no cost booked yet, so there is no CPI and no forecast");
-        } else {
-            o.put("measuredPeriod", "Live \u00b7 earned value derived from activity progress");
-        }
-        if (o.get("measuredPeriod") == null) {
-            o.put("measuredPeriod", "Live \u00b7 not measured");
+        if (latest == null) {
+            caveats.add("this project has not been reconciled, so there is no earned "
+                    + "value, no cost index and no forecast - run reconcile on it");
         }
 
         // ------------------------------------------------- what needs a human
@@ -321,6 +331,27 @@ public class ProjectOverviewHandler implements EventHandler {
 
         o.put("note", caveats.isEmpty() ? null : truncate(capitalise(String.join("; ", caveats)), 255));
         return o;
+    }
+
+
+    /**
+     * The most recent reconciliation for a project, by the period it measured.
+     *
+     * Most recent rather than any: a project reconciled for three months has
+     * three reports, and the overview shows where it stands now.
+     */
+    private Row latestReportOf(String projectId) {
+        Row best = null;
+        java.time.LocalDate bestOn = null;
+        for (Row report : rowsWhere(E_REPORT, "project_ID", projectId)) {
+            java.time.LocalDate on = first(E_PERIOD, "ID", report.get("period_ID"))
+                    .map(period -> date(period.get("startDate"))).orElse(null);
+            if (best == null || (on != null && (bestOn == null || on.isAfter(bestOn)))) {
+                best = report;
+                bestOn = on;
+            }
+        }
+        return best;
     }
 
     // ---------------------------------------------------------------- helpers
