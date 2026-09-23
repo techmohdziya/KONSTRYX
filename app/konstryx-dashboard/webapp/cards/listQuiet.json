@@ -1,0 +1,34 @@
+{
+  "sap.app": {
+    "id": "konstryx.dash.listQuiet",
+    "type": "card",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.card": {
+    "type": "List",
+    "data": {
+      "request": {
+        "url": "/odata/v4/project/WorkFronts?$filter=state eq 'QUIET'&$orderby=driftPct",
+        "withCredentials": true
+      },
+      "path": "/value"
+    },
+    "header": {
+      "title": "Nobody on it this week",
+      "subTitle": "Running, and no day signed in seven"
+    },
+    "content": {
+      "maxItems": 6,
+      "item": {
+        "title": "{activityName}",
+        "description": "{projectCode} \u00b7 last worked {lastWorkedOn}",
+        "info": {
+          "value": "{driftPct}%",
+          "state": "Warning"
+        }
+      }
+    }
+  }
+}

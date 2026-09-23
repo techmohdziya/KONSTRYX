@@ -1,0 +1,34 @@
+{
+  "sap.app": {
+    "id": "konstryx.dash.listFronts",
+    "type": "card",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.card": {
+    "type": "List",
+    "data": {
+      "request": {
+        "url": "/odata/v4/project/WorkFronts?$filter=state eq 'OVERDUE'&$orderby=driftPct",
+        "withCredentials": true
+      },
+      "path": "/value"
+    },
+    "header": {
+      "title": "Overdue work fronts",
+      "subTitle": "Past their finish date and not complete"
+    },
+    "content": {
+      "maxItems": 6,
+      "item": {
+        "title": "{activityName}",
+        "description": "{projectCode} \u00b7 {wbsCode} \u00b7 {percentDone}% done",
+        "info": {
+          "value": "{driftPct}%",
+          "state": "Error"
+        }
+      }
+    }
+  }
+}

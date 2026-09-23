@@ -1,0 +1,49 @@
+{
+  "sap.app": {
+    "id": "konstryx.dash.tableClaims",
+    "type": "card",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.card": {
+    "type": "Table",
+    "data": {
+      "request": {
+        "url": "/odata/v4/billing/PaymentApplications?$filter=IsActiveEntity eq true&$orderby=seq desc",
+        "withCredentials": true
+      },
+      "path": "/value"
+    },
+    "header": {
+      "title": "Client applications",
+      "subTitle": "Claimed, certified and still owed"
+    },
+    "content": {
+      "row": {
+        "columns": [
+          {
+            "title": "Application",
+            "value": "{docNo}"
+          },
+          {
+            "title": "Period",
+            "value": "{periodName}"
+          },
+          {
+            "title": "Proposed",
+            "value": "{proposedGross}"
+          },
+          {
+            "title": "Approved",
+            "value": "{approvedGross}"
+          },
+          {
+            "title": "Stage",
+            "value": "{status}"
+          }
+        ]
+      }
+    }
+  }
+}

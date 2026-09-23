@@ -1,0 +1,51 @@
+{
+  "sap.app": {
+    "id": "konstryx.dash.tableProjects",
+    "type": "card",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.card": {
+    "type": "Table",
+    "data": {
+      "request": {
+        "url": "/odata/v4/project/ProjectOverviews?$orderby=code",
+        "withCredentials": true
+      },
+      "path": "/value"
+    },
+    "header": {
+      "title": "Portfolio",
+      "subTitle": "Every project, where it stands"
+    },
+    "content": {
+      "row": {
+        "columns": [
+          {
+            "title": "Project",
+            "value": "{code}"
+          },
+          {
+            "title": "Stage",
+            "value": "{stage}"
+          },
+          {
+            "title": "Complete",
+            "value": "{percentComplete}%"
+          },
+          {
+            "title": "Budget used",
+            "value": "{budgetUsedPct}%",
+            "state": "{= ${budgetCriticality} === 1 ? 'Error' : ${budgetCriticality} === 2 ? 'Warning' : 'Success'}"
+          },
+          {
+            "title": "Slip (d)",
+            "value": "{slipDays}",
+            "state": "{= ${slipCriticality} === 1 ? 'Error' : ${slipCriticality} === 2 ? 'Warning' : 'Success'}"
+          }
+        ]
+      }
+    }
+  }
+}

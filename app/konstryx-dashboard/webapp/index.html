@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>KONSTRYX — Project Controller Overview</title>
+
+	<!--
+		The overview page, as cards.
+
+		SAP Fiori elements has an Overview Page template and it is OData V2
+		only. This service is V4, so the card framework SAP moved to for V4 -
+		sap.ui.integration - is what an overview is built from now: the same
+		control Work Zone and My Home render their cards with, each card a
+		manifest of its own that names its data and how to draw it.
+
+		Cards fetch from the same origin as this page, which is what makes the
+		relative /odata paths below work: serve.py proxies them to the CAP
+		service, and an approuter would do the same in Cloud Foundry.
+	-->
+	<script
+		id="sap-ui-bootstrap"
+		src="https://ui5.sap.com/1.150.0/resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_horizon"
+		data-sap-ui-libs="sap.m,sap.f,sap.ui.integration,sap.viz"
+		data-sap-ui-compat-version="edge"
+		data-sap-ui-async="true"
+		data-sap-ui-frame-options="trusted">
+	</script>
+
+	<style>
+		html, body { height: 100%; margin: 0; }
+		.kxDash { padding: 1rem; }
+	</style>
+
+	<script>
+		sap.ui.getCore().attachInit(function () {
+			sap.ui.require([
+				"sap/f/GridContainer",
+				"sap/f/GridContainerSettings",
+				"sap/ui/integration/widgets/Card",
+				"sap/m/Page",
+				"sap/m/App",
+				"sap/m/Title"
+			], function (GridContainer, GridContainerSettings, Card, Page, App, Title) {
+
+				// Each card is a manifest of its own. Kept as files rather than
+				// inline so a card can be read, changed or lifted into Work Zone
+				// without touching the page that happens to host it today.
+				var aCards = [
+					{ manifest: "cards/kpiContract.json",   rows: 4,  cols: 3 },
+					{ manifest: "cards/kpiEarned.json",     rows: 4,  cols: 3 },
+					{ manifest: "cards/kpiSpent.json",      rows: 4,  cols: 3 },
+					{ manifest: "cards/kpiMargin.json",     rows: 4,  cols: 3 },
+					{ manifest: "cards/chartEvm.json",      rows: 9,  cols: 6 },
+					{ manifest: "cards/tableProjects.json", rows: 9,  cols: 6 },
+					{ manifest: "cards/listFronts.json",    rows: 9,  cols: 4 },
+					{ manifest: "cards/tableClaims.json",   rows: 9,  cols: 4 },
+					{ manifest: "cards/listQuiet.json",     rows: 9,  cols: 4 }
+				];
+
+				// No fixed column count: the grid takes as many columns as the
+				// window gives it. Pinning it to eighteen made every card
+				// narrower than its own contents on anything but a very wide
+				// screen, which is how a dashboard ends up as a column of
+				// cropped boxes.
+				var oGrid = new GridContainer({
+					snapToRow: true,
+					layout: new GridContainerSettings({
+						rowSize: "5rem", columnSize: "5rem", gap: "0.75rem"
+					}),
+					layoutS: new GridContainerSettings({
+						rowSize: "4.5rem", columnSize: "4.5rem", gap: "0.5rem"
+					})
+				});
+
+				aCards.forEach(function (c) {
+					oGrid.addItem(new Card({
+						manifest: c.manifest,
+						layoutData: new sap.f.GridContainerItemLayoutData({
+							minRows: c.rows, columns: c.cols
+						})
+					}));
+				});
+
+				new App({
+					pages: [ new Page({
+						title: "Project Controller Overview",
+						titleLevel: "H1",
+						class: "kxDash",
+						content: [ oGrid ]
+					}) ]
+				}).placeAt("content");
+			});
+		});
+	</script>
+</head>
+<body class="sapUiBody sapUiSizeCompact" id="content"></body>
+</html>

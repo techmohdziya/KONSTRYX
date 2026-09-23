@@ -1,0 +1,77 @@
+{
+  "sap.app": {
+    "id": "konstryx.dash.chartEvm",
+    "type": "card",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.card": {
+    "type": "Analytical",
+    "data": {
+      "request": {
+        "url": "/odata/v4/project/PeriodReports?$apply=groupby((projectCode),aggregate(plannedValue with sum as pv,earnedValue with sum as ev,actualCost with sum as ac))",
+        "withCredentials": true
+      },
+      "path": "/value"
+    },
+    "header": {
+      "title": "Planned, earned and spent",
+      "subTitle": "By project, current period"
+    },
+    "content": {
+      "chartType": "StackedColumn",
+      "measures": [
+        {
+          "name": "Planned value",
+          "value": "{pv}"
+        },
+        {
+          "name": "Earned value",
+          "value": "{ev}"
+        },
+        {
+          "name": "Actual cost",
+          "value": "{ac}"
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "Project",
+          "value": "{projectCode}"
+        }
+      ],
+      "feeds": [
+        {
+          "uid": "valueAxis",
+          "type": "Measure",
+          "values": [
+            "Planned value",
+            "Earned value",
+            "Actual cost"
+          ]
+        },
+        {
+          "uid": "categoryAxis",
+          "type": "Dimension",
+          "values": [
+            "Project"
+          ]
+        }
+      ],
+      "chartProperties": {
+        "legend": {
+          "visible": true
+        },
+        "plotArea": {
+          "dataLabel": {
+            "visible": false
+          }
+        },
+        "title": {
+          "visible": false
+        }
+      }
+    }
+  }
+}

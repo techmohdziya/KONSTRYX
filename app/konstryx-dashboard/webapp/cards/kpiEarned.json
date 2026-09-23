@@ -1,0 +1,34 @@
+{
+  "sap.app": {
+    "id": "konstryx.dash.kpiEarned",
+    "type": "card",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.card": {
+    "type": "Object",
+    "data": {
+      "request": {
+        "url": "/odata/v4/project/Booklet?$apply=aggregate(adjustedValue with sum as contractTotal,earnedValue with sum as earnedTotal,actualCost with sum as spentTotal,forecastMargin with sum as marginTotal)",
+        "withCredentials": true
+      },
+      "path": "/value/0"
+    },
+    "header": {
+      "type": "Numeric",
+      "title": "Recognised",
+      "subTitle": "Measured work at contract rates",
+      "unitOfMeasurement": "AED",
+      "mainIndicator": {
+        "number": "{earnedTotal}",
+        "unit": "AED",
+        "state": "Good",
+        "scale": ""
+      }
+    },
+    "content": {
+      "groups": []
+    }
+  }
+}

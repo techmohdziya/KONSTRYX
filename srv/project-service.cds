@@ -515,8 +515,21 @@ service ProjectService @(path:'/project') {
    * is written by reconcile on the project, and kept, so a margin can be
    * compared with the same margin three months ago rather than only stated.
    */
+  @Aggregation.ApplySupported : {
+    $Type : 'Aggregation.ApplySupportedType',
+    AggregatableProperties : [
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : plannedValue },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : earnedValue },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : actualCost },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : earnedCost },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : forecastMargin },
+    ],
+    GroupableProperties : [ projectCode, periodName, companyCcy_code ],
+  }
   @readonly entity PeriodReports as projection on ins.ProjectPeriodReport {
     *,
+    /** The code as a groupable column, so a chart can categorise on it. */
+    project.code as projectCode : String(24),
     /**
      * Colour for the margin and for the cost index, computed here rather than
      * on the screen.

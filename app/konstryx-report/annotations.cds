@@ -192,3 +192,81 @@ annotate service.PeriodReports with {
     }
   };
 };
+
+/**
+ * The reconciliation as analytics: earned value, planned value and actual
+ * cost side by side, per project.
+ *
+ * The three curves of earned value management in one picture. A reader can
+ * see at a glance which projects have earned more than they have spent and
+ * which have spent against nothing measured - the shape the CPI and SPI
+ * columns express as numbers and nobody reads across five rows.
+ */
+annotate service.PeriodReports with @(
+  Analytics.AggregatedProperty #evTotal : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'evTotal',
+    AggregatableProperty : earnedValue,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Earned value',
+  },
+  Analytics.AggregatedProperty #pvTotal : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'pvTotal',
+    AggregatableProperty : plannedValue,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Planned value',
+  },
+  Analytics.AggregatedProperty #acTotal : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'acTotal',
+    AggregatableProperty : actualCost,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Actual cost',
+  },
+  Analytics.AggregatedProperty #ecTotal : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'ecTotal',
+    AggregatableProperty : earnedCost,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Earned cost',
+  },
+
+  /** The classic three, which is what earned value management is. */
+  UI.Chart #alpChart : {
+    $Type               : 'UI.ChartDefinitionType',
+    Title               : 'Planned, earned and spent',
+    ChartType           : #Column,
+    Dimensions          : [ projectCode ],
+    DimensionAttributes : [
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
+    ],
+    DynamicMeasures     : [
+      '@Analytics.AggregatedProperty#pvTotal',
+      '@Analytics.AggregatedProperty#evTotal',
+      '@Analytics.AggregatedProperty#acTotal',
+    ],
+  },
+
+  /**
+   * Earned cost against actual cost: the comparison with the contract margin
+   * taken out of it, and the only pair on this page measured in the same unit.
+   */
+  UI.Chart #costBasis : {
+    $Type               : 'UI.ChartDefinitionType',
+    Title               : 'Earned cost against actual',
+    ChartType           : #Column,
+    Dimensions          : [ projectCode ],
+    DimensionAttributes : [
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : projectCode, Role : #Category },
+    ],
+    DynamicMeasures     : [
+      '@Analytics.AggregatedProperty#ecTotal',
+      '@Analytics.AggregatedProperty#acTotal',
+    ],
+  },
+);
+
+annotate service.PeriodReports with {
+  projectCode @title : 'Project';
+}
