@@ -1,7 +1,7 @@
 {
   "name": "konstryx",
   "version": "0.1.0",
-  "description": "KONSTRYX — SAP BTP extension for Engineering & Construction (CAP Java)",
+  "description": "KONSTRYX \u2014 SAP BTP extension for Engineering & Construction (CAP Java)",
   "private": true,
   "dependencies": {
     "@sap/cds": "^9.9.3"
@@ -92,7 +92,8 @@
     "app/konstryx-engagement",
     "app/konstryx-roster",
     "app/konstryx-trade",
-    "app/konstryx-payment-application"
+    "app/konstryx-payment-application",
+    "app/konstryx-booklet"
   ],
   "type": "module"
 }

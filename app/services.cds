@@ -84,3 +84,5 @@ using from './konstryx-roster/annotations';
 using from './konstryx-trade/annotations';
 
 using from './konstryx-payment-application/annotations';
+
+using from './konstryx-booklet/annotations';

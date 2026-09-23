@@ -550,6 +550,33 @@ service ProjectService @(path:'/project') {
   };
 
   /**
+   * The same measurements, read across the portfolio rather than down one
+   * project: the financial booklet.
+   *
+   * Its own projection rather than a second set of annotations on
+   * PeriodReports, because two apps annotating one entity overwrite each
+   * other's columns and the one a reader got would depend on which app
+   * happened to load last. The reconciliation and the booklet ask different
+   * questions of the same rows and are entitled to different screens.
+   */
+  @readonly entity Booklet as projection on ins.ProjectPeriodReport {
+    *,
+    case
+      when forecastMarginPct is null then 0
+      when forecastMarginPct <  0    then 1
+      when forecastMarginPct <  5    then 2
+      else                                3
+    end as marginCriticality : Integer,
+    case
+      when cpi is null then 0
+      when cpi <  0.95 then 1
+      when cpi <  1.00 then 2
+      when cpi <= 1.15 then 3
+      else                  0
+    end as cpiCriticality : Integer,
+  };
+
+  /**
    * The site's own geography — building, floor, zone, grid. Maintained with
    * the project because that is what owns it.
    */

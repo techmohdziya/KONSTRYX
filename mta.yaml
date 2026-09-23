@@ -102,6 +102,17 @@ modules:
         []
       build-result: dist
 
+  - name: konstryx-booklet
+    type: html5
+    path: app/konstryx-booklet
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npx ui5 build --clean-dest --dest dist --config ui5-deploy.yaml
+      supported-platforms: []
+      build-result: dist
+
   - name: konstryx-consumption
     type: html5
     path: app/konstryx-consumption
@@ -641,6 +652,10 @@ modules:
         - name: konstryx-approval-scheme
           artifacts:
             - konstryx-approval-scheme.zip
+          target-path: resources/
+        - name: konstryx-booklet
+          artifacts:
+            - konstryx-booklet.zip
           target-path: resources/
         - name: konstryx-consumption
           artifacts:
