@@ -101,7 +101,12 @@ public class ProjectOverviewHandler implements EventHandler {
     @HandlerOrder(HandlerOrder.EARLY)
     public void refresh(CdsReadEventContext context) {
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (Row project : projects.run(Select.from("ProjectService.Projects"))) {
+        // Active rows only. A draft-enabled entity answers a plain read with
+        // both the active row and anybody's draft of it, which gave this
+        // handler two rows carrying the same project key and a unique
+        // constraint violation on the insert.
+        for (Row project : projects.run(Select.from("ProjectService.Projects")
+                .where(p -> p.get("IsActiveEntity").eq(true)))) {
             rows.add(overviewOf(project));
         }
         // Replaced wholesale rather than merged: a project deleted since the

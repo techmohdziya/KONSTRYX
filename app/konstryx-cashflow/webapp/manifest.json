@@ -138,7 +138,7 @@
                   {
                     "primary": [
                       {
-                        "annotationPath": "com.sap.vocabularies.UI.v1.Chart#Curve"
+                        "annotationPath": "com.sap.vocabularies.UI.v1.Chart#Valley"
                       }
                     ],
                     "secondary": [

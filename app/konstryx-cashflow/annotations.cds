@@ -8,10 +8,11 @@ using ProjectService as service from '../../srv/project-service';
  * question, and a column of figures makes a reader construct that shape in
  * their head.
  *
- * Cost out only, and every row says so. Client payment applications are not
- * modelled, so a money-in line would be invented; an empty revenue column
- * would read as a project earning nothing, which is a worse answer than the
- * absence stated in words.
+ * Both halves. Money in on the period the cash arrives, money out on the
+ * period the cost fell, and the running position through them - which goes
+ * negative through the middle of every job, because a contractor pays for a
+ * month's work inside that month and is paid for it two months later. The
+ * depth of that trough is what the job has to fund.
  */
 annotate service.Cashflow with @(
 
@@ -51,6 +52,34 @@ annotate service.Cashflow with @(
     AggregationMethod    : 'sum',
     @Common.Label        : 'Actual, cumulative',
   },
+  Analytics.AggregatedProperty #inflow : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'inflow',
+    AggregatableProperty : cashIn,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Cash in',
+  },
+  /**
+   * The outflow negated, so the bars fall below the axis.
+   *
+   * Cost is a positive number everywhere else in this model. Charting it
+   * downward is a statement about direction, not about sign, and the column
+   * beside it in the table still reads as money spent.
+   */
+  Analytics.AggregatedProperty #outflow : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'outflow',
+    AggregatableProperty : cashOutSigned,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Cash out',
+  },
+  Analytics.AggregatedProperty #position : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'position',
+    AggregatableProperty : cumPosition,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Net position',
+  },
 
   /**
    * Planned and actual as two lines over the same axis, cumulative rather
@@ -58,6 +87,38 @@ annotate service.Cashflow with @(
    * and the question a cashflow is opened for is "are we ahead or behind",
    * which only the running total answers.
    */
+  /**
+   * The valley: cash in above the line, cash out below it, and the running
+   * position drawn through both.
+   *
+   * First of the two charts because it is the one a reader opens this app
+   * for. The spend curve below answers whether the job is ahead of budget;
+   * this one answers whether it can pay for next month.
+   */
+  UI.Chart #Valley : {
+    $Type               : 'UI.ChartDefinitionType',
+    Title               : 'Cash in, cash out and the running position',
+    ChartType           : #Column,
+    Dimensions          : [ periodName ],
+    DimensionAttributes : [
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : periodName,
+        Role : #Category },
+    ],
+    DynamicMeasures     : [
+      '@Analytics.AggregatedProperty#inflow',
+      '@Analytics.AggregatedProperty#outflow',
+      '@Analytics.AggregatedProperty#position',
+    ],
+    MeasureAttributes   : [
+      { $Type : 'UI.ChartMeasureAttributeType',
+        DynamicMeasure : '@Analytics.AggregatedProperty#inflow', Role : #Axis1 },
+      { $Type : 'UI.ChartMeasureAttributeType',
+        DynamicMeasure : '@Analytics.AggregatedProperty#outflow', Role : #Axis1 },
+      { $Type : 'UI.ChartMeasureAttributeType',
+        DynamicMeasure : '@Analytics.AggregatedProperty#position', Role : #Axis2 },
+    ],
+  },
+
   UI.Chart #Curve : {
     $Type               : 'UI.ChartDefinitionType',
     Title               : 'Planned against actual, cumulative',
@@ -78,19 +139,31 @@ annotate service.Cashflow with @(
     // Oldest first: a curve read backwards is not a curve.
     SortOrder      : [ { $Type : 'Common.SortOrderType', Property : startDate,
                          Descending : false } ],
-    Visualizations : [ '@UI.Chart#Curve', '@UI.LineItem' ],
+    Visualizations : [ '@UI.Chart#Valley', '@UI.LineItem' ],
   },
 
+  /**
+   * One row per period, read left to right as the money moves: what the work
+   * was valued at, what was held back, what that leaves certified, what
+   * actually arrived, what went out, and where that puts the job.
+   */
   UI.LineItem : [
-    { $Type : 'UI.DataField', Value : projectCode,    Label : 'Project' },
-    { $Type : 'UI.DataField', Value : periodName,     Label : 'Period' },
-    { $Type : 'UI.DataField', Value : plannedOut,     Label : 'Planned' },
-    { $Type : 'UI.DataField', Value : actualOut,      Label : 'Actual' },
-    { $Type : 'UI.DataField', Value : variance,       Label : 'Variance' },
-    { $Type : 'UI.DataField', Value : plannedOutCum,  Label : 'Planned to date' },
-    { $Type : 'UI.DataField', Value : actualOutCum,   Label : 'Actual to date' },
-    { $Type : 'UI.DataField', Value : varianceCum,    Label : 'Variance to date' },
-    { $Type : 'UI.DataField', Value : envelopePct,    Label : 'From straight-line %' },
+    { $Type : 'UI.DataField', Value : projectCode,      Label : 'Project' },
+    { $Type : 'UI.DataField', Value : periodName,       Label : 'Period' },
+    { $Type : 'UI.DataField', Value : billedGross,      Label : 'Valued' },
+    { $Type : 'UI.DataField', Value : retentionPct,     Label : 'Retention %' },
+    { $Type : 'UI.DataField', Value : retentionHeld,    Label : 'Retention held' },
+    { $Type : 'UI.DataField', Value : netCertified,     Label : 'Net certified' },
+    { $Type : 'UI.DataField', Value : advanceRecovery,  Label : 'Advance recovered' },
+    { $Type : 'UI.DataField', Value : cashIn,           Label : 'Cash in' },
+    { $Type : 'UI.DataField', Value : actualOut,        Label : 'Cash out' },
+    { $Type : 'UI.DataField', Value : netMonthly,       Label : 'Net this period' },
+    { $Type : 'UI.DataField', Value : cumPosition,      Label : 'Position',
+      Criticality : positionCriticality },
+    { $Type : 'UI.DataField', Value : lagDays,          Label : 'Lag (days)' },
+    { $Type : 'UI.DataField', Value : plannedOut,       Label : 'Planned spend' },
+    { $Type : 'UI.DataField', Value : variance,         Label : 'Spend variance' },
+    { $Type : 'UI.DataField', Value : actualOutCum,     Label : 'Spent to date' },
   ],
 
   UI.FieldGroup #Period : {

@@ -267,6 +267,7 @@ entity ProjectCashflow : cuid {
   endDate        : Date;
   ccy            : Currency;
 
+  // ------------------------------------------------------------ money out
   /** Phased budget falling in this period. */
   plannedOut     : Decimal(15,2);
   plannedOutCum  : Decimal(15,2);
@@ -278,6 +279,70 @@ entity ProjectCashflow : cuid {
   varianceCum    : Decimal(15,2);
   /** How much of this period's plan rests on a straight-line spread. */
   envelopePct    : Decimal(5,2);
+
+  // ------------------------------------------------------------- money in
+  //
+  // Work valued in a period is not money in that period, and the gap between
+  // the two is the whole subject. A contractor bills at month end, the
+  // engineer certifies weeks later, retention is held back, and the payment
+  // terms run from the certificate - so the cash arrives one or two months
+  // after the cost that earned it was already paid out. The columns below
+  // keep the two apart: what was billed sits on the period it measured, and
+  // what was received sits on the period it landed in.
+
+  /** Work valued in this period, at contract rates, before any deduction. */
+  billedGross    : Decimal(15,2);
+  /** The percentage held back on this period's valuation. */
+  retentionPct   : Decimal(5,2);
+  /** The amount that percentage holds back. */
+  retentionHeld  : Decimal(15,2);
+  /** Billed less retention: what the certificate is worth. */
+  netCertified   : Decimal(15,2);
+  /** Retention released back in this period, at completion or after defects. */
+  retentionRelease : Decimal(15,2);
+  /** Advance received in this period, which is money in without a valuation. */
+  advanceIn      : Decimal(15,2);
+  /** Advance repaid out of this period's certificate. */
+  advanceRecovery : Decimal(15,2);
+
+  /**
+   * Cash actually landing in this period.
+   *
+   * A certificate settles on its settlement date where one exists, on its due
+   * date where it has been issued and not paid, and otherwise on the period
+   * end plus the payment terms. It is deliberately not the certificate's own
+   * period: putting it there would draw a cashflow with no lag in it, which
+   * is the one thing this report exists to show.
+   */
+  cashIn         : Decimal(15,2);
+  cashInCum      : Decimal(15,2);
+  /** Days between valuing the work and the money arriving. */
+  lagDays        : Integer;
+
+  // ------------------------------------------------------------- position
+  /**
+   * The same outflow, negated, so a chart can draw it below the line.
+   *
+   * A cashflow reads as two opposed bars and a line through them, and a
+   * charting layer draws a measure where its sign puts it. Cost is a positive
+   * number everywhere else in this model and must stay one; this column
+   * exists only so the picture matches the direction the money moved.
+   */
+  cashOutSigned  : Decimal(15,2);
+  /** Cash in less cash out, for this period alone. */
+  netMonthly     : Decimal(15,2);
+  /**
+   * The running cash position: the valley.
+   *
+   * Negative through the middle of every job, because the cost of a month is
+   * paid before the money for it arrives. The depth of it is what the job has
+   * to fund, and the period it turns is the period it stops costing money to
+   * run.
+   */
+  cumPosition    : Decimal(15,2);
+  /** Red while the position is negative, so the valley reads at a glance. */
+  positionCriticality : Integer;
+
   note           : String(255);
 }
 
