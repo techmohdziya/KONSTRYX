@@ -148,10 +148,31 @@
 				*/
 				var oTileModel = new JSONModel({ overdue: 0, quiet: 0, requests: 0, claims: 0 });
 
-				function miniTile(sTitle, sPath, sSub, sState) {
+				/*
+					A tile opens the worklist it counts.
+
+					The state it counted travels as a query parameter, which the
+					target's filter bar picks up where the property is one of its
+					SelectionFields - work fronts filter on state, so an Overdue
+					tile lands on the overdue ones. The project travels the same
+					way. Where a target does not take the parameter it is ignored
+					and the reader lands on the unfiltered list, which is still
+					the list they asked for.
+
+					Intent-based navigation would be the SAP-native route and
+					needs a launchpad to resolve the intent; these apps are served
+					standalone, so the link is a plain one.
+				*/
+				function navigateTo(sApp, mParams) {
+					var p = Object.keys(mParams || {}).filter(function (k) { return mParams[k]; })
+						.map(function (k) { return encodeURIComponent(k) + "=" + encodeURIComponent(mParams[k]); });
+					window.open("/" + sApp + "/" + (p.length ? "?" + p.join("&") : ""), "_self");
+				}
+
+				function miniTile(sTitle, sPath, sSub, sState, fnPress) {
 					return new GenericTile({
 						header: sTitle, subheader: sSub, frameType: "OneByOne",
-						press: function () { /* drill-down lands with the worklist apps */ },
+						press: fnPress,
 						tileContent: [ new TileContent({
 							unit: "", content: new NumericContent({
 								value: "{tiles>/" + sPath + "}",
@@ -161,11 +182,21 @@
 					});
 				}
 
+				function currentProjectId() { return mProjectIds[oProject.data("key") || ""] || ""; }
+
 				var oTiles = new HBox({ renderType: "Bare", items: [
-					miniTile("Overdue",     "overdue",  "work fronts",       "Error"),
-					miniTile("Untouched",   "quiet",    "no day this week",  "Critical"),
-					miniTile("Open",        "requests", "resource requests", "Neutral"),
-					miniTile("Unanswered",  "claims",   "client claims",     "Neutral")
+					miniTile("Overdue", "overdue", "work fronts", "Error", function () {
+						navigateTo("konstryx-workfront", { state: "OVERDUE", project_ID: currentProjectId() });
+					}),
+					miniTile("Untouched", "quiet", "no day this week", "Critical", function () {
+						navigateTo("konstryx-workfront", { state: "QUIET", project_ID: currentProjectId() });
+					}),
+					miniTile("Open", "requests", "resource requests", "Neutral", function () {
+						navigateTo("konstryx-resource-request", {});
+					}),
+					miniTile("Unanswered", "claims", "client claims", "Neutral", function () {
+						navigateTo("konstryx-payment-application", { project_ID: currentProjectId() });
+					})
 				]});
 				oTiles.setModel(oTileModel, "tiles");
 				oTiles.addStyleClass("kxTiles");

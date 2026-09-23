@@ -23,7 +23,7 @@ annotate service.WorkFronts with @(
     Description    : { $Type : 'UI.DataField', Value : projectCode },
   },
 
-  UI.SelectionFields : [ project_ID, state, isCritical, wbsCode ],
+  UI.SelectionFields : [ projectCode, state, isCritical, wbsCode ],
 
   UI.PresentationVariant : {
     $Type     : 'UI.PresentationVariantType',
@@ -185,3 +185,9 @@ annotate service.WorkFronts with {
     }
   };
 };
+
+/** The project as a person names it, not as the service keys it. */
+annotate service.WorkFronts with {
+  projectCode @title : 'Project';
+  projectName @title : 'Project name';
+}

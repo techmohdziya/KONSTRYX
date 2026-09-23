@@ -23,7 +23,7 @@ annotate service.Cashflow with @(
     Description    : { $Type : 'UI.DataField', Value : project.code },
   },
 
-  UI.SelectionFields : [ project_ID, periodName ],
+  UI.SelectionFields : [ projectCode, periodName ],
 
   /**
    * Planned and actual as two lines over the same axis, cumulative rather
@@ -140,3 +140,9 @@ annotate service.Cashflow with {
     }
   };
 };
+
+/** The project as a person names it, not as the service keys it. */
+annotate service.Cashflow with {
+  projectCode @title : 'Project';
+  projectName @title : 'Project name';
+}

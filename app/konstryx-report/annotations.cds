@@ -25,7 +25,7 @@ annotate service.PeriodReports with @(
     Description    : { $Type : 'UI.DataField', Value : periodName },
   },
 
-  UI.SelectionFields : [ project_ID, periodName, companyCcy_code ],
+  UI.SelectionFields : [ projectCode, periodName, companyCcy_code ],
 
   /**
    * Worth, earned, spent, and what it is forecast to make. In that order

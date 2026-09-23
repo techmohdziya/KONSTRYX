@@ -19,7 +19,7 @@ annotate service.Variations with @(
     Description    : { $Type : 'UI.DataField', Value : title },
   },
 
-  UI.SelectionFields : [ status, origin, project_ID ],
+  UI.SelectionFields : [ status, origin, projectCode ],
 
   UI.DataPoint #Revenue : {
     $Type : 'UI.DataPointType',
@@ -279,3 +279,9 @@ annotate service.VariationLines with {
     }
   };
 };
+
+/** The project as a person names it, not as the service keys it. */
+annotate service.Variations with {
+  projectCode @title : 'Project';
+  projectName @title : 'Project name';
+}

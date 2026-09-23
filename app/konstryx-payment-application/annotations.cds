@@ -26,7 +26,7 @@ annotate service.PaymentApplications with @(
     Description    : { $Type : 'UI.DataField', Value : periodName },
   },
 
-  UI.SelectionFields : [ project_ID, status, periodName ],
+  UI.SelectionFields : [ projectCode, status, periodName ],
 
   /**
    * The worklist. Ordered as the claim moves: what we put in, what the
@@ -182,3 +182,9 @@ annotate service.CertAdjustments with @(
     { $Type : 'UI.DataField', Value : reasoning,   Label : 'Reasoning' },
   ],
 );
+
+/** The project as a person names it, not as the service keys it. */
+annotate service.PaymentApplications with {
+  projectCode @title : 'Project';
+  projectName @title : 'Project name';
+}

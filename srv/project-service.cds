@@ -307,6 +307,15 @@ service ProjectService @(path:'/project') {
    */
   @odata.draft.enabled
   entity Variations as projection on vo.VariationOrder {
+    /**
+     * The project as a person names it, beside the key the service joins on.
+     *
+     * A filter bar offering project_ID asks a quantity surveyor to recognise
+     * a UUID. The key still does the filtering; this is what the field shows
+     * and what the value help searches.
+     */
+    project.code as projectCode : String(24),
+    project.name as projectName : String(150),
     *,
     /**
      * The colours, computed here so no two screens disagree about what counts
@@ -474,7 +483,18 @@ service ProjectService @(path:'/project') {
    * The spend curve: what each period is expected to cost, and what it has.
    * Recomputed on read, from the phased budget and the signed cost.
    */
-  @readonly entity Cashflow as projection on ins.ProjectCashflow;
+  @readonly entity Cashflow as projection on ins.ProjectCashflow {
+    *,
+    /**
+     * The project as a person names it, beside the key the service joins on.
+     *
+     * A filter bar offering project_ID asks a quantity surveyor to recognise
+     * a UUID. The key still does the filtering; this is what the field shows
+     * and what the value help searches.
+     */
+    project.code as projectCode : String(24),
+    project.name as projectName : String(150),
+  };
 
   /**
    * Today's work front: the activities the job is standing on right now, who

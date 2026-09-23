@@ -25,6 +25,15 @@ service BillingService @(path:'/billing') {
   entity PaymentApplications as projection on bil.PaymentApplication {
     *,
     /**
+     * The project as a person names it, beside the key the service joins on.
+     *
+     * A filter bar offering project_ID asks a quantity surveyor to recognise
+     * a UUID. The key still does the filtering; this is what the field shows
+     * and what the value help searches.
+     */
+    project.code as projectCode : String(24),
+    project.name as projectName : String(150),
+    /**
      * The colours, on the service rather than in each screen's annotations.
      *
      * An application is red once it is past its due date and still uncertified
