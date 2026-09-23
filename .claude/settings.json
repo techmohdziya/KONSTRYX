@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Read(./**)",
+      "Edit(./**)",
       "Bash(cf logs *)",
       "Bash(cf apps)",
       "Bash(cf target)",

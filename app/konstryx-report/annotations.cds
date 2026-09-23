@@ -35,10 +35,10 @@ annotate service.PeriodReports with @(
   UI.LineItem : [
     { $Type : 'UI.DataField', Value : project.code,      Label : 'Project' },
     { $Type : 'UI.DataField', Value : periodName,        Label : 'Period' },
-    { $Type : 'UI.DataField', Value : adjustedValue,     Label : 'Worth' },
-    { $Type : 'UI.DataField', Value : earnedValue,       Label : 'Earned' },
-    { $Type : 'UI.DataField', Value : percentComplete,   Label : 'Complete %' },
-    { $Type : 'UI.DataField', Value : actualCost,        Label : 'Spent' },
+    { $Type : 'UI.DataField', Value : adjustedValue,     Label : 'Adjusted contract value' },
+    { $Type : 'UI.DataField', Value : earnedValue,       Label : 'Earned value' },
+    { $Type : 'UI.DataField', Value : percentComplete,   Label : 'Progress %' },
+    { $Type : 'UI.DataField', Value : actualCost,        Label : 'Actual cost' },
     { $Type : 'UI.DataField', Value : costVariance,      Label : 'Cost variance' },
     { $Type : 'UI.DataField', Value : cpi,               Label : 'CPI',
       Criticality : cpiCriticality },
@@ -57,7 +57,7 @@ annotate service.PeriodReports with @(
   UI.FieldGroup #Value : {
     $Type : 'UI.FieldGroupType',
     Data  : [
-      { $Type : 'UI.DataField', Value : contractValue, Label : 'Contract value' },
+      { $Type : 'UI.DataField', Value : contractValue, Label : 'Original contract value' },
       { $Type : 'UI.DataField', Value : variations,    Label : 'Variations' },
       { $Type : 'UI.DataField', Value : adjustedValue, Label : 'Adjusted value' },
       { $Type : 'UI.DataField', Value : companyCcy_code, Label : 'Currency' },
@@ -127,21 +127,21 @@ annotate service.PeriodReports with @(
   UI.FieldGroup #Caveats : {
     $Type : 'UI.FieldGroupType',
     Data  : [
-      { $Type : 'UI.DataField', Value : note, Label : 'Read this first' },
+      { $Type : 'UI.DataField', Value : note, Label : 'Project summary' },
       { $Type : 'UI.DataField', Value : takenAt, Label : 'Measured at' },
     ],
   },
 
   UI.Facets : [
-    { $Type : 'UI.ReferenceFacet', ID : 'Caveats', Label : 'Basis',
+    { $Type : 'UI.ReferenceFacet', ID : 'Caveats', Label : 'Project Summary',
       Target : '@UI.FieldGroup#Caveats' },
-    { $Type : 'UI.ReferenceFacet', ID : 'Value', Label : 'What it is worth',
+    { $Type : 'UI.ReferenceFacet', ID : 'Value', Label : 'Commercial',
       Target : '@UI.FieldGroup#Value' },
-    { $Type : 'UI.ReferenceFacet', ID : 'Earned', Label : 'Earned against spent',
+    { $Type : 'UI.ReferenceFacet', ID : 'Earned', Label : 'Earned Value Analysis',
       Target : '@UI.FieldGroup#Earned' },
-    { $Type : 'UI.ReferenceFacet', ID : 'Forecast', Label : 'Forecast',
+    { $Type : 'UI.ReferenceFacet', ID : 'Forecast', Label : 'Forecast at Completion',
       Target : '@UI.FieldGroup#Forecast' },
-    { $Type : 'UI.ReferenceFacet', ID : 'Group', Label : 'Group currency',
+    { $Type : 'UI.ReferenceFacet', ID : 'Group', Label : 'Group Reporting Currency',
       Target : '@UI.FieldGroup#Group' },
   ],
 );
@@ -171,7 +171,7 @@ annotate service.PeriodReports with {
   percentComplete   @title : 'Complete %';
   rateType          @title : 'Rate type';
   rateApplied       @title : 'Rate applied';
-  note              @title : 'Basis';
+  note              @title : 'Project summary';
   takenAt           @title : 'Measured at';
   marginCriticality @UI.Hidden;
   cpiCriticality    @UI.Hidden;

@@ -114,10 +114,15 @@
                       "title": "Overview",
                       "layout": {
                         "vizOrder": [
+                          "viz-konstryx-dashboard",
                           "viz-konstryx-project360"
                         ]
                       },
                       "viz": {
+                        "viz-konstryx-dashboard": {
+                          "id": "viz-konstryx-dashboard",
+                          "vizId": "viz-konstryx-dashboard"
+                        },
                         "viz-konstryx-project360": {
                           "id": "viz-konstryx-project360",
                           "vizId": "viz-konstryx-project360"
@@ -316,13 +321,18 @@
                       "title": "Certification",
                       "layout": {
                         "vizOrder": [
-                          "viz-konstryx-payment-certificate"
+                          "viz-konstryx-payment-certificate",
+                          "viz-konstryx-payment-application"
                         ]
                       },
                       "viz": {
                         "viz-konstryx-payment-certificate": {
                           "id": "viz-konstryx-payment-certificate",
                           "vizId": "viz-konstryx-payment-certificate"
+                        },
+                        "viz-konstryx-payment-application": {
+                          "id": "viz-konstryx-payment-application",
+                          "vizId": "viz-konstryx-payment-application"
                         }
                       }
                     },
@@ -332,6 +342,7 @@
                       "layout": {
                         "vizOrder": [
                           "viz-konstryx-report",
+                          "viz-konstryx-booklet",
                           "viz-konstryx-cashflow"
                         ]
                       },
@@ -339,6 +350,10 @@
                         "viz-konstryx-report": {
                           "id": "viz-konstryx-report",
                           "vizId": "viz-konstryx-report"
+                        },
+                        "viz-konstryx-booklet": {
+                          "id": "viz-konstryx-booklet",
+                          "vizId": "viz-konstryx-booklet"
                         },
                         "viz-konstryx-cashflow": {
                           "id": "viz-konstryx-cashflow",
@@ -542,6 +557,55 @@
               }
             },
             "applications": {
+              "konstryx.dashboard": {
+                "sap.app": {
+                  "id": "konstryx.dashboard",
+                  "title": "Project Controller Overview",
+                  "subTitle": "KPIs, curves and what needs a human",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "display": {
+                        "semanticObject": "KonstryxDashboard",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://business-objects-experience"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryx.dashboard"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-dashboard",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
               "konstryxproject360": {
                 "sap.app": {
                   "id": "konstryxproject360",
@@ -1522,6 +1586,55 @@
                   "service": "konstryx.app"
                 }
               },
+              "konstryxpaymentapplication": {
+                "sap.app": {
+                  "id": "konstryxpaymentapplication",
+                  "title": "Payment Applications",
+                  "subTitle": "Interim claims to the client and what was certified",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxPaymentApplication-display": {
+                        "semanticObject": "KonstryxPaymentApplication",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://money-bills"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxpaymentapplication"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-payment-application",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
               "konstryxreport": {
                 "sap.app": {
                   "id": "konstryxreport",
@@ -1563,6 +1676,55 @@
                 "sap.platform.runtime": {
                   "componentProperties": {
                     "url": "/konstryx-report",
+                    "manifest": false
+                  }
+                },
+                "sap.cloud": {
+                  "public": true,
+                  "service": "konstryx.app"
+                }
+              },
+              "konstryxbooklet": {
+                "sap.app": {
+                  "id": "konstryxbooklet",
+                  "title": "Project Financial Booklet",
+                  "subTitle": "Revenue, cost and margin by project and period",
+                  "applicationVersion": {
+                    "version": "1.0.0"
+                  },
+                  "crossNavigation": {
+                    "inbounds": {
+                      "KonstryxBooklet-display": {
+                        "semanticObject": "KonstryxBooklet",
+                        "action": "display",
+                        "signature": {
+                          "parameters": {},
+                          "additionalParameters": "allowed"
+                        }
+                      }
+                    }
+                  }
+                },
+                "sap.flp": {
+                  "type": "application"
+                },
+                "sap.ui": {
+                  "technology": "UI5",
+                  "icons": {
+                    "icon": "sap-icon://blank-tag"
+                  },
+                  "deviceTypes": {
+                    "desktop": true,
+                    "tablet": true,
+                    "phone": true
+                  }
+                },
+                "sap.ui5": {
+                  "componentName": "konstryxbooklet"
+                },
+                "sap.platform.runtime": {
+                  "componentProperties": {
+                    "url": "/konstryx-booklet",
                     "manifest": false
                   }
                 },
@@ -2700,6 +2862,37 @@
               }
             },
             "visualizations": {
+              "viz-konstryx-dashboard": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryx.dashboard",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Project Controller Overview",
+                    "subTitle": "KPIs, curves and what needs a human"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://business-objects-experience"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryx.dashboard",
+                      "inboundId": "display"
+                    },
+                    "numberUnit": "projects",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/ProjectOverviews/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
               "viz-konstryx-project360": {
                 "vizType": "sap.ushell.DynamicAppLauncher",
                 "businessApp": "konstryxproject360",
@@ -3320,6 +3513,37 @@
                   }
                 }
               },
+              "viz-konstryx-payment-application": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxpaymentapplication",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Payment Applications",
+                    "subTitle": "Interim claims to the client and what was certified"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://money-bills"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxpaymentapplication",
+                      "inboundId": "KonstryxPaymentApplication-display"
+                    },
+                    "numberUnit": "client claims",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/billing/PaymentApplications/$count?$filter=IsActiveEntity eq true",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
               "viz-konstryx-report": {
                 "vizType": "sap.ushell.DynamicAppLauncher",
                 "businessApp": "konstryxreport",
@@ -3346,6 +3570,37 @@
                     "numberUnit": "periods",
                     "indicatorDataSource": {
                       "path": "/odata/v4/project/PeriodReports/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-booklet": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryxbooklet",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Project Financial Booklet",
+                    "subTitle": "Revenue, cost and margin by project and period"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://blank-tag"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "appId": "konstryxbooklet",
+                      "inboundId": "KonstryxBooklet-display"
+                    },
+                    "numberUnit": "projects",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/Booklet/$count",
                       "refresh": 120
                     }
                   }
@@ -4173,6 +4428,19 @@
       "adapter": {
         "config": {
           "inbounds": {
+            "konstryx.dashboard-display": {
+              "semanticObject": "KonstryxDashboard",
+              "action": "display",
+              "title": "Project Controller Overview",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "URL",
+                "url": "/konstryx-dashboard/"
+              }
+            },
             "konstryxproject360-KonstryxProject360-display": {
               "semanticObject": "KonstryxProject360",
               "action": "display",
@@ -4453,6 +4721,20 @@
                 "url": "/konstryx-payment-certificate"
               }
             },
+            "konstryxpaymentapplication-KonstryxPaymentApplication-display": {
+              "semanticObject": "KonstryxPaymentApplication",
+              "action": "display",
+              "title": "Payment Applications",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxpaymentapplication",
+                "url": "/konstryx-payment-application"
+              }
+            },
             "konstryxreport-KonstryxReport-display": {
               "semanticObject": "KonstryxReport",
               "action": "display",
@@ -4465,6 +4747,20 @@
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=konstryxreport",
                 "url": "/konstryx-report"
+              }
+            },
+            "konstryxbooklet-KonstryxBooklet-display": {
+              "semanticObject": "KonstryxBooklet",
+              "action": "display",
+              "title": "Project Financial Booklet",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=konstryxbooklet",
+                "url": "/konstryx-booklet"
               }
             },
             "konstryxcashflow-KonstryxCashflow-display": {

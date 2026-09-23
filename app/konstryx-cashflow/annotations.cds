@@ -31,16 +31,45 @@ annotate service.Cashflow with @(
    * and the question a cashflow is opened for is "are we ahead or behind",
    * which only the running total answers.
    */
+  /**
+   * The two curves as aggregated measures.
+   *
+   * A chart measure is a total the service computes, not a column the table
+   * happens to show, so each one names the property it sums and how.
+   */
+  Analytics.AggregatedProperty #plannedCurve : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'plannedCurve',
+    AggregatableProperty : plannedOutCum,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Planned, cumulative',
+  },
+  Analytics.AggregatedProperty #actualCurve : {
+    $Type                : 'Analytics.AggregatedPropertyType',
+    Name                 : 'actualCurve',
+    AggregatableProperty : actualOutCum,
+    AggregationMethod    : 'sum',
+    @Common.Label        : 'Actual, cumulative',
+  },
+
+  /**
+   * Planned and actual as two lines over the same axis, cumulative rather
+   * than per period: a monthly bar chart of spend answers "was March busy",
+   * and the question a cashflow is opened for is "are we ahead or behind",
+   * which only the running total answers.
+   */
   UI.Chart #Curve : {
     $Type               : 'UI.ChartDefinitionType',
+    Title               : 'Planned against actual, cumulative',
     ChartType           : #Line,
     Dimensions          : [ periodName ],
-    Measures            : [ plannedOutCum, actualOutCum ],
-    MeasureAttributes   : [
-      { $Type : 'UI.ChartMeasureAttributeType', Measure : plannedOutCum,
-        Role : #Axis1 },
-      { $Type : 'UI.ChartMeasureAttributeType', Measure : actualOutCum,
-        Role : #Axis1 },
+    DimensionAttributes : [
+      { $Type : 'UI.ChartDimensionAttributeType', Dimension : periodName,
+        Role : #Category },
+    ],
+    DynamicMeasures     : [
+      '@Analytics.AggregatedProperty#plannedCurve',
+      '@Analytics.AggregatedProperty#actualCurve',
     ],
   },
 
@@ -53,7 +82,7 @@ annotate service.Cashflow with @(
   },
 
   UI.LineItem : [
-    { $Type : 'UI.DataField', Value : project.code,   Label : 'Project' },
+    { $Type : 'UI.DataField', Value : projectCode,    Label : 'Project' },
     { $Type : 'UI.DataField', Value : periodName,     Label : 'Period' },
     { $Type : 'UI.DataField', Value : plannedOut,     Label : 'Planned' },
     { $Type : 'UI.DataField', Value : actualOut,      Label : 'Actual' },

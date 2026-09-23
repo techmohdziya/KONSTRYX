@@ -54,6 +54,14 @@ LOCAL_OUT = os.path.join(APP_DIR, "launchpad", "webapp", "appconfig")
 LAYOUT = [
     ("konstryx-planning", "Planning", "sap-icon://blueprint",
      "The project, what it is worth, and what it may spend", [
+         ("Overview", {"id": "konstryx.dashboard",
+                       "app": "konstryx-dashboard",
+                       "semanticObject": "KonstryxDashboard",
+                       "action": "display",
+                       "title": "Project Controller Overview",
+                       "subTitle": "KPIs, curves and what needs a human",
+                       "icon": "sap-icon://business-objects-experience"},
+          "/odata/v4/project/ProjectOverviews/$count", "projects"),
          ("Overview", "konstryx-project360",
           "/odata/v4/project/ProjectOverviews/$count", "projects"),
          ("Set up", "konstryx-project",
@@ -115,8 +123,13 @@ LAYOUT = [
           "variations"),
          ("Certification", "konstryx-payment-certificate",
           "/odata/v4/subcontract/PaymentCertificates/$count", "certificates"),
+         ("Certification", "konstryx-payment-application",
+          "/odata/v4/billing/PaymentApplications/$count?$filter=IsActiveEntity eq true",
+          "client claims"),
          ("Reports", "konstryx-report",
           "/odata/v4/project/PeriodReports/$count", "periods"),
+         ("Reports", "konstryx-booklet",
+          "/odata/v4/project/Booklet/$count", "projects"),
          ("Reports", "konstryx-cashflow",
           "/odata/v4/project/Cashflow/$count", "periods"),
      ]),
@@ -216,9 +229,26 @@ def build():
         sections, section_order = {}, []
 
         for section_title, app, count_url, unit in entries:
-            app_manifest = manifest(app)
-            app_id = app_manifest["sap.app"]["id"]
-            inbound_key, inbound = inbound_of(app_manifest, app)
+            # A page rather than a component: the overview dashboard is plain
+            # HTML driving integration cards, so there is no manifest to read
+            # an intent from and no Component for the launchpad to load. It is
+            # declared here instead and resolved as a URL, which is what the
+            # launchpad does for anything it cannot instantiate itself.
+            is_url_app = isinstance(app, dict)
+            if is_url_app:
+                spec = app
+                app = spec["app"]
+                app_id = spec["id"]
+                inbound_key = spec["action"]
+                inbound = {"semanticObject": spec["semanticObject"],
+                           "action": spec["action"],
+                           "title": spec["title"],
+                           "subTitle": spec.get("subTitle", ""),
+                           "icon": spec.get("icon", "")}
+            else:
+                app_manifest = manifest(app)
+                app_id = app_manifest["sap.app"]["id"]
+                inbound_key, inbound = inbound_of(app_manifest, app)
             viz_id = "viz-" + app
             section_id = section_title.lower().replace(" ", "-")
 
@@ -293,11 +323,14 @@ def build():
                 "signature": inbound.get(
                     "signature",
                     {"parameters": {}, "additionalParameters": "allowed"}),
-                "resolutionResult": {
+                "resolutionResult": ({
+                    "applicationType": "URL",
+                    "url": "/" + app + "/",
+                } if is_url_app else {
                     "applicationType": "SAPUI5",
                     "additionalInformation": "SAPUI5.Component=" + app_id,
                     "url": "/" + app,
-                },
+                }),
             }
 
         pages[page_id] = {

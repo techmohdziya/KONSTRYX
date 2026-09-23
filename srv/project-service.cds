@@ -483,6 +483,26 @@ service ProjectService @(path:'/project') {
    * The spend curve: what each period is expected to cost, and what it has.
    * Recomputed on read, from the phased budget and the signed cost.
    */
+  /**
+   * Aggregation, declared, because the cashflow screen draws a curve.
+   *
+   * Fiori Elements does not plot client side - it asks the service to group
+   * and total, and refuses to draw at all unless the service has said which
+   * properties it may group by and which it may add up. The chart was
+   * annotated and the entity was not, so the page failed to build its filter
+   * bar and came up blank.
+   */
+  @Aggregation.ApplySupported : {
+    $Type : 'Aggregation.ApplySupportedType',
+    AggregatableProperties : [
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : plannedOut },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : actualOut },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : plannedOutCum },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : actualOutCum },
+      { $Type : 'Aggregation.AggregatablePropertyType', Property : variance },
+    ],
+    GroupableProperties : [ periodName, projectCode, projectName, startDate ],
+  }
   @readonly entity Cashflow as projection on ins.ProjectCashflow {
     *,
     /**
