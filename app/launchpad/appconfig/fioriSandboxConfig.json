@@ -292,7 +292,8 @@
                         "vizOrder": [
                           "viz-konstryx-report",
                           "viz-konstryx-booklet",
-                          "viz-konstryx-cashflow"
+                          "viz-konstryx-cashflow",
+                          "viz-konstryx-cashflow-model"
                         ]
                       },
                       "viz": {
@@ -307,6 +308,10 @@
                         "viz-konstryx-cashflow": {
                           "id": "viz-konstryx-cashflow",
                           "vizId": "viz-konstryx-cashflow"
+                        },
+                        "viz-konstryx-cashflow-model": {
+                          "id": "viz-konstryx-cashflow-model",
+                          "vizId": "viz-konstryx-cashflow-model"
                         }
                       }
                     }
@@ -1637,7 +1642,7 @@
                 "sap.app": {
                   "id": "konstryxcashflow",
                   "title": "Project Cashflow",
-                  "subTitle": "Planned spend against actual, per period",
+                  "subTitle": "Cash in, cash out and the running position",
                   "applicationVersion": {
                     "version": "1.0.0"
                   },
@@ -3512,7 +3517,7 @@
                 "vizConfig": {
                   "sap.app": {
                     "title": "Project Cashflow",
-                    "subTitle": "Planned spend against actual, per period"
+                    "subTitle": "Cash in, cash out and the running position"
                   },
                   "sap.ui": {
                     "icons": {
@@ -3532,6 +3537,37 @@
                     "numberUnit": "periods",
                     "indicatorDataSource": {
                       "path": "/odata/v4/project/Cashflow/$count",
+                      "refresh": 120
+                    }
+                  }
+                }
+              },
+              "viz-konstryx-cashflow-model": {
+                "vizType": "sap.ushell.DynamicAppLauncher",
+                "businessApp": "konstryx.cashflowmodel",
+                "vizConfig": {
+                  "sap.app": {
+                    "title": "Cashflow Model",
+                    "subTitle": "What the job has to fund, on chosen terms"
+                  },
+                  "sap.ui": {
+                    "icons": {
+                      "icon": "sap-icon://simulate"
+                    },
+                    "deviceTypes": {
+                      "desktop": true,
+                      "tablet": true,
+                      "phone": true
+                    }
+                  },
+                  "sap.flp": {
+                    "target": {
+                      "type": "URL",
+                      "url": "/konstryx-cashflow-model/webapp/index.html"
+                    },
+                    "numberUnit": "projects",
+                    "indicatorDataSource": {
+                      "path": "/odata/v4/project/ProjectOverviews/$count",
                       "refresh": 120
                     }
                   }

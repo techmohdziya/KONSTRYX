@@ -137,6 +137,17 @@ LAYOUT = [
           "/odata/v4/project/Booklet/$count", "projects"),
          ("Reports", "konstryx-cashflow",
           "/odata/v4/project/Cashflow/$count", "periods"),
+         # A page, like the overview dashboard: three assumptions the reader
+         # moves, and a position that redraws under them. There is no
+         # component to load, so it resolves as a URL.
+         ("Reports", {"id": "konstryx.cashflowmodel",
+                      "app": "konstryx-cashflow-model",
+                      "semanticObject": "KonstryxCashflowModel",
+                      "action": "display",
+                      "title": "Cashflow Model",
+                      "subTitle": "What the job has to fund, on chosen terms",
+                      "icon": "sap-icon://simulate"},
+          "/odata/v4/project/ProjectOverviews/$count", "projects"),
      ]),
     ("konstryx-master", "Master Data", "sap-icon://course-book",
      "The catalogues every document draws on", [

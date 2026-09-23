@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>KONSTRYX — Cashflow Model</title>
+
+	<!--
+		What the job has to fund, under terms somebody chooses.
+
+		The Project Cashflow app reports what happened: work valued on the
+		period it was measured, cash on the period it arrived, and the running
+		position through both. This page asks the other question - what would
+		the position look like on different terms - and that is a different
+		kind of screen. A report has one answer; this one has an answer per
+		set of assumptions, and the assumptions belong to the reader.
+
+		Freestyle rather than Fiori Elements, and not because the framework is
+		short of features. A Fiori Elements list report binds its table and
+		chart to what the service returns; there is no place in it for three
+		controls that change the numbers before they are drawn. The modelling
+		happens here, in the browser, over the facts the service supplies:
+		what each period valued, what it cost, and what retention was held.
+		Nothing below invents a figure - it moves the ones that exist onto
+		different dates and recovers an advance against them.
+
+		Read-only in every direction. Moving a slider changes this reader's
+		picture and nothing else: no assumption here is written back, because
+		a forecast somebody tried out over lunch must never become the
+		forecast the project is managed against.
+	-->
+	<script
+		id="sap-ui-bootstrap"
+		src="https://ui5.sap.com/1.150.0/resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_horizon"
+		data-sap-ui-libs="sap.m,sap.f,sap.viz,sap.ui.layout,sap.ui.integration"
+		data-sap-ui-compat-version="edge"
+		data-sap-ui-async="true"
+		data-sap-ui-frame-options="trusted">
+	</script>
+
+	<style>
+		html, body { height: 100%; margin: 0; }
+		.kxModel   { padding: 0.5rem 1rem 1.5rem 1rem; }
+		.kxTiles   { padding: 0 0 0.75rem 0; }
+		.kxChart   { height: 26rem; width: 100%; }
+		.kxNote    { padding: 0.5rem 0 0 0; }
+		/* Room for a label above each control, and air between them. */
+		.kxAssumptions { padding: 0.75rem 0 0.25rem 0; }
+		.kxControl     { padding: 0 3rem 0.5rem 0; }
+	</style>
+
+	<script>
+		sap.ui.getCore().attachInit(function () {
+			sap.ui.require([
+				"sap/f/DynamicPage", "sap/f/DynamicPageTitle", "sap/f/DynamicPageHeader",
+				"sap/m/App", "sap/m/Title", "sap/m/Label", "sap/m/Input", "sap/m/Slider",
+				"sap/m/Select", "sap/m/Button", "sap/m/Toolbar",
+				"sap/m/ToolbarSpacer", "sap/m/Text", "sap/m/SelectDialog",
+				"sap/m/StandardListItem", "sap/m/GenericTile", "sap/m/NumericContent",
+				"sap/m/TileContent", "sap/m/HBox", "sap/m/VBox", "sap/m/Panel",
+				"sap/ui/core/Item", "sap/ui/integration/widgets/Card",
+				"sap/ui/layout/VerticalLayout", "sap/ui/model/json/JSONModel",
+				"sap/ui/model/Filter", "sap/ui/model/FilterOperator",
+				"sap/viz/ui5/controls/VizFrame", "sap/viz/ui5/controls/common/feeds/FeedItem",
+				"sap/viz/ui5/data/FlattenedDataset"
+			], function (DynamicPage, DynamicPageTitle, DynamicPageHeader,
+					App, Title, Label, Input, Slider, Select, Button, Toolbar,
+					ToolbarSpacer, Text, SelectDialog, StandardListItem, GenericTile,
+					NumericContent, TileContent, HBox, VBox, Panel, Item, Card,
+					VerticalLayout, JSONModel, Filter, FilterOperator,
+					VizFrame, FeedItem, FlattenedDataset) {
+
+				var DAY = 86400000;
+
+				function esc(s) { return String(s).replace(/'/g, "''"); }
+				function num(v) {
+					// Two decimals everywhere. A cashflow read to the nearest
+					// million hides exactly the amount a reader is deciding
+					// whether they can cover.
+					return (v === null || v === undefined || isNaN(v)) ? "—"
+						: Number(v).toLocaleString("en-US",
+							{ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				}
+				function short(v) {
+					// Millions, to two decimals. A KPI tile truncates what it
+					// cannot fit, and thousands put "1,426.40" into a control
+					// that showed "1,42" - a number that is not wrong so much
+					// as unreadable, which on a funding figure is worse. The
+					// unit beneath says which scale it is.
+					return (v === null || v === undefined || isNaN(v)) ? "—"
+						: (Number(v) / 1000000).toLocaleString("en-US",
+							{ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+				}
+
+				// ------------------------------------------------- the state
+				var oRows      = [];      // what the service said, untouched
+				var sCurrency  = "AED";
+				var fContract  = 0;
+				var oChartModel = new JSONModel({ rows: [] });
+				var oProjectModel = new JSONModel({ rows: [] });
+
+				/*
+					The model.
+
+					Three assumptions move three things, and each one moves
+					money that already exists rather than creating any:
+
+					advance      a percentage of the contract, received in the
+					             first period of activity and recovered against
+					             every later valuation pro rata, so it is fully
+					             repaid by the end. It does not change what the
+					             job earns; it changes when.
+					clientDays   how long after a period ends its certificate
+					             is paid. The receipt moves to the period that
+					             date falls in.
+					subDays      how long after a cost is incurred it is paid.
+					             The seeded packages are on thirty-day terms,
+					             so this shifts them by the difference.
+
+					Retention is held at the rate each period's claim states
+					and released at the end - which is why the closing position
+					is the margin and not the margin less retention.
+				*/
+				var BASE_SUB_DAYS = 30;
+
+				var sReleasePeriod = "";
+
+				function model(iAdvancePct, iClientDays, iSubDays) {
+					var i, r;
+					sReleasePeriod = "";
+					var aOut = oRows.map(function (row) {
+						return {
+							period:  row.periodName,
+							start:   row.startDate ? new Date(row.startDate + "T00:00:00Z") : null,
+							end:     row.endDate   ? new Date(row.endDate   + "T00:00:00Z") : null,
+							valued:  Number(row.billedGross || 0),
+							retPct:  Number(row.retentionPct || 10),
+							cost:    Number(row.actualOut || 0),
+							cashIn:  0, cashOut: 0, advIn: 0, advRec: 0,
+							retHeld: 0, retOut: 0, net: 0, position: 0
+						};
+					});
+					if (!aOut.length) { return aOut; }
+
+					var fValuedTotal = aOut.reduce(function (n, x) { return n + x.valued; }, 0);
+					var fAdvance = fContract * (iAdvancePct / 100);
+
+					// Which period a date lands in. Past the end of the
+					// calendar it lands in the last period we have, so money
+					// due after the final row is still counted rather than
+					// quietly dropped - a closing position that omits the last
+					// certificate is the one number on this page that would be
+					// wrong without looking wrong.
+					function indexOn(dWhen) {
+						if (!dWhen) { return -1; }
+						for (var k = 0; k < aOut.length; k++) {
+							if (aOut[k].start && aOut[k].end
+									&& dWhen >= aOut[k].start && dWhen <= aOut[k].end) {
+								return k;
+							}
+						}
+						return dWhen > aOut[aOut.length - 1].end ? aOut.length - 1 : 0;
+					}
+
+					var iFirst = -1;
+					for (i = 0; i < aOut.length; i++) {
+						if (aOut[i].valued > 0 || aOut[i].cost > 0) { iFirst = i; break; }
+					}
+					if (iFirst >= 0 && fAdvance > 0) {
+						aOut[iFirst].advIn = fAdvance;
+						aOut[iFirst].cashIn += fAdvance;
+					}
+
+					var fRetentionTotal = 0;
+					for (i = 0; i < aOut.length; i++) {
+						r = aOut[i];
+						if (r.valued > 0) {
+							r.retHeld = r.valued * r.retPct / 100;
+							fRetentionTotal += r.retHeld;
+							r.advRec = fValuedTotal > 0
+								? fAdvance * (r.valued / fValuedTotal) : 0;
+							var fNet = r.valued - r.retHeld - r.advRec;
+							var iLand = indexOn(new Date(r.end.getTime() + iClientDays * DAY));
+							if (iLand >= 0) { aOut[iLand].cashIn += fNet; }
+						}
+						if (r.cost > 0) {
+							var iPaid = indexOn(new Date(r.end.getTime()
+								+ (iSubDays - BASE_SUB_DAYS) * DAY));
+							if (iPaid >= 0) { aOut[iPaid].cashOut += r.cost; }
+						}
+					}
+
+					// Retention comes back at the end. Released in the last
+					// period of the series rather than on a defects date
+					// nobody has recorded, and the note under the chart says
+					// which it is - an assumed release shown without saying so
+					// would flatter the closing position.
+					var iLast = -1;
+					for (i = aOut.length - 1; i >= 0; i--) {
+						if (aOut[i].valued > 0 || aOut[i].cost > 0) { iLast = i; break; }
+					}
+					if (fRetentionTotal > 0 && iLast >= 0) {
+						aOut[iLast].retOut = fRetentionTotal;
+						aOut[iLast].cashIn += fRetentionTotal;
+						sReleasePeriod = aOut[iLast].period;
+					}
+
+					var fPos = 0;
+					for (i = 0; i < aOut.length; i++) {
+						r = aOut[i];
+						r.net = r.cashIn - r.cashOut;
+						fPos += r.net;
+						r.position = fPos;
+						r.cashOutSigned = -r.cashOut;
+					}
+
+					// The job, not the calendar. Periods before the first
+					// movement and after the last are flat runs of zero that
+					// squeeze eighteen months of a curve into a third of the
+					// axis, and a reader learns nothing from either end.
+					var iFrom = 0, iTo = aOut.length - 1;
+					while (iFrom < aOut.length && aOut[iFrom].cashIn === 0
+							&& aOut[iFrom].cashOut === 0 && aOut[iFrom].valued === 0) {
+						iFrom++;
+					}
+					while (iTo > iFrom && aOut[iTo].cashIn === 0
+							&& aOut[iTo].cashOut === 0) {
+						iTo--;
+					}
+					return aOut.slice(iFrom, iTo + 1);
+				}
+
+				/*
+					Three figures a contractor asks of a cashflow, and they are
+					not the same figure written three ways.
+
+					deficit  how far below zero the position goes. Money that
+					         has to come from somewhere outside the job.
+					capital  the largest fall from a running high to the next
+					         low. A job can need six million on hand having
+					         never once gone below zero, and that six million
+					         still has to be found.
+					margin   where the position closes, once retention is back.
+				*/
+				function kpis(aRows) {
+					var fDeficit = 0, fPeak = -Infinity, fDrawdown = 0, sWorst = "";
+					aRows.forEach(function (r) {
+						if (r.position < fDeficit) { fDeficit = r.position; sWorst = r.period; }
+						if (r.position > fPeak) { fPeak = r.position; }
+						var fFall = fPeak - r.position;
+						if (fFall > fDrawdown) { fDrawdown = fFall; }
+					});
+					return {
+						deficit: Math.abs(fDeficit),
+						capital: fDrawdown,
+						margin:  aRows.length ? aRows[aRows.length - 1].position : 0,
+						worstPeriod: sWorst || "never below zero"
+					};
+				}
+
+				function redraw() {
+					var a = model(oAdvance.getValue(), oTerms.getValue(),
+						parseInt(oSubTerms.getSelectedKey(), 10));
+					oChartModel.setData({ rows: a });
+					var k = kpis(a);
+
+					/*
+						The targets, and why each one is the right comparison.
+
+						deficit  target nil. A job that funds itself needs no
+						         facility, and the deviation is the deficit as
+						         a share of the contract - which is the number
+						         a finance director actually asks for.
+						capital  target nil for the same reason, deviated
+						         against the contract.
+						margin   target the margin the job was tendered at.
+						         Contract less the cost it has booked and still
+						         expects is not knowable here, so the target is
+						         the contract's own value of the work billed,
+						         and the deviation says how far the cash
+						         position sits from it.
+					*/
+					var fContractM = fContract / 1000000;
+					function pct(v, of) {
+						return of ? (v / of * 100).toLocaleString("en-US",
+							{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
+					}
+
+					oCardDeficit.setManifest(cardManifest({
+						id: "deficit", rows: a,
+						title: "Max financing deficit",
+						subTitle: "Deepest point below zero",
+						value: short(k.deficit), state: k.deficit > 0 ? "Error" : "Good",
+						details: "Worst in " + k.worstPeriod,
+						target: "0.00", deviation: pct(k.deficit, fContract),
+						chartType: "Line", measure: "position", measureName: "Position"
+					}));
+					oCardCapital.setManifest(cardManifest({
+						id: "capital", rows: a,
+						title: "Peak capital required",
+						subTitle: "Largest fall from a running high",
+						value: short(k.capital), state: "Critical",
+						details: "Cash that must be on hand at once",
+						target: "0.00", deviation: pct(k.capital, fContract),
+						// StackedColumn rather than Column: the card's plain column
+						// chart threw on an axis it had not built, and stacked
+						// column draws one series identically. Both are in the
+						// design system's list of supported types.
+						chartType: "StackedColumn", measure: "net", measureName: "Net movement"
+					}));
+					oCardMargin.setManifest(cardManifest({
+						id: "margin", rows: a,
+						title: "Project net margin",
+						subTitle: "Closing cash position",
+						value: short(k.margin), state: k.margin >= 0 ? "Good" : "Error",
+						details: "After retention is released",
+						target: fContractM.toLocaleString("en-US",
+							{ minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+						deviation: pct(k.margin, fContract),
+						chartType: "Line", measure: "position", measureName: "Position"
+					}));
+
+					oAdvanceLabel.setText(oAdvance.getValue() + " %");
+					oTermsLabel.setText(oTerms.getValue() + " days");
+					oNote.setText(a.length
+						? "Retention of " + num(a.reduce(function (n, x) {
+								return n + x.retHeld; }, 0))
+							+ " " + sCurrency + " is shown released in "
+							+ (sReleasePeriod || "the final period")
+							+ ", the last period with activity. No defects date"
+							+ " is recorded, so that is an assumption rather"
+							+ " than a certificate. Terms move a payment into"
+							+ " the period its date falls in, and the periods"
+							+ " here are months, so a change of less than a"
+							+ " month often leaves a payment where it was."
+						: "No periods to model for this project.");
+				}
+
+				// ---------------------------------------------- the controls
+				var oAdvanceLabel = new Text({ text: "10 %" });
+				var oTermsLabel   = new Text({ text: "60 days" });
+
+				var oAdvance = new Slider({
+					width: "12rem", min: 0, max: 25, step: 1, value: 10,
+					liveChange: redraw
+				});
+				var oTerms = new Slider({
+					width: "12rem", min: 0, max: 120, step: 15, value: 60,
+					liveChange: redraw
+				});
+				var oSubTerms = new Select({
+					width: "10rem",
+					items: [
+						new Item({ key: "14", text: "14 days net" }),
+						new Item({ key: "30", text: "30 days net" }),
+						new Item({ key: "45", text: "45 days net" }),
+						new Item({ key: "60", text: "60 days net" })
+					],
+					selectedKey: "30",
+					change: redraw
+				});
+
+				/*
+					An HBox, not a Toolbar.
+
+					sap.m.Toolbar lays its content out in one row of fixed
+					height. A label stacked over a slider is taller than that
+					row, so all three captions were clipped and ran up behind
+					the filter bar above them. A toolbar is for a row of
+					controls; this is three labelled fields, and it needs a
+					container that grows to what it holds.
+				*/
+				function control(sTitle, oField, oValue) {
+					var oBox = new VBox({ items: [
+						new Label({ text: sTitle }),
+						new HBox({ alignItems: "Center", items: [ oField, oValue ] })
+					]});
+					oBox.addStyleClass("kxControl");
+					return oBox;
+				}
+
+				var oAssumptions = new HBox({
+					renderType: "Bare", wrap: "Wrap", alignItems: "End",
+					items: [
+						control("Mobilisation advance", oAdvance, oAdvanceLabel),
+						control("Client payment terms", oTerms, oTermsLabel),
+						control("Subcontractor terms", oSubTerms, new Text({ text: "" }))
+					]
+				});
+				oAssumptions.addStyleClass("kxAssumptions");
+
+				// -------------------------------------------------- the KPIs
+				/*
+					Analytical cards with a KPI header, following the Fiori
+					design system: title, a subtitle carrying the unit, the
+					value in a semantic colour, the sorting information that
+					says what the value is of, and a target and a deviation -
+					both of which the specification makes mandatory, and for
+					a good reason. A funding figure with nothing to measure it
+					against is a number a reader cannot act on. Each one says
+					what it is measured against and by how much it misses.
+
+					Fed from this page rather than from a request, because
+					these figures do not exist in the service: they are what
+					the model makes of the service's rows under the reader's
+					own assumptions, and they change without a round trip.
+				*/
+				function kpiCard(sId) {
+					return new Card({ width: "22rem", height: "18rem" })
+						.addStyleClass("sapUiTinyMargin").data("kx", sId);
+				}
+				var oCardDeficit = kpiCard("deficit");
+				var oCardCapital = kpiCard("capital");
+				var oCardMargin  = kpiCard("margin");
+
+				function cardManifest(o) {
+					return {
+						"sap.app": { id: "konstryx.cfm." + o.id, type: "card",
+							applicationVersion: { version: "1.0.0" } },
+						"sap.card": {
+							type: "Analytical",
+							data: { json: { rows: o.rows } },
+							header: {
+								type: "Numeric",
+								title: o.title,
+								subTitle: o.subTitle + ", " + sCurrency + " million",
+								unitOfMeasurement: sCurrency + " million",
+								mainIndicator: {
+									number: o.value, unit: sCurrency + "m", state: o.state
+								},
+								details: o.details,
+								sideIndicators: [
+									{ title: "Target",    number: o.target,    unit: sCurrency + "m" },
+									{ title: "Deviation", number: o.deviation, unit: "%" }
+								]
+							},
+							content: {
+								chartType: o.chartType,
+								data: { path: "/rows" },
+								dimensions: [ { name: "Period", value: "{period}" } ],
+								measures:   [ { name: o.measureName, value: "{" + o.measure + "}" } ],
+								feeds: [
+									{ uid: "valueAxis",    type: "Measure",   values: [ o.measureName ] },
+									{ uid: "categoryAxis", type: "Dimension", values: [ "Period" ] }
+								],
+								// No chartProperties. Setting valueAxis here
+								// reached into a plot area the card had not
+								// built yet and threw on null; the card's own
+								// defaults already draw a legend-free chart at
+								// this size.
+								chartProperties: {
+									legend: { visible: false },
+									title: { visible: false }
+								}
+							}
+						}
+					};
+				}
+
+				var oTiles = new HBox({ renderType: "Bare", wrap: "Wrap",
+					items: [ oCardDeficit, oCardCapital, oCardMargin ] });
+				oTiles.addStyleClass("kxTiles");
+
+				// ------------------------------------------------- the chart
+				/*
+					Cash in above the axis, cash out below it, the position
+					drawn through both on its own scale. Dual axis because a
+					running position and a monthly movement are different
+					orders of magnitude, and on one scale the movements flatten
+					into a line along the bottom.
+				*/
+				var oViz = new VizFrame({
+					uiConfig: { applicationSet: "fiori" },
+					vizType: "dual_combination",
+					height: "24rem", width: "100%",
+					vizProperties: {
+						title: { visible: false },
+						legend: { visible: true },
+						plotArea: { dataLabel: { visible: false } },
+						valueAxis:  { title: { text: "Cash movement" } },
+						valueAxis2: { title: { text: "Running position" } },
+						categoryAxis: { title: { visible: false } }
+					}
+				});
+				oViz.setModel(oChartModel);
+				oViz.setDataset(new FlattenedDataset({
+					dimensions: [ { name: "Period", value: "{period}" } ],
+					measures: [
+						{ name: "Cash in",  value: "{cashIn}" },
+						{ name: "Cash out", value: "{cashOutSigned}" },
+						{ name: "Position", value: "{position}" }
+					],
+					data: { path: "/rows" }
+				}));
+				oViz.addFeed(new FeedItem({ uid: "valueAxis", type: "Measure",
+					values: [ "Cash in", "Cash out" ] }));
+				oViz.addFeed(new FeedItem({ uid: "valueAxis2", type: "Measure",
+					values: [ "Position" ] }));
+				oViz.addFeed(new FeedItem({ uid: "categoryAxis", type: "Dimension",
+					values: [ "Period" ] }));
+				oViz.addStyleClass("kxChart");
+
+				var oNote = new Text({ text: "" });
+				oNote.addStyleClass("kxNote");
+
+				// ------------------------------------------------ the filter
+				/*
+					One project at a time, and no "all projects" option.
+					A cashflow modelled across a portfolio would net one job's
+					surplus against another's deficit and report that nothing
+					needs funding, which is the opposite of true.
+				*/
+				var oProject = new Input({
+					width: "20rem", showValueHelp: true, valueHelpOnly: true,
+					placeholder: "Select a project",
+					valueHelpRequest: function () { oProjectVH.open(); }
+				});
+
+				var oProjectVH = new SelectDialog({
+					title: "Select project", growing: false, rememberSelections: true,
+					search: function (e) { filterList(e); },
+					liveChange: function (e) { filterList(e); },
+					confirm: function (e) {
+						var oItem = e.getParameter("selectedItem");
+						if (!oItem) { return; }
+						oProject.setValue(oItem.getDescription());
+						oProject.data("key", oItem.getTitle());
+						load(oItem.getTitle());
+					}
+				});
+				function filterList(e) {
+					var v = e.getParameter("value") || "";
+					e.getSource().getBinding("items").filter(v ? new Filter({
+						filters: [ new Filter("code", FilterOperator.Contains, v),
+						           new Filter("name", FilterOperator.Contains, v) ],
+						and: false
+					}) : []);
+				}
+				oProjectVH.setModel(oProjectModel);
+				oProjectVH.bindAggregation("items", {
+					path: "/rows",
+					template: new StandardListItem({ title: "{code}", description: "{name}" })
+				});
+
+				// ------------------------------------------------- the data
+				function load(sCode) {
+					var sUrl = "/odata/v4/project/Cashflow"
+						+ "?$filter=projectCode eq '" + esc(sCode) + "'"
+						+ "&$orderby=startDate"
+						+ "&$select=periodName,startDate,endDate,billedGross,retentionPct,"
+						+ "actualOut,ccy_code";
+					Promise.all([
+						fetch(sUrl, { credentials: "same-origin" })
+							.then(function (r) { return r.json(); }),
+						fetch("/odata/v4/project/ProjectOverviews?$select=code,contractValue,ccy_code"
+							+ "&$filter=code eq '" + esc(sCode) + "'",
+							{ credentials: "same-origin" })
+							.then(function (r) { return r.json(); })
+					]).then(function (a) {
+						oRows = (a[0].value || []);
+						var p = (a[1].value || [])[0] || {};
+						fContract = Number(p.contractValue || 0);
+						sCurrency = p.ccy_code || oRows[0] && oRows[0].ccy_code || "AED";
+						// The terms the data already shows, so the page opens on
+						// what is happening before anyone moves a slider.
+						redraw();
+					}).catch(function () {
+						oRows = [];
+						redraw();
+					});
+				}
+
+				fetch("/odata/v4/project/ProjectOverviews?$select=code,name&$orderby=code",
+						{ credentials: "same-origin" })
+					.then(function (r) { return r.json(); })
+					.then(function (d) {
+						var aRows = d.value || [];
+						oProjectModel.setData({ rows: aRows });
+						if (aRows.length) {
+							oProject.setValue(aRows[0].name);
+							oProject.data("key", aRows[0].code);
+							load(aRows[0].code);
+						}
+					})
+					.catch(function () { redraw(); });
+
+				// -------------------------------------------------- the page
+				var oFilterBar = new Toolbar({ content: [
+					new Label({ text: "Project", labelFor: oProject }), oProject,
+					new ToolbarSpacer(),
+					new Button({ text: "Reset assumptions", press: function () {
+						oAdvance.setValue(10);
+						oTerms.setValue(60);
+						oSubTerms.setSelectedKey("30");
+						redraw();
+					}})
+				]});
+
+				var oPage = new DynamicPage({
+					title: new DynamicPageTitle({
+						heading:         new Title({ text: "Cashflow Model", level: "H1" }),
+						snappedHeading:  new Title({ text: "Cashflow Model", level: "H1" }),
+						expandedHeading: new Title({ text: "Cashflow Model", level: "H1" }),
+						snappedContent:  [ new Text({ text: "What the job has to fund, on terms you choose" }) ],
+						expandedContent: [ new Text({ text: "What the job has to fund, on terms you choose" }) ]
+					}),
+					header: new DynamicPageHeader({ pinnable: true,
+						content: [ oFilterBar, oAssumptions ] }),
+					content: new VerticalLayout({ width: "100%", content: [
+						oTiles,
+						new Panel({ headerText: "Cash in, cash out and the running position",
+							content: [ oViz, oNote ] })
+					]})
+				});
+				oPage.addStyleClass("kxModel");
+
+				new App({ pages: [ oPage ] }).placeAt("content");
+			});
+		});
+	</script>
+</head>
+<body class="sapUiBody sapUiSizeCompact" id="content"></body>
+</html>

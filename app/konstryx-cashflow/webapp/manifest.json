@@ -31,7 +31,7 @@
           "semanticObject": "KonstryxCashflow",
           "action": "display",
           "title": "Project Cashflow",
-          "subTitle": "Planned spend against actual, per period",
+          "subTitle": "Cash in, cash out and the running position",
           "icon": "sap-icon://line-charts",
           "signature": {
             "parameters": {},
