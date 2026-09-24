@@ -10,6 +10,20 @@ spring:
   sql:
     init:
       platform: h2
+  # A name, rather than the UUID Spring Boot invents for an anonymous embedded
+  # database. The database itself is unchanged - still in memory, still gone
+  # when the process stops - but a tool outside this JVM needs a name to ask
+  # for, and one that is different after every restart cannot be saved in a
+  # connection profile.
+  #
+  # DB_CLOSE_DELAY=-1 keeps it alive while the process lives rather than while
+  # the first connection lives, so a second client attaching does not find an
+  # empty database, and the last one disconnecting does not take it away.
+  datasource:
+    url: jdbc:h2:mem:konstryx;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
 cds:
   data-source:
     auto-config:

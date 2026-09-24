@@ -119,7 +119,13 @@
   	<dependency>
   		<groupId>com.h2database</groupId>
   		<artifactId>h2</artifactId>
-  		<scope>runtime</scope>
+  		<!--
+  			Compile scope, not runtime. H2TcpServer opens the local database to
+  			a SQL client and needs org.h2.tools.Server at compile time. The
+  			dependency was already shipped in the jar either way; this only
+  			puts it on the compile classpath, and the one class that uses it
+  			is confined to the development profile.
+  		-->
   	</dependency>
   </dependencies>
 
