@@ -65,6 +65,20 @@ if /i "%KX_DB_MODE%"=="memory" (
     pause
     exit /b 1
   )
+  if not defined KX_DB_PASSWORD (
+    echo.
+    echo   KX_DB_PASSWORD is empty, and PostgreSQL asks for one on every
+    echo   connection - local ones included. Put yours in .env beside
+    echo   KX_DB_USER, or set KX_DB_MODE=memory to run on the in-memory
+    echo   database instead.
+    echo.
+    echo   Left empty, the service starts and then answers every request with
+    echo   "the server requested SCRAM-based authentication", which reads like
+    echo   a broken build and is a missing line.
+    echo.
+    pause
+    exit /b 1
+  )
   if not defined KX_DB_DRIVER   set "KX_DB_DRIVER=org.postgresql.Driver"
   if not defined KX_DB_PLATFORM set "KX_DB_PLATFORM=postgres"
   if /i "%KX_DB_MODE%"=="fresh" (
