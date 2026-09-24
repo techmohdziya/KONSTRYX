@@ -181,8 +181,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # It is served from the launchpad's own folder so the site stays with
         # the app that renders it.
         if parts and parts[0] == "appconfig":
-            return os.path.join(APPS_ROOT, "launchpad", "webapp", "appconfig",
-                                *parts[1:])
+            return os.path.join(APPS_ROOT, "launchpad", "appconfig", *parts[1:])
 
         # A sibling application, e.g. /konstryx-resource-request/index.html.
         # Every UI5 app in app/ is reachable from this one origin, so they all

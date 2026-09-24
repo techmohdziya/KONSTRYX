@@ -33,6 +33,58 @@ if not defined KX_UI_PORT  set "KX_UI_PORT=8081"
 if not defined KX_USER     set "KX_USER=demo"
 if not defined KX_PASS     set "KX_PASS=demo"
 
+REM ---------------------------------------------------------------------------
+REM  Which database, and what happens to what is in it.
+REM
+REM  KX_DB_MODE is one word standing for three settings that have to agree.
+REM  Set them individually in .env and they win - this only fills in what was
+REM  left blank.
+REM
+REM    memory  (default)  in-memory H2. Nothing to install, gone on exit.
+REM    fresh              local Postgres, rebuilt and reseeded every start.
+REM    keep               local Postgres, left exactly as you left it.
+REM
+REM  "keep" is the one that lets a row survive a restart, and it is also the
+REM  one that goes wrong quietly: it does not create tables, so the first run
+REM  after a model change must be "fresh" or the new entity has nowhere to
+REM  live. It also does not reseed, so demo data you have edited stays edited.
+REM ---------------------------------------------------------------------------
+if not defined KX_DB_MODE set "KX_DB_MODE=memory"
+
+if /i "%KX_DB_MODE%"=="memory" (
+  if not defined KX_DB_PLATFORM  set "KX_DB_PLATFORM=h2"
+  if not defined KX_DB_INIT_MODE set "KX_DB_INIT_MODE=embedded"
+  if not defined KX_DB_SEED_MODE set "KX_DB_SEED_MODE=embedded"
+) else (
+  if not defined KX_DB_URL (
+    echo.
+    echo   KX_DB_MODE is %KX_DB_MODE%, which needs a database to point at.
+    echo   Set KX_DB_URL / KX_DB_USER / KX_DB_PASSWORD in .env, or use
+    echo   KX_DB_MODE=memory. See .env.example.
+    echo.
+    pause
+    exit /b 1
+  )
+  if not defined KX_DB_DRIVER   set "KX_DB_DRIVER=org.postgresql.Driver"
+  if not defined KX_DB_PLATFORM set "KX_DB_PLATFORM=postgres"
+  if /i "%KX_DB_MODE%"=="fresh" (
+    if not defined KX_DB_INIT_MODE set "KX_DB_INIT_MODE=always"
+    if not defined KX_DB_SEED_MODE set "KX_DB_SEED_MODE=always"
+  ) else (
+    if /i "%KX_DB_MODE%"=="keep" (
+      if not defined KX_DB_INIT_MODE set "KX_DB_INIT_MODE=never"
+      if not defined KX_DB_SEED_MODE set "KX_DB_SEED_MODE=never"
+    ) else (
+      echo.
+      echo   KX_DB_MODE=%KX_DB_MODE% is not one I know. Use memory, fresh or keep.
+      echo.
+      pause
+      exit /b 1
+    )
+  )
+)
+echo Database: %KX_DB_MODE%
+
 if not exist "%JAR%" (
   echo.
   echo   The service jar is missing. Build it first:
