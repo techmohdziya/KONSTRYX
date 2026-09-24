@@ -9,21 +9,41 @@ spring:
       on-profile: default
   sql:
     init:
-      platform: h2
-  # A name, rather than the UUID Spring Boot invents for an anonymous embedded
-  # database. The database itself is unchanged - still in memory, still gone
-  # when the process stops - but a tool outside this JVM needs a name to ask
-  # for, and one that is different after every restart cannot be saved in a
-  # connection profile.
+      # Which schema file to run, and whether to run it at all.
+      #
+      # Spring only initialises an embedded database by default, so a local
+      # Postgres would come up with no tables in it and every read would fail
+      # on a missing relation. Both are driven from the same two variables as
+      # the datasource below, so the schema always matches the database it is
+      # run against.
+      #
+      # The schema drops and recreates on every start. That is the right
+      # behaviour for a development database and a deliberate one: the demo
+      # dataset is seeded from CSV at boot, and a database that kept yesterday's
+      # rows alongside today's would double them. Nothing here should ever run
+      # against a database whose contents matter.
+      platform: ${KX_DB_PLATFORM:h2}
+      mode: ${KX_DB_INIT_MODE:embedded}
+  # Which database this runs on locally, and how to reach it.
   #
-  # DB_CLOSE_DELAY=-1 keeps it alive while the process lives rather than while
-  # the first connection lives, so a second client attaching does not find an
-  # empty database, and the last one disconnecting does not take it away.
+  # Unset, these defaults give the in-memory H2 the service has always used:
+  # no installation, identical on every machine, gone when the process stops.
+  # Set them in .env and the same build runs against a local Postgres instead,
+  # which is what you want when the question is how the model behaves on a real
+  # database rather than how a screen looks.
+  #
+  # The password is read from the environment and is never written here. .env
+  # is gitignored; this file is not.
+  #
+  # The H2 default carries a name rather than the UUID Spring Boot invents for
+  # an anonymous embedded database, so a SQL client has something to ask for
+  # that is the same after a restart, and DB_CLOSE_DELAY=-1 keeps it alive as
+  # long as the process rather than as long as its first connection.
   datasource:
-    url: jdbc:h2:mem:konstryx;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
+    url: ${KX_DB_URL:jdbc:h2:mem:konstryx;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    driver-class-name: ${KX_DB_DRIVER:org.h2.Driver}
+    username: ${KX_DB_USER:sa}
+    password: ${KX_DB_PASSWORD:}
 cds:
   data-source:
     auto-config:
@@ -37,6 +57,13 @@ cds:
       paths:
         - db/data
         - test/data
+      # Seed whatever database this is pointed at, not only an embedded one.
+      #
+      # The default is `embedded`, which is why a local Postgres came up with
+      # the schema in place and not a single row in it. `always` is safe here
+      # because the schema above is recreated on the same startup - the rows
+      # are loaded into tables that were empty a moment earlier.
+      initialization-mode: ${KX_DB_SEED_MODE:embedded}
   # Local development only. Personas mirror the xs-security.json role templates
   # one-for-one; the cloud profile takes its roles from XSUAA instead.
   security:

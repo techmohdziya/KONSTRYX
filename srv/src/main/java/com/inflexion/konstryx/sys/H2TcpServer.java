@@ -4,6 +4,7 @@ import org.h2.tools.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -33,14 +34,20 @@ import java.sql.SQLException;
  * listener somebody else can reach, and the person who needs it is sitting at
  * the keyboard.
  *
- * Development profile only, and deliberately so. On Cloud Foundry the service
- * runs on SAP HANA Cloud, which has its own access path and its own
- * authorization; a second door into the database, opened by the application
- * itself and authenticated by nothing, is not something that should exist
- * where real data does.
+ * Development profile only, and only on H2. On Cloud Foundry the service runs
+ * on SAP HANA Cloud, which has its own access path and its own authorization;
+ * a second door into the database, opened by the application itself and
+ * authenticated by nothing, is not something that should exist where real data
+ * does. A local Postgres needs nothing from this either - it already listens
+ * on a port of its own.
  */
 @Configuration
 @Profile("default")
+// Only when this actually runs on H2. Pointed at a local Postgres the service
+// needs no listener of its own - psql and DBeaver already reach that database
+// on its own port - and one started here would log a connection string that
+// leads nowhere.
+@ConditionalOnExpression("'${spring.datasource.url:jdbc:h2:mem:konstryx}'.startsWith('jdbc:h2:')")
 public class H2TcpServer {
 
     private static final Logger log = LoggerFactory.getLogger(H2TcpServer.class);
