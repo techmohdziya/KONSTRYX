@@ -105,6 +105,15 @@ service MasterDataService @(path:'/masterdata') {
 
   // S/4 mirrors — read-only in Konstryx
   @readonly entity Vendors    as projection on master.Vendor;
+  /**
+   * The chart of accounts, mirrored from S/4 and read-only here.
+   *
+   * Finance owns it. An account invented on a requisition is a commitment
+   * posted where nobody reconciles it, so this offers the real ones and
+   * nothing else.
+   */
+  @readonly entity GLAccounts as projection on master.GLAccount;
+
   @readonly entity Materials  as projection on master.Material;
   @readonly entity Customers  as projection on master.Customer;
 

@@ -154,6 +154,22 @@ service MaterialService @(path:'/material') {
       else 1
     end as matchCriticality : Integer
   };
+  /**
+   * Service entry sheets: the acceptance of work that arrives on no lorry.
+   *
+   * Read-only for the same reason the goods receipt is. S/4 owns the
+   * acceptance because S/4 owns the commitment it releases, and a sheet
+   * entered in two places would release it twice.
+   */
+  @readonly entity ServiceEntrySheets as projection on mat.ServiceEntrySheet {
+    *,
+    po.poNo as orderNo : String(10),
+    case
+      when threeWayMatch is null then 0
+      when threeWayMatch      then 3
+      else 1
+    end as matchCriticality : Integer
+  };
   @readonly entity SupplierInvoices     as projection on mat.SupplierInvoice {
     *,
     po.poNo         as orderNo    : String(10),

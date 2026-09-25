@@ -237,6 +237,45 @@ entity PurchaseOrderLine : cuid {
   status       : String(20);
 }
 
+/**
+ * A service entry sheet: the goods receipt of work that has no goods.
+ *
+ * Plant hire, scaffolding rental, a design package, a subcontracted service -
+ * none of them arrives on a lorry, so none of them can be receipted. S/4
+ * records the acceptance as a service entry sheet instead, and the three-way
+ * match runs order to entry sheet to invoice exactly as it runs order to
+ * receipt to invoice for material. A rental billed monthly posts one sheet a
+ * month against the same order, which is why this carries a period rather
+ * than a single posting date.
+ *
+ * Mirrored, never authored here. S/4 owns the acceptance because S/4 owns the
+ * commitment it releases, and an entry sheet raised in two places would
+ * release it twice.
+ */
+entity ServiceEntrySheet : cuid, managed, common.s4mirror {
+  sesNo        : String(20);
+  po           : Association to PurchaseOrder;
+  poLineNo     : Integer;
+  /** The order line this sheet accepts against, resolved when it is mirrored. */
+  poLine       : Association to PurchaseOrderLine;
+  description  : String(255);
+  /** The period the service covers, which is not the date it was entered. */
+  periodFrom   : Date;
+  periodTo     : Date;
+  qty          : Decimal(15,3);
+  uom          : String(10);
+  /** Priced at the order line's rate, which is what the sheet accrues. */
+  netValue     : Decimal(15,2);
+  ccy          : Currency;
+  postedOn     : Date;
+  /** An entry sheet releases no commitment until somebody accepts it. */
+  approvedOn   : Date;
+  approvedBy   : String(120);
+  status       : String(20);
+  threeWayMatch: Boolean;
+  matchVariance: String(255);
+}
+
 entity GoodsReceipt : cuid, managed, common.s4mirror {
   grDoc        : String(20);
   po           : Association to PurchaseOrder;

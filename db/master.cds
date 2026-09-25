@@ -235,6 +235,30 @@ entity Customer : cuid, managed, common.s4mirror {
 }
 
 // S/4 Product Master mirror (MR vertical).
+/**
+ * A general ledger account, as the ledger defines it.
+ *
+ * Mirrored from S/4 because the chart of accounts is finance's, not the site's.
+ * A cost element typed by hand on a requisition is how a commitment lands in
+ * an account nobody reconciles, and the account that receives it is the one
+ * thing on the line the project has no authority to invent.
+ *
+ * Both the account and its type are carried. Whether an account is a primary
+ * cost element decides whether a requisition may post to it at all, and a
+ * balance-sheet account offered in a picker beside a cost account is the
+ * mistake this mirror exists to prevent.
+ */
+entity GLAccount : cuid, managed, common.s4mirror {
+  glAccount      : String(10);
+  chartOfAccounts: String(4);
+  description    : String(255);
+  /** Primary or secondary cost element, balance sheet, or non-operating. */
+  accountType    : String(20);
+  accountGroup   : String(10);
+  /** A blocked account still exists and must still be recognisable. */
+  blocked        : Boolean;
+}
+
 entity Material : cuid, managed, common.s4mirror {
   materialCode  : String(40);
   description   : String(255);

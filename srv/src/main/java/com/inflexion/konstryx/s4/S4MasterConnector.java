@@ -40,12 +40,16 @@ public class S4MasterConnector {
     private static final String E_CONFIG = "konstryx.admin.S4SyncConfig";
     private static final String E_MATERIAL = "konstryx.master.Material";
     private static final String E_VENDOR = "konstryx.master.Vendor";
+    private static final String E_GL = "konstryx.master.GLAccount";
 
     static final String MATERIAL = "MATERIAL";
     static final String VENDOR = "VENDOR";
+    static final String GL_ACCOUNT = "GL_ACCOUNT";
 
     private static final String PRODUCT_SRV = "/sap/opu/odata/sap/API_PRODUCT_SRV";
     private static final String BP_SRV = "/sap/opu/odata/sap/API_BUSINESS_PARTNER";
+    private static final String GL_SRV =
+            "/sap/opu/odata/sap/API_GLACCOUNTINCHARTOFACCOUNTS_SRV";
 
     /**
      * Rows fetched per request. The run continues until S/4 returns a short
@@ -117,7 +121,8 @@ public class S4MasterConnector {
                 continue;
             }
             String type = upper(str(config.get("objectType")));
-            if (!MATERIAL.equals(type) && !VENDOR.equals(type)) {
+            if (!MATERIAL.equals(type) && !VENDOR.equals(type)
+                    && !GL_ACCOUNT.equals(type)) {
                 continue;
             }
             String service = str(config.get("service"));
@@ -127,18 +132,22 @@ public class S4MasterConnector {
         if (byType.isEmpty()) {
             byType.put(MATERIAL, new Feed(MATERIAL, PRODUCT_SRV, false));
             byType.put(VENDOR, new Feed(VENDOR, BP_SRV, false));
+            byType.put(GL_ACCOUNT, new Feed(GL_ACCOUNT, GL_SRV, false));
         }
         return new ArrayList<>(byType.values());
     }
 
     private static String defaultService(String objectType) {
-        return MATERIAL.equals(objectType) ? PRODUCT_SRV : BP_SRV;
+        if (MATERIAL.equals(objectType)) { return PRODUCT_SRV; }
+        if (GL_ACCOUNT.equals(objectType)) { return GL_SRV; }
+        return BP_SRV;
     }
 
     private String run(Feed feed) {
         try {
-            return MATERIAL.equals(feed.objectType)
-                    ? syncMaterials(feed) : syncVendors(feed);
+            if (MATERIAL.equals(feed.objectType)) { return syncMaterials(feed); }
+            if (GL_ACCOUNT.equals(feed.objectType)) { return syncGLAccounts(feed); }
+            return syncVendors(feed);
         } catch (Exception e) {
             log.warn("Master sync failed for {}: {}", feed.objectType, e.toString());
             return feed.objectType + ": failed (" + e.getClass().getSimpleName() + ")";
@@ -282,6 +291,105 @@ public class S4MasterConnector {
                 + " read, " + created + " new, " + updated + " updated"
                 + (truncated ? ". Stopped at the " + SAFETY_LIMIT
                         + "-row safety limit, so this is not the whole list." : "");
+    }
+
+    // ------------------------------------------------------------ G/L account
+
+    /**
+     * The chart of accounts, as finance defines it.
+     *
+     * Read because the account a commitment posts to is not for a site to
+     * invent. A cost element typed by hand on a requisition lands in an account
+     * nobody reconciles, and the picker that prevents that has to be offering
+     * the real accounts of the tenant rather than a list maintained here.
+     *
+     * The account type comes with it. Whether an account is a primary cost
+     * element decides whether a requisition may post to it at all, and a
+     * balance sheet account offered beside a cost account is exactly the
+     * mistake this feed exists to prevent.
+     */
+    private String syncGLAccounts(Feed feed) throws Exception {
+        int read = 0, created = 0, updated = 0;
+        Map<String, String> names = glAccountNames(feed.service);
+
+        for (int skip = 0; skip < SAFETY_LIMIT; skip += PAGE) {
+            String url = feed.service + "/A_GLAccountInChartOfAccounts?%24format=json&%24top="
+                    + PAGE + "&%24skip=" + skip
+                    + "&%24select=GLAccount,ChartOfAccounts,GLAccountType,GLAccountGroup,"
+                    + "IsBlockedForCreation";
+            S4Connection.S4Response response = connection.get(url);
+            if (response.status != 200) {
+                return feed.objectType + ": not available (" + response.status + ")";
+            }
+            List<JsonNode> page = rowsOf(response.body);
+            if (page.isEmpty()) {
+                break;
+            }
+            for (JsonNode row : page) {
+                String account = text(row, "GLAccount");
+                if (account == null) {
+                    continue;
+                }
+                read++;
+                Map<String, Object> data = new HashMap<>();
+                data.put("glAccount", account);
+                data.put("chartOfAccounts", text(row, "ChartOfAccounts"));
+                data.put("description", names.get(account));
+                data.put("accountType", text(row, "GLAccountType"));
+                data.put("accountGroup", text(row, "GLAccountGroup"));
+                data.put("blocked", "true".equalsIgnoreCase(text(row, "IsBlockedForCreation")));
+                if (upsert(E_GL, "glAccount", account, data)) {
+                    created++;
+                } else {
+                    updated++;
+                }
+            }
+            if (page.size() < PAGE) {
+                break;
+            }
+        }
+        return feed.objectType + " <- A_GLAccountInChartOfAccounts" + source(feed) + ": "
+                + read + " read, " + created + " new, " + updated + " updated";
+    }
+
+    /** Account names, which live in their own entity and in several languages. */
+    private Map<String, String> glAccountNames(String service) {
+        Map<String, String> byAccount = new HashMap<>();
+        try {
+            for (int skip = 0; skip < SAFETY_LIMIT; skip += PAGE) {
+                String url = service + "/A_GLAccountInChartOfAccountsText?%24format=json"
+                        + "&%24top=" + PAGE + "&%24skip=" + skip
+                        + "&%24select=GLAccount,Language,GLAccountLongName,GLAccountName";
+                S4Connection.S4Response response = connection.get(url);
+                if (response.status != 200) {
+                    return byAccount;
+                }
+                List<JsonNode> page = rowsOf(response.body);
+                if (page.isEmpty()) {
+                    return byAccount;
+                }
+                for (JsonNode row : page) {
+                    String account = text(row, "GLAccount");
+                    String name = text(row, "GLAccountLongName");
+                    if (name == null) {
+                        name = text(row, "GLAccountName");
+                    }
+                    if (account == null || name == null) {
+                        continue;
+                    }
+                    boolean english = "EN".equalsIgnoreCase(text(row, "Language"));
+                    if (english || !byAccount.containsKey(account)) {
+                        byAccount.put(account, name);
+                    }
+                }
+                if (page.size() < PAGE) {
+                    return byAccount;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("G/L account names unavailable: {}", e.toString());
+        }
+        return byAccount;
     }
 
     // ---------------------------------------------------------------- helpers

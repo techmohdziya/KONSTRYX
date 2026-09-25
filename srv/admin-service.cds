@@ -132,4 +132,18 @@ service AdminService @(path:'/admin') {
    * author of a mirror, so there is no local edit to preserve.
    */
   action syncMastersFromS4() returns LargeString;
+
+  /**
+   * Reads back the procurement documents S/4 owns: purchase orders and their
+   * lines, goods receipts, and service entry sheets.
+   *
+   * Separate from the master pull because it runs on a different rhythm. A
+   * chart of accounts changes when finance changes it; an order changes when a
+   * supplier delivers, which is every day on a live site.
+   *
+   * Orders are read first. A receipt or an entry sheet that cannot find its
+   * order has nothing to price itself against, so the order has to be there
+   * before either of them arrives.
+   */
+  action syncProcurementFromS4() returns LargeString;
 }
