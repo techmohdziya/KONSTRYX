@@ -29,7 +29,7 @@ import java.util.UUID;
  * everything that follows. The order, the receipt and the service entry sheet
  * are read back, never written here.
  *
- *   purchase order         API_PURCHASEORDER_PROCESS_SRV      SAP_COM_0053
+ *   purchase order         API_PURCHASEORDER_2 (A2X, V4)      SAP_COM_0053
  *   goods receipt          API_MATERIAL_DOCUMENT_SRV          SAP_COM_0107
  *   service entry sheet    API_SERVICE_ENTRY_SHEET_SRV        SAP_COM_0237
  *
@@ -62,7 +62,18 @@ public class S4ProcurementConnector {
     private static final String E_VENDOR = "konstryx.master.Vendor";
     private static final String E_COMPANY = "konstryx.admin.Company";
 
-    static final String PO_SRV = "/sap/opu/odata/sap/API_PURCHASEORDER_PROCESS_SRV";
+    /**
+     * The purchase order service, as this tenant exposes it.
+     *
+     * API_PURCHASEORDER_2 on the A2X protocol, which is OData V4 and lives
+     * under /sap/opu/odata4 rather than /sap/opu/odata. The older
+     * API_PURCHASEORDER_PROCESS_SRV is V2 and is what the requirements named;
+     * the tenant publishes the V4 one, and a connector pointed at a path the
+     * tenant does not publish fails in a way that reads like a credential
+     * problem. Repointable through S4SyncConfig for a tenant on the other one.
+     */
+    static final String PO_SRV =
+            "/sap/opu/odata4/sap/api_purchaseorder_2/srvd_a2x/sap/purchaseorder/0001";
     static final String GR_SRV = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV";
     static final String SES_SRV = "/sap/opu/odata/sap/API_SERVICE_ENTRY_SHEET_SRV";
 
@@ -131,7 +142,7 @@ public class S4ProcurementConnector {
         int read = 0, created = 0, updated = 0, skipped = 0, lines = 0;
 
         for (int skip = 0; skip < SAFETY_LIMIT; skip += PAGE) {
-            String url = PO_SRV + "/A_PurchaseOrder?%24format=json&%24top=" + PAGE
+            String url = PO_SRV + "/PurchaseOrder?%24top=" + PAGE
                     + "&%24skip=" + skip
                     + "&%24select=PurchaseOrder,Supplier,CompanyCode,PurchaseOrderDate,"
                     + "PurchasingDocumentDeletionCode,PurchaseOrderNetAmount,DocumentCurrency";
@@ -183,17 +194,17 @@ public class S4ProcurementConnector {
                 break;
             }
         }
-        return "purchase orders <- A_PurchaseOrder: " + read + " read, " + created
+        return "purchase orders <- PurchaseOrder: " + read + " read, " + created
                 + " new, " + updated + " updated, " + lines + " line(s)"
                 + (skipped > 0 ? ", " + skipped + " for projects this system does not run" : "");
     }
 
     private List<JsonNode> items(String poNo) throws Exception {
-        String url = PO_SRV + "/A_PurchaseOrderItem?%24format=json&%24top=" + PAGE
+        String url = PO_SRV + "/PurchaseOrderItem?%24top=" + PAGE
                 + "&%24filter=PurchaseOrder%20eq%20'" + poNo + "'"
                 + "&%24select=PurchaseOrder,PurchaseOrderItem,Material,PurchaseOrderItemText,"
                 + "OrderQuantity,PurchaseOrderQuantityUnit,NetPriceAmount,NetAmount,"
-                + "WBSElementInternalID,ScheduleLineDeliveryDate";
+                + "WBSElement,ScheduleLineDeliveryDate";
         S4Connection.S4Response response = connection.get(url);
         return response.status == 200 ? rowsOf(response.body) : List.of();
     }
@@ -206,7 +217,13 @@ public class S4ProcurementConnector {
      */
     private String projectOf(List<JsonNode> itemRows, Map<String, String> projects) {
         for (JsonNode item : itemRows) {
-            String wbs = text(item, "WBSElementInternalID");
+            String wbs = text(item, "WBSElement");
+            if (wbs == null) {
+                // The V2 service spells it WBSElementInternalID. Both are read
+                // so that repointing the feed at the older service through
+                // S4SyncConfig does not silently stop finding the project.
+                wbs = text(item, "WBSElementInternalID");
+            }
             if (wbs == null) {
                 continue;
             }
