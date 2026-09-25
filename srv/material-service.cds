@@ -150,7 +150,7 @@ service MaterialService @(path:'/material') {
     *,
     case
       when threeWayMatch is null then 0
-      when threeWayMatch      then 3
+      when threeWayMatch = true      then 3
       else 1
     end as matchCriticality : Integer
   };
@@ -166,7 +166,7 @@ service MaterialService @(path:'/material') {
     po.poNo as orderNo : String(10),
     case
       when threeWayMatch is null then 0
-      when threeWayMatch      then 3
+      when threeWayMatch = true      then 3
       else 1
     end as matchCriticality : Integer
   };
@@ -177,7 +177,7 @@ service MaterialService @(path:'/material') {
     project.code    as projectCode : String(24),
     case
       when matched is null then 0
-      when matched      then 3
+      when matched = true      then 3
       else 1
     end as matchCriticality : Integer
   };
@@ -185,7 +185,7 @@ service MaterialService @(path:'/material') {
     *,
     case
       when matched is null then 0
-      when matched      then 3
+      when matched = true      then 3
       else 1
     end as matchCriticality : Integer
   };

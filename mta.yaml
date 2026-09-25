@@ -657,6 +657,14 @@ modules:
           artifacts:
             - konstryx-booklet.zip
           target-path: resources/
+        - name: konstryx-dashboard
+          artifacts:
+            - konstryx-dashboard.zip
+          target-path: resources/
+        - name: konstryx-cashflow-model
+          artifacts:
+            - konstryx-cashflow-model.zip
+          target-path: resources/
         - name: konstryx-consumption
           artifacts:
             - konstryx-consumption.zip
@@ -924,6 +932,44 @@ modules:
         - "npx cds build .. --production"
     requires:
       - name: konstryx-db
+
+  # The Project Controller Overview. A page rather than a UI5 component, so
+  # there is no Component.js to build and the sources are uploaded as they are.
+  - name: konstryx-dashboard
+    type: html5
+    path: app/konstryx-dashboard
+    build-parameters:
+      # The zip is made here. mbt copies the artifact the deployer names out of
+      # build-result, and the other apps get theirs from ui5-task-zipper during
+      # `ui5 build`; a plain page has no UI5 build, so without this there is no
+      # konstryx-dashboard.zip to copy and mbt copies nothing - silently,
+      # because a pattern matching no file is not an error.
+      builder: custom
+      commands:
+        - npm run build:zip
+        # run from webapp, so the files land at the zip root rather
+        # than inside a webapp/ folder the repository will not look in
+      supported-platforms: []
+      build-result: .
+
+  # The cashflow what-if model. A page rather than a UI5 component, so
+  # there is no Component.js to build and the sources are uploaded as they are.
+  - name: konstryx-cashflow-model
+    type: html5
+    path: app/konstryx-cashflow-model
+    build-parameters:
+      # The zip is made here. mbt copies the artifact the deployer names out of
+      # build-result, and the other apps get theirs from ui5-task-zipper during
+      # `ui5 build`; a plain page has no UI5 build, so without this there is no
+      # konstryx-cashflow-model.zip to copy and mbt copies nothing - silently,
+      # because a pattern matching no file is not an error.
+      builder: custom
+      commands:
+        - npm run build:zip
+        # run from webapp, so the files land at the zip root rather
+        # than inside a webapp/ folder the repository will not look in
+      supported-platforms: []
+      build-result: .
 
 resources:
   - name: konstryx-db

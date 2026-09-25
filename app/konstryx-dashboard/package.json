@@ -1,0 +1,10 @@
+{
+  "name": "konstryx-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A KONSTRYX page. No dependencies: it is plain HTML driving UI5 from the CDN, and this manifest exists so the MTA build packages it like every other app.",
+  "devDependencies": {},
+  "scripts": {
+    "build:zip": "cd webapp && npx --yes bestzip ../konstryx-dashboard.zip *"
+  }
+}
