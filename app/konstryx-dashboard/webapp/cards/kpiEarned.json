@@ -17,8 +17,8 @@
     },
     "header": {
       "type": "Numeric",
-      "title": "Recognised",
-      "subTitle": "Measured work at contract rates",
+      "title": "Value of work done",
+      "subTitle": "Measured at contract rates, all projects",
       "unitOfMeasurement": "AED",
       "mainIndicator": {
         "number": "{= format.float(${earnedTotal}, {decimals: 2, groupingEnabled: true}) }",

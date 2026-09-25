@@ -290,16 +290,16 @@
 					oCardDeficit.setManifest(cardManifest({
 						id: "deficit", rows: a,
 						title: "Max financing deficit",
-						subTitle: "Deepest point below zero",
+						subTitle: "Deepest negative cash position",
 						value: short(k.deficit), state: k.deficit > 0 ? "Error" : "Good",
 						details: "Worst in " + k.worstPeriod,
 						target: "0.00", deviation: pct(k.deficit, fContract),
-						chartType: "Line", measure: "position", measureName: "Position"
+						chartType: "Line", measure: "position", measureName: "Cumulative position"
 					}));
 					oCardCapital.setManifest(cardManifest({
 						id: "capital", rows: a,
 						title: "Peak capital required",
-						subTitle: "Largest fall from a running high",
+						subTitle: "Largest peak-to-trough drawdown",
 						value: short(k.capital), state: "Critical",
 						details: "Cash that must be on hand at once",
 						target: "0.00", deviation: pct(k.capital, fContract),
@@ -312,13 +312,13 @@
 					oCardMargin.setManifest(cardManifest({
 						id: "margin", rows: a,
 						title: "Project net margin",
-						subTitle: "Closing cash position",
+						subTitle: "Closing cumulative cash position",
 						value: short(k.margin), state: k.margin >= 0 ? "Good" : "Error",
 						details: "After retention is released",
 						target: fContractM.toLocaleString("en-US",
 							{ minimumFractionDigits: 2, maximumFractionDigits: 2 }),
 						deviation: pct(k.margin, fContract),
-						chartType: "Line", measure: "position", measureName: "Position"
+						chartType: "Line", measure: "position", measureName: "Cumulative position"
 					}));
 
 					oAdvanceLabel.setText(oAdvance.getValue() + " %");
@@ -383,9 +383,9 @@
 				var oAssumptions = new HBox({
 					renderType: "Bare", wrap: "Wrap", alignItems: "End",
 					items: [
-						control("Mobilisation advance", oAdvance, oAdvanceLabel),
-						control("Client payment terms", oTerms, oTermsLabel),
-						control("Subcontractor terms", oSubTerms, new Text({ text: "" }))
+						control("Advance payment (% of contract)", oAdvance, oAdvanceLabel),
+						control("Client payment terms (days)", oTerms, oTermsLabel),
+						control("Subcontractor payment terms", oSubTerms, new Text({ text: "" }))
 					]
 				});
 				oAssumptions.addStyleClass("kxAssumptions");
@@ -478,8 +478,8 @@
 						title: { visible: false },
 						legend: { visible: true },
 						plotArea: { dataLabel: { visible: false } },
-						valueAxis:  { title: { text: "Cash movement" } },
-						valueAxis2: { title: { text: "Running position" } },
+						valueAxis:  { title: { text: "Cash movement (AED)" } },
+						valueAxis2: { title: { text: "Cumulative position (AED)" } },
 						categoryAxis: { title: { visible: false } }
 					}
 				});
@@ -487,16 +487,16 @@
 				oViz.setDataset(new FlattenedDataset({
 					dimensions: [ { name: "Period", value: "{period}" } ],
 					measures: [
-						{ name: "Cash in",  value: "{cashIn}" },
-						{ name: "Cash out", value: "{cashOutSigned}" },
-						{ name: "Position", value: "{position}" }
+						{ name: "Cash inflow",  value: "{cashIn}" },
+						{ name: "Cash outflow", value: "{cashOutSigned}" },
+						{ name: "Cumulative position", value: "{position}" }
 					],
 					data: { path: "/rows" }
 				}));
 				oViz.addFeed(new FeedItem({ uid: "valueAxis", type: "Measure",
-					values: [ "Cash in", "Cash out" ] }));
+					values: [ "Cash inflow", "Cash outflow" ] }));
 				oViz.addFeed(new FeedItem({ uid: "valueAxis2", type: "Measure",
-					values: [ "Position" ] }));
+					values: [ "Cumulative position" ] }));
 				oViz.addFeed(new FeedItem({ uid: "categoryAxis", type: "Dimension",
 					values: [ "Period" ] }));
 				oViz.addStyleClass("kxChart");
@@ -609,7 +609,7 @@
 						content: [ oFilterBar, oAssumptions ] }),
 					content: new VerticalLayout({ width: "100%", content: [
 						oTiles,
-						new Panel({ headerText: "Cash in, cash out and the running position",
+						new Panel({ headerText: "Cash inflow, cash outflow and cumulative position",
 							content: [ oViz, oNote ] })
 					]})
 				});

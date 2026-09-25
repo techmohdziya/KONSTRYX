@@ -57,7 +57,7 @@ annotate service.Cashflow with @(
     Name                 : 'inflow',
     AggregatableProperty : cashIn,
     AggregationMethod    : 'sum',
-    @Common.Label        : 'Cash in',
+    @Common.Label        : 'Cash inflow',
   },
   /**
    * The outflow negated, so the bars fall below the axis.
@@ -71,14 +71,14 @@ annotate service.Cashflow with @(
     Name                 : 'outflow',
     AggregatableProperty : cashOutSigned,
     AggregationMethod    : 'sum',
-    @Common.Label        : 'Cash out',
+    @Common.Label        : 'Cash outflow',
   },
   Analytics.AggregatedProperty #position : {
     $Type                : 'Analytics.AggregatedPropertyType',
     Name                 : 'position',
     AggregatableProperty : cumPosition,
     AggregationMethod    : 'sum',
-    @Common.Label        : 'Net position',
+    @Common.Label        : 'Cumulative cash position',
   },
 
   /**
@@ -97,7 +97,7 @@ annotate service.Cashflow with @(
    */
   UI.Chart #Valley : {
     $Type               : 'UI.ChartDefinitionType',
-    Title               : 'Cash in, cash out and the running position',
+    Title               : 'Cash inflow, cash outflow and cumulative position',
     ChartType           : #Column,
     Dimensions          : [ periodName ],
     DimensionAttributes : [
@@ -150,20 +150,20 @@ annotate service.Cashflow with @(
   UI.LineItem : [
     { $Type : 'UI.DataField', Value : projectCode,      Label : 'Project' },
     { $Type : 'UI.DataField', Value : periodName,       Label : 'Period' },
-    { $Type : 'UI.DataField', Value : billedGross,      Label : 'Valued' },
+    { $Type : 'UI.DataField', Value : billedGross,      Label : 'Value of work done' },
     { $Type : 'UI.DataField', Value : retentionPct,     Label : 'Retention %' },
-    { $Type : 'UI.DataField', Value : retentionHeld,    Label : 'Retention held' },
+    { $Type : 'UI.DataField', Value : retentionHeld,    Label : 'Retention' },
     { $Type : 'UI.DataField', Value : netCertified,     Label : 'Net certified' },
-    { $Type : 'UI.DataField', Value : advanceRecovery,  Label : 'Advance recovered' },
-    { $Type : 'UI.DataField', Value : cashIn,           Label : 'Cash in' },
-    { $Type : 'UI.DataField', Value : actualOut,        Label : 'Cash out' },
+    { $Type : 'UI.DataField', Value : advanceRecovery,  Label : 'Advance recovery' },
+    { $Type : 'UI.DataField', Value : cashIn,           Label : 'Cash inflow' },
+    { $Type : 'UI.DataField', Value : actualOut,        Label : 'Cash outflow' },
     { $Type : 'UI.DataField', Value : netMonthly,       Label : 'Net this period' },
-    { $Type : 'UI.DataField', Value : cumPosition,      Label : 'Position',
+    { $Type : 'UI.DataField', Value : cumPosition,      Label : 'Cumulative cash position',
       Criticality : positionCriticality },
-    { $Type : 'UI.DataField', Value : lagDays,          Label : 'Lag (days)' },
+    { $Type : 'UI.DataField', Value : lagDays,          Label : 'Payment terms (days)' },
     { $Type : 'UI.DataField', Value : plannedOut,       Label : 'Planned spend' },
     { $Type : 'UI.DataField', Value : variance,         Label : 'Spend variance' },
-    { $Type : 'UI.DataField', Value : actualOutCum,     Label : 'Spent to date' },
+    { $Type : 'UI.DataField', Value : actualOutCum,     Label : 'Cumulative spend' },
   ],
 
   UI.FieldGroup #Period : {

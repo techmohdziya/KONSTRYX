@@ -242,7 +242,7 @@ public class ContentDeploymentService {
         return db.run(Select.from(entity).where(e -> {
             CqnPredicate predicate = null;
             for (String field : keyFields) {
-                Object value = data.get(field);
+                Object value = typed(entity, field, data.get(field));
                 CqnPredicate term = value == null
                         ? e.get(field).isNull()
                         : e.get(field).eq(value);
@@ -250,6 +250,45 @@ public class ContentDeploymentService {
             }
             return predicate == null ? CQL.constant(true).eq(true) : predicate;
         })).first().isPresent();
+    }
+
+    /**
+     * A key value as the column understands it, not as JSON spelt it.
+     *
+     * Content is authored as JSON, where a date is a string. Comparing that
+     * string to a date column works on H2, which coerces one to the other, and
+     * fails outright on PostgreSQL: "operator does not exist: date = character
+     * varying". The pack then applied nothing at all, which on a fresh database
+     * meant every rate, every currency and every code list was missing and the
+     * failure read as a broken deployment rather than a type mismatch.
+     *
+     * The model already knows what each element is, so it is asked rather than
+     * guessed at: a string that looks like a date is only converted where the
+     * column is a date. A code that happens to read like one stays a string.
+     */
+    private Object typed(String entity, String field, Object value) {
+        if (!(value instanceof String text) || text.isEmpty()) {
+            return value;
+        }
+        return runtime.getCdsModel().findEntity(entity)
+                .flatMap(cdsEntity -> cdsEntity.findElement(field))
+                .map(element -> {
+                    try {
+                        switch (element.getType().getQualifiedName()) {
+                            case "cds.Date":      return (Object) java.time.LocalDate.parse(text);
+                            case "cds.Time":      return (Object) java.time.LocalTime.parse(text);
+                            case "cds.DateTime":
+                            case "cds.Timestamp": return (Object) Instant.parse(text);
+                            default:              return (Object) text;
+                        }
+                    } catch (java.time.format.DateTimeParseException e) {
+                        // A date column holding something that is not a date is
+                        // a fault in the pack, and it belongs in the error the
+                        // insert raises rather than in a silent mismatch here.
+                        return (Object) text;
+                    }
+                })
+                .orElse(value);
     }
 
     /**
